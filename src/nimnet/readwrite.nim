@@ -5,16 +5,15 @@ import sets
 
 import ../nimnet.nim
 
-###
-# adjlist format
-#
+# -------------------------------------------------------------------
+# Read/Write functions for Adjacent List format
+# -------------------------------------------------------------------
 # e.g.) delimiter = ' '
 # ```tsv
 # 0 1 2
 # 1 2
 # ```
-#
-###
+# -------------------------------------------------------------------
 
 proc readAdjlistAsGraph*(path: string, delimiter: char = ' '): Graph =
   if path == "":
@@ -132,16 +131,15 @@ proc parseAdjlistAsDiGraph*(lines: HashSet[string], delimiter: char = ' '): DiGr
   DG.addEdgesFrom(edges)
   return DG
 
-###
-# edgelist format
-#
+# -------------------------------------------------------------------
+# Read/Write functions for Edge List format
+# -------------------------------------------------------------------
 # e.g.) delimiter = ' '
 # ```
 # 0 1
 # 1 2
 # ```
-#
-###
+# -------------------------------------------------------------------
 
 proc readEdgelistAsGraph*(path: string, delimiter: char = ' '): Graph =
   ## Read edgelist file from `path` as undirected graph

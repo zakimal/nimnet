@@ -4,9 +4,9 @@ import sequtils
 import tables
 import strformat
 
-###
+# -------------------------------------------------------------------
 #  Basic types
-###
+# -------------------------------------------------------------------
 
 type Node* = int
 const None* = -1.Node
@@ -22,9 +22,9 @@ type DiGraph* = ref object of RootObj
   pred*: Table[Node, HashSet[Node]]
   succ*: Table[Node, HashSet[Node]]
 
-###
+# -------------------------------------------------------------------
 #  Exceptions
-###
+# -------------------------------------------------------------------
 
 type
   NNException*                       = ref object of CatchableError
@@ -100,9 +100,9 @@ proc newNNPowerIterationFailedConvergence*(numIterations: int): NNPowerIteration
   e.msg = fmt"power iteration failed to converge within {numIterations} iterations"
   return e
 
-###
+# -------------------------------------------------------------------
 #  Basic Operations
-###
+# -------------------------------------------------------------------
 
 # (Undirected) Graph
 proc newGraph*(): Graph =
