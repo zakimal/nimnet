@@ -91,6 +91,32 @@ proc completeDiGraph*(n: int): DiGraph =
       DG.addEdge(i, j)
   return DG
 
+proc circularLadderGraph*(n: int): Graph =
+  let G = newGraph()
+  for i in 0..<(n-1):
+    G.addEdge(i, i + 1)
+    G.addEdge(i + n, i + n + 1)
+  for i in 0..<n:
+    G.addEdge(i, i + n)
+  G.addEdge(0, n - 1)
+  G.addEdge(n, 2 * n - 1)
+  return G
+proc circularLadderDiGraph*(n: int): DiGraph =
+  let DG = newDiGraph()
+  for i in 0..<(n-1):
+    DG.addEdge(i, i + 1)
+    DG.addEdge(i + 1, i)
+    DG.addEdge(i + n, i + n + 1)
+    DG.addEdge(i + n + 1, i + n)
+  for i in 0..<n:
+    DG.addEdge(i, i + n)
+    DG.addEdge(i + n, i)
+  DG.addEdge(0, n - 1)
+  DG.addEdge(n - 1, 0)
+  DG.addEdge(n, 2 * n - 1)
+  DG.addEdge(2 * n - 1, n)
+  return DG
+
 proc cycleGraph*(n: int): Graph =
   let G = newGraph()
   if n < 0:

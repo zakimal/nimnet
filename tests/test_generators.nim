@@ -53,6 +53,20 @@ test "generate complete directed graph":
   check DG.numberOfEdges() == 12
   check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2)]
 
+test "generate circular ladder graph":
+  let G = circularLadderGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 8
+  check G.numberOfEdges() == 12
+  check G.edges() == @[(0, 1), (0, 3), (0, 4), (1, 2), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 7), (5, 6), (6, 7)]
+
+test "generate circular ladder directed graph":
+  let DG = circularLadderDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 8
+  check DG.numberOfEdges() == 24
+  check DG.edges() == @[(0, 1), (0, 3), (0, 4), (1, 0), (1, 2), (1, 5), (2, 1), (2, 3), (2, 6), (3, 0), (3, 2), (3, 7), (4, 0), (4, 5), (4, 7), (5, 1), (5, 4), (5, 6), (6, 2), (6, 5), (6, 7), (7, 3), (7, 4), (7, 6)]
+
 test "generate cycle grpah":
   let G = cycleGraph(4)
   check G.isDirected() == false
