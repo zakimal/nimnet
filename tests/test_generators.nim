@@ -1,4 +1,7 @@
-import ../nimnet.nim
+import unittest
+
+import nimnet
+import nimnet/generators
 
 # -------------------------------------------------------------------
 # TODO:
@@ -10,167 +13,125 @@ import ../nimnet.nim
 # Classic Graph Generator
 # -------------------------------------------------------------------
 
-proc barbellGraph*(m1, m2: int): Graph =
-  ## Returns barbell graph: 2 complete graph connected by a path
-  ## 2 <= m1, 0 <= m2
-  ## barbell graph contains `2*m1+m2` nodes.
-  ## left barbell: `0, ..., m1-1` (clique)
-  ## path: `m1, ..., m1+m2-1` (path)
-  ## right barbell: `m1+m2, ..., 2*m1+m2` (clique)
-  ## if `m2 == 0`, this is just 2 complete graphs jointed together
-  if m1 < 2:
-    raise newNNError("invalid graph description: 2 <= m1")
-  if m2 < 0:
-    raise newNNError("invalid graph description: 0 <= m2")
+test "generate barbell graph":
+  var G = barbellGraph(4, 2)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 10
+  check G.numberOfEdges() == 15
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (6, 8), (6, 9), (7, 8), (7, 9), (8, 9)]
 
-  # left barbell
-  let G = newGraph()
-  for i in 0..<m1:
-    for j in 0..<m1:
-      if i == j:
-        continue
-      G.addEdge(i, j)
-  # path
-  for i in (m1-1)..<(m1+m2):
-    G.addEdge(i, i + 1)
-  # right barbell
-  for i in (m1+m2)..<(2*m1+m2):
-    for j in (m1+m2)..<(2*m1+m2):
-      if i == j:
-        continue
-      G.addEdge(i, j)
-  return G
-proc barbellDiGraph*(m1, m2: int): DiGraph =
-  ## Returns barbell graph: 2 complete graph connected by a path
-  ## 2 <= m1, 0 <= m2
-  ## barbell graph contains `2*m1+m2` nodes.
-  ## left barbell: `0, ..., m1-1` (clique)
-  ## path: `m1, ..., m1+m2-1` (path)
-  ## right barbell: `m1+m2, ..., 2*m1+m2` (clique)
-  ## if `m2 == 0`, this is just 2 complete graphs jointed together
-  if m1 < 2:
-    raise newNNError("invalid graph description: 2 <= m1")
-  if m2 < 0:
-    raise newNNError("invalid graph description: 0 <= m2")
+  G = barbellGraph(4, 0)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 8
+  check G.numberOfEdges() == 13
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (3, 4), (4, 5), (4, 6), (4, 7), (5, 6), (5, 7), (6, 7)]
 
-  # left barbell
-  let DG = newDiGraph()
-  for i in 0..<m1:
-    for j in 0..<m1:
-      if i == j:
-        continue
-      DG.addEdge(i, j)
-      DG.addEdge(j, i)
-  # path
-  for i in (m1-1)..<(m1+m2):
-    DG.addEdge(i, i + 1)
-    DG.addEdge(i + 1, i)
-  # right barbell
-  for i in (m1+m2)..<(2*m1+m2):
-    for j in (m1+m2)..<(2*m1+m2):
-      if i == j:
-        continue
-      DG.addEdge(i, j)
-      DG.addEdge(j, i)
-  return DG
+test "generate barbell directed graph":
+  var DG = barbellDiGraph(4, 2)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 10
+  check DG.numberOfEdges() == 30
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2), (3, 4), (4, 3), (4, 5), (5, 4), (5, 6), (6, 5), (6, 7), (6, 8), (6, 9), (7, 6), (7, 8), (7, 9), (8, 6), (8, 7), (8, 9), (9, 6), (9, 7), (9, 8)]
 
-proc completeGraph*(n: int): Graph =
-  let G = newGraph()
-  for i in 0..<n:
-    for j in i..<n:
-      if i == j:
-        continue
-      G.addEdge(i, j)
-  return G
-proc completeDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  for i in 0..<n:
-    for j in 0..<n:
-      if i == j:
-        continue
-      DG.addEdge(i, j)
-  return DG
+  DG = barbellDiGraph(4, 0)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 8
+  check DG.numberOfEdges() == 26
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2), (3, 4), (4, 3), (4, 5), (4, 6), (4, 7), (5, 4), (5, 6), (5, 7), (6, 4), (6, 5), (6, 7), (7, 4), (7, 5), (7, 6)]
 
-proc cycleGraph*(n: int): Graph =
-  let G = newGraph()
-  if n < 0:
-    raise newNNError("n must be greater than or equal to 0")
-  if n == 0:
-    return G
-  for i in 0..<(n-1):
-    G.addEdge(i, i + 1)
-  G.addEdge(n - 1, 0)
-  return G
-proc cycleDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  if n < 0:
-    raise newNNError("n must be greater than or equal to 0")
-  if n == 0:
-    return DG
-  for i in 0..<(n-1):
-    DG.addEdge(i, i + 1)
-  DG.addEdge(n - 1, 0)
-  return DG
+test "generate complete graph":
+  let G = completeGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 4
+  check G.numberOfEdges() == 6
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
 
-proc emptyGraph*(n: int): Graph =
-  let G = newGraph()
-  for i in 0..<n:
-    G.addNode(i)
-  return G
-proc emptyDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  for i in 0..<n:
-    DG.addNode(i)
-  return DG
+test "generate complete directed graph":
+  let DG = completeDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 4
+  check DG.numberOfEdges() == 12
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2)]
 
-proc ladderGraph*(n: int): Graph =
-  let G = newGraph()
-  for i in 0..<(n-1):
-    G.addEdge(i, i + 1)
-    G.addEdge(i + n, i + n + 1)
-  for i in 0..<n:
-    G.addEdge(i, i + n)
-  return G
-proc ladderDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  for i in 0..<(n-1):
-    DG.addEdge(i, i + 1)
-    DG.addEdge(i + 1, i)
-    DG.addEdge(i + n, i + n + 1)
-    DG.addEdge(i + n + 1, i + n)
-  for i in 0..<n:
-    DG.addEdge(i, i + n)
-    DG.addEdge(i + n, i)
-  return DG
+test "generate cycle grpah":
+  let G = cycleGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 4
+  check G.numberOfEdges() == 4
+  check G.edges() == @[(0, 1), (0, 3), (1, 2), (2, 3)]
 
-proc nullGraph*(): Graph =
-  return newGraph()
-proc nullDiGraph*(): DiGraph =
-  return newDiGraph()
+test "generate cycle directed graph":
+  let DG = cycleDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 4
+  check DG.numberOfEdges() == 4
+  check DG.edges() == @[(0, 1), (1, 2), (2, 3), (3, 0)]
 
-proc pathGraph*(n: int): Graph =
-  let G = newGraph()
-  for i in 0..<(n-1):
-    G.addEdge(i, i + 1)
-  return G
-proc pathDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  for i in 0..<(n-1):
-    DG.addEdge(i, i + 1)
-  return DG
+test "generate empty graph":
+  let G = emptyGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 4
+  check G.numberOfEdges() == 0
 
-proc starGraph*(n: int): Graph =
-  let G = newGraph()
-  G.addNode(0)
-  for i in 1..n:
-    G.addEdge(0, i)
-  return G
-proc starDiGraph*(n: int): DiGraph =
-  let DG = newDiGraph()
-  DG.addNode(0)
-  for i in 1..n:
-    DG.addEdge(0, i)
-  return DG
+test "generate empty directed graph":
+  let DG = emptyDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 4
+  check DG.numberOfEdges() == 0
+
+test "generate ladder graph":
+  let G = ladderGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 8
+  check G.numberOfEdges() == 10
+  check G.edges() == @[(0, 1), (0, 4), (1, 2), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (5, 6), (6, 7)]
+
+test "generate ladder directed graph":
+  let DG = ladderDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 8
+  check DG.numberOfEdges() == 20
+  check DG.edges() == @[(0, 1), (0, 4), (1, 0), (1, 2), (1, 5), (2, 1), (2, 3), (2, 6), (3, 2), (3, 7), (4, 0), (4, 5), (5, 1), (5, 4), (5, 6), (6, 2), (6, 5), (6, 7), (7, 3), (7, 6)]
+
+test "generate null graph":
+  let G = nullGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 0
+  check G.numberOfEdges() == 0
+
+test "generate null directed graph":
+  let DG = nullDiGraph()
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 0
+  check DG.numberOfEdges() == 0
+
+test "generate path graph":
+  let G = pathGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 4
+  check G.numberOfEdges() == 3
+  check G.edges() == @[(0, 1), (1, 2), (2, 3)]
+
+test "generate path directed graph":
+  let DG = pathDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 4
+  check DG.numberOfEdges() == 3
+  check DG.edges() == @[(0, 1), (1, 2), (2, 3)]
+
+test "generate star graph":
+  let G = starGraph(4)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 5
+  check G.numberOfEdges() == 4
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4)]
+
+test "generate star directed graph":
+  let DG = starDiGraph(4)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 5
+  check DG.numberOfEdges() == 4
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4)]
 
 # -------------------------------------------------------------------
 # TODO:
@@ -246,8 +207,12 @@ proc starDiGraph*(n: int): DiGraph =
 # Social Graph Generator
 # -------------------------------------------------------------------
 
-proc karateClubGraph*(): Graph =
-  let edges = @[
+test "generate karate graph":
+  let karate = karateClubGraph()
+  check karate.isDirected() == false
+  check karate.numberOfNodes() == 34
+  check karate.numberOfEdges() == 78
+  check karate.edges() == @[
     (0, 1), (0, 2), (0, 3), (0, 4), (0, 5),
     (0, 6), (0, 7), (0, 8), (0, 10), (0, 11),
     (0, 12), (0, 13), (0, 17), (0, 19), (0, 21),
@@ -267,12 +232,13 @@ proc karateClubGraph*(): Graph =
     (30, 32), (30, 33), (31, 32), (31, 33),
     (32, 33)
   ]
-  var ret = newGraph()
-  ret.addEdgesFrom(edges)
-  return ret
 
-proc davisSouthernWomenGraph*(): Graph =
-  let edges = @[
+test "generate davis southern women graph":
+  let dsw = davisSouthernWomenGraph()
+  check dsw.isDirected() == false
+  check dsw.numberOfNodes() == 32
+  check dsw.numberOfEdges() == 89
+  check dsw.edges() == @[
     (0, 18), (0, 19), (0, 20), (0, 21), (0, 22),
     (0, 23), (0, 25), (0, 26), (1, 18), (1, 19),
     (1, 20), (1, 22), (1, 23), (1, 24), (1, 25),
@@ -294,23 +260,25 @@ proc davisSouthernWomenGraph*(): Graph =
     (15, 25), (15, 26), (16, 26), (16, 28),
     (17, 26), (17, 28)
   ]
-  var ret = newGraph()
-  ret.addEdgesFrom(edges)
-  return ret
 
-proc florentineFamiliesGraph*(): Graph =
-  let edges = @[
+test "generate florentine families graph":
+  let ff = florentineFamiliesGraph()
+  check ff.isDirected() == false
+  check ff.numberOfNodes() == 15
+  check ff.numberOfEdges() == 20
+  check ff.edges() == @[
     (0, 1), (1, 5), (1, 6), (1, 7), (1, 8), (1, 9),
     (2, 3), (2, 4), (2, 5), (3, 4), (3, 11), (4, 6),
     (4, 11), (6, 7), (7, 12), (8, 12), (8, 13),
     (9, 10), (11, 12), (12, 14)
   ]
-  var ret = newGraph()
-  ret.addEdgesFrom(edges)
-  return ret
 
-proc lesMiserablesGraph*(): Graph =
-  let edges = @[
+test "generate les miserables graph":
+  let lm = lesMiserablesGraph()
+  check lm.isDirected() == false
+  check lm.numberOfNodes() == 77
+  check lm.numberOfEdges() == 254
+  check lm.edges() == @[
     (0, 1), (1, 2), (1, 3), (1, 4), (1, 5),
     (1, 6), (1, 7), (1, 8), (1, 9), (1, 10),
     (2, 3), (2, 10), (3, 10), (10, 11),
@@ -375,9 +343,6 @@ proc lesMiserablesGraph*(): Graph =
     (68, 75), (69, 70), (69, 71), (69, 75),
     (70, 71), (70, 75), (71, 75), (73, 74)
   ]
-  var ret = newGraph()
-  ret.addEdgesFrom(edges)
-  return ret
 
 # -------------------------------------------------------------------
 # TODO:
