@@ -172,6 +172,11 @@ proc starDiGraph*(n: int): DiGraph =
     DG.addEdge(0, i)
   return DG
 
+proc trivialGraph*(): Graph =
+  return newGraph(@[0])
+proc trivialDiGraph*(): DiGraph =
+  return newDiGraph(@[0])
+
 # -------------------------------------------------------------------
 # TODO:
 # Expanders

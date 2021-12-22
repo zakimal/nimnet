@@ -133,6 +133,20 @@ test "generate star directed graph":
   check DG.numberOfEdges() == 4
   check DG.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4)]
 
+test "generate trivial graph":
+  let G = trivialGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 1
+  check G.numberOfEdges() == 0
+  check G.nodes() == @[0]
+
+test "generate trivial directed graph":
+  let DG = trivialDiGraph()
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 1
+  check DG.numberOfEdges() == 0
+  check DG.nodes() == @[0]
+
 # -------------------------------------------------------------------
 # TODO:
 # Expanders

@@ -22,7 +22,7 @@
 - [x] null_graph([create_using])
 - [x] path_graph(n[, create_using])
 - [x] star_graph(n[, create_using])
-- trivial_graph([create_using])
+- [x] trivial_graph([create_using])
 - turan_graph(n, r)
 - wheel_graph(n[, create_using])
 
