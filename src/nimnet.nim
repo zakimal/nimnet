@@ -315,7 +315,7 @@ proc hasEdge*(g: Graph, u, v: Node): bool =
   except KeyError:
     return false
 proc hasEdge*(g: Graph, edge: Edge): bool =
-  g.hasEdge(edge.u, edge.v)
+  return g.hasEdge(edge.u, edge.v)
 proc contains*(g: Graph, u, v: Node): bool =
   return g.hasEdge(u, v)
 proc contains*(g: Graph, edge: Edge): bool =
@@ -426,20 +426,22 @@ proc density*(g: Graph): float =
   var m = g.numberOfEdges()
   if m == 0 or n <= 1:
     return 0.0
-  return m.float / (n*(n - 1)).float
+  return (2 * m).float / (n*(n - 1)).float
 
 proc nodeSubgraph*(g: Graph, nodes: HashSet[Node]): Graph =
   var ret = newGraph()
-  for (u, v) in g.edges():
-    if u in nodes and v in nodes:
-      ret.addEdge((u, v))
+  for u in nodes:
+    for v in g.adj[u]:
+      if v in nodes:
+        ret.addEdge((u, v))
   return ret
 proc nodeSubgraph*(g: Graph, nodes: seq[Node]): Graph =
   var ret = newGraph()
   let nodesSet = nodes.toHashSet()
-  for (u, v) in g.edges():
-    if u in nodesSet and v in nodesSet:
-      ret.addEdge((u, v))
+  for u in nodes:
+    for v in g.adj[u]:
+      if v in nodesSet:
+        ret.addEdge((u, v))
   return ret
 proc edgeSubgraph*(g: Graph, edges: HashSet[Edge]): Graph =
   var ret = newGraph()
@@ -449,8 +451,7 @@ proc edgeSubgraph*(g: Graph, edges: HashSet[Edge]): Graph =
   return ret
 proc edgeSubgraph*(g: Graph, edges: seq[Edge]): Graph =
   var ret = newGraph()
-  let edgesSet = edges.toHashSet()
-  for edge in edgesSet:
+  for edge in edges:
     if g.hasEdge(edge):
       ret.addEdge(edge)
   return ret
@@ -459,15 +460,21 @@ proc subgraph*(g: Graph, nodes: HashSet[Node]): Graph =
 proc subgraph*(g: Graph, nodes: seq[Node]): Graph =
   return g.nodeSubgraph(nodes)
 
+proc info*(g :Graph): string =
+  var ret = "type: undirected graph"
+  ret = ret & "\n"
+  ret = ret & fmt"#nodes: {g.numberOfNodes()}"
+  ret = ret & "\n"
+  ret = ret & fmt"#edges: {g.numberOfEdges()}"
+  return ret
 proc info*(g: Graph, node: Node): string =
   if node notin g.adj:
     raise newNNNodeNotFound(node)
   var ret = fmt"node {node} has following properties:"
   ret = ret & "\n"
-  ret = ret & fmt"Degree: {g.degree(node)}"
+  ret = ret & fmt"degree: {g.degree(node)}"
   ret = ret & "\n"
-  ret = ret & fmt"Neighbors: {g.neighbors(node)}"
-  ret = ret & "\n"
+  ret = ret & fmt"neighbors: {g.neighbors(node)}"
   return ret
 
 proc addStar*(g: Graph, nodes: seq[Node]) =
@@ -547,16 +554,20 @@ iterator nonNeighbors*(g: Graph, node: Node): Node =
 
 proc commonNeighbors*(g: Graph, u, v: Node): seq[Node] =
   var commonNeighbors = initHashSet[Node]()
-  for nbr in g.neighbors(u):
-    if (nbr in g.neighborsSet(v)) and (nbr != u) and (nbr != v):
+  let neighborsU = g.neighbors(u)
+  let neighborsV = g.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
       commonNeighbors.incl(nbr)
   var ret = commonNeighbors.toSeq()
   ret.sort()
   return ret
 proc commonNeighborsIterator*(g: Graph, u, v: Node): iterator: Node =
   var commonNeighbors = initHashSet[Node]()
-  for nbr in g.neighbors(u):
-    if (nbr in g.neighborsSet(v)) and (nbr != u) and (nbr != v):
+  let neighborsU = g.neighbors(u)
+  let neighborsV = g.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
       commonNeighbors.incl(nbr)
   var ret = commonNeighbors.toSeq()
   ret.sort()
@@ -565,8 +576,10 @@ proc commonNeighborsIterator*(g: Graph, u, v: Node): iterator: Node =
       yield commonNeighbor
 proc commonNeighborsSet*(g: Graph, u, v: Node): HashSet[Node] =
   var commonNeighbors = initHashSet[Node]()
-  for nbr in g.neighbors(u):
-    if (nbr in g.neighborsSet(v)) and (nbr != u) and (nbr != v):
+  let neighborsU = g.neighbors(u)
+  let neighborsV = g.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
       commonNeighbors.incl(nbr)
   return commonNeighbors
 proc commonNeighborsSeq*(g: Graph, u, v: Node): seq[Node] =
@@ -676,6 +689,9 @@ iterator selfloopEdges*(g: Graph): Edge =
   for edge in ret:
     yield edge
 
+proc isDirected*(g: Graph): bool =
+  return false
+
 proc `[]`*(g: Graph, node: Node): seq[Node] =
   return g.neighbors(node)
 
@@ -747,9 +763,918 @@ proc `-=`*(g: Graph, edges: HashSet[Edge]) =
 proc `-=`*(g: Graph, edges: openArray[Edge]) =
     g.removeEdgesFrom(edges)
 
-
-
 # Directed Graph
+
+proc newDiGraph*(): DiGraph =
+  var dg = DiGraph()
+  dg.pred = initTable[Node, HashSet[Node]]()
+  dg.succ = initTable[Node, HashSet[Node]]()
+  return dg
+proc newDiGraph*(nodes: openArray[Node]): DiGraph =
+  var dg = DiGraph()
+  dg.pred = initTable[Node, HashSet[Node]]()
+  dg.succ = initTable[Node, HashSet[Node]]()
+  for node in nodes:
+    if node notin dg.succ:
+      if node == None:
+        raise newNNError("None cannot be a node")
+      dg.pred[node] = initHashSet[Node]()
+      dg.succ[node] = initHashSet[Node]()
+  return dg
+proc newDiGraph*(nodes: HashSet[Node]): DiGraph =
+  var dg = DiGraph()
+  dg.pred = initTable[Node, HashSet[Node]]()
+  dg.succ = initTable[Node, HashSet[Node]]()
+  for node in nodes:
+    if node notin dg.succ:
+      if node == None:
+        raise newNNError("None cannot be a node")
+      dg.pred[node] = initHashSet[Node]()
+      dg.succ[node] = initHashSet[Node]()
+  return dg
+proc newDiGraph*(edges: openArray[Edge]): DiGraph =
+  var dg = DiGraph()
+  for edge in edges:
+    var u = edge.u
+    var v = edge.v
+    if u notin dg.succ:
+      if u == None:
+        raise newNNError("None cannot be a node")
+      dg.succ[u] = initHashSet[Node]()
+      dg.pred[u] = initHashSet[Node]()
+    if v notin dg.succ:
+      if v == None:
+        raise newNNError("None cannot be a node")
+      dg.succ[v] = initHashSet[Node]()
+      dg.pred[v] = initHashSet[Node]()
+    dg.succ[u].incl(v)
+    dg.pred[v].incl(u)
+  return dg
+proc newDiGraph*(edges: HashSet[Edge]): DiGraph =
+  var dg = DiGraph()
+  for edge in edges:
+    var u = edge.u
+    var v = edge.v
+    if u notin dg.succ:
+      if u == None:
+        raise newNNError("None cannot be a node")
+      dg.succ[u] = initHashSet[Node]()
+      dg.pred[u] = initHashSet[Node]()
+    if v notin dg.succ:
+      if v == None:
+        raise newNNError("None cannot be a node")
+      dg.succ[v] = initHashSet[Node]()
+      dg.pred[v] = initHashSet[Node]()
+    dg.succ[u].incl(v)
+    dg.pred[v].incl(u)
+  return dg
+
+proc addNode*(dg: DiGraph, node: Node) =
+  if node notin dg.succ:
+    if node == None:
+      raise newNNError("None cannot be a node")
+    dg.succ[node] = initHashSet[Node]()
+    dg.pred[node] = initHashSet[Node]()
+proc addNodesFrom*(dg: DiGraph, nodes: openArray[Node]) =
+  for node in nodes:
+    dg.addNode(node)
+proc addNodesFrom*(dg: DiGraph, nodes: HashSet[Node]) =
+  for node in nodes:
+    dg.addNode(node)
+
+proc removeNode*(dg: DiGraph, node: Node) =
+  var predecessors: HashSet[Node]
+  try:
+    predecessors = dg.pred[node]
+    dg.succ.del(node)
+  except KeyError:
+    raise newNNNodeNotFound(node)
+  for predecessor in predecessors:
+    dg.pred[predecessor].excl(node)
+proc removeNodesFrom*(dg: DiGraph, nodes: openArray[Node]) =
+  for node in nodes:
+    dg.removeNode(node)
+proc removeNodesFrom*(dg: DiGraph, nodes: HashSet[Node]) =
+  for node in nodes:
+    dg.removeNode(node)
+
+proc addEdge*(dg: DiGraph, u, v: Node) =
+  if u notin dg.succ:
+    if u == None:
+      raise newNNError("None cannot be a node")
+    dg.succ[u] = initHashSet[Node]()
+    dg.pred[u] = initHashSet[Node]()
+  if v notin dg.succ:
+    if v == None:
+      raise newNNError("None cannot be a node")
+    dg.succ[v] = initHashSet[Node]()
+    dg.pred[v] = initHashSet[Node]()
+  dg.succ[u].incl(v)
+  dg.pred[v].incl(u)
+proc addEdge*(dg: DiGraph, edge: Edge) =
+  dg.addEdge(edge.u, edge.v)
+proc addEdgesFrom*(dg: DiGraph, edges: openArray[Edge]) =
+  for edge in edges:
+    dg.addEdge(edge)
+proc addEdgesFrom*(dg: DiGraph, edges: HashSet[Edge]) =
+  for edge in edges:
+    dg.addEdge(edge)
+
+proc removeEdge*(dg: DiGraph, u, v: Node) =
+  try:
+    var isMissing: bool
+    isMissing = dg.succ[u].missingOrExcl(v)
+    if isMissing:
+      raise newNNError(fmt"edge {u}-{v} is not in graph")
+    dg.pred[v].excl(u)
+  except KeyError:
+    raise newNNError(fmt"edge {u}-{v} is not in grpah")
+proc removeEdge*(dg: DiGraph, edge: Edge) =
+  dg.removeEdge(edge.u, edge.v)
+proc removeEdgesFrom*(dg: DiGraph, edges: openArray[Edge]) =
+  for edge in edges:
+    dg.removeEdge(edge)
+proc removeEdgesFrom*(dg: DiGraph, edges: HashSet[Edge]) =
+    for edge in edges:
+      dg.removeEdge(edge)
+
+proc clear*(dg: DiGraph) =
+  dg.succ.clear()
+  dg.pred.clear()
+proc clearNodes*(dg: DiGraph) =
+  dg.succ.clear()
+  dg.pred.clear()
+proc clearEdges*(dg: DiGraph) =
+  for node in dg.succ.keys():
+    dg.succ[node].clear()
+    dg.pred[node].clear()
+
+proc nodes*(dg: DiGraph): seq[Node] =
+  var ret = newSeq[Node]()
+  for node in dg.succ.keys():
+    ret.add(node)
+  ret.sort()
+  return ret
+proc nodesIterator*(dg: DiGraph): iterator: Node =
+  return iterator: Node =
+    for node in dg.nodes():
+      yield node
+proc nodesSet*(dg: DiGraph): HashSet[Node] =
+  var ret = initHashSet[Node]()
+  for node in dg.succ.keys():
+    ret.incl(node)
+  return ret
+proc nodesSeq*(dg: DiGraph): seq[Node] =
+  return dg.nodes()
+iterator nodes*(dg: DiGraph): Node =
+  var nodes = dg.nodesSeq()
+  for node in nodes:
+    yield node
+
+proc hasNode*(dg: DiGraph, node: Node): bool =
+  return node in dg.succ
+proc contains*(dg: DiGraph, node: Node): bool =
+  return node in dg.succ
+
+proc edges*(dg: DiGraph): seq[Edge] =
+  var ret = newSeq[Edge]()
+  for (u, vs) in dg.succ.pairs():
+    for v in vs:
+      ret.add((u, v))
+  ret.sort()
+  return ret
+proc edgesIterator*(dg: DiGraph): iterator: Edge =
+  return iterator: Edge =
+    for (u, v) in dg.edges():
+      yield (u, v)
+proc edgesSet*(dg: DiGraph): HashSet[Edge] =
+  var ret = initHashSet[Edge]()
+  for (u, vs) in dg.succ.pairs():
+    for v in vs:
+      ret.incl((u, v))
+  return ret
+proc edgesSeq*(dg: DiGraph): seq[Edge] =
+  return dg.edges()
+iterator edges*(dg: DiGraph): Edge =
+  var edges = dg.edgesSeq()
+  for edge in edges:
+    yield edge
+
+proc edges*(dg: DiGraph, node: Node): seq[Edge] =
+  var ret = newSeq[Edge]()
+  for v in dg.succ[node]:
+    ret.add((node, v))
+  ret.sort()
+  return ret
+proc edgesIterator*(dg: DiGraph, node: Node): iterator: Edge =
+  return iterator: Edge =
+    for edge in dg.edges(node):
+      yield edge
+proc edgesSet*(dg: DiGraph, node: Node): HashSet[Edge] =
+  var ret = initHashSet[Edge]()
+  for v in dg.succ[node]:
+    ret.incl((node, v))
+  return ret
+proc edgesSeq*(dg: DiGraph, node: Node): seq[Edge] =
+  return dg.edges(node)
+iterator edges*(dg: DiGraph, node: Node): Edge =
+  var edges = dg.edgesSeq(node)
+  for edge in edges:
+    yield edge
+
+proc hasEdge*(dg: DiGraph, u, v: Node): bool =
+  try:
+    return v in dg.succ[u]
+  except KeyError:
+    return false
+proc hasEdge*(dg: DiGraph, edge: Edge): bool =
+  return dg.hasEdge(edge.u, edge.v)
+proc contains*(dg: DiGraph, u, v: Node): bool =
+  return dg.hasEdge(u, v)
+proc contains*(dg: DiGraph, edge: Edge): bool =
+  return dg.hasEdge(edge)
+
+proc pred*(dg: DiGraph): Table[Node, HashSet[Node]] =
+  return dg.pred
+proc predecence*(dg: DiGraph): seq[tuple[node: Node, predecentNodes: seq[Node]]] =
+  var ret = newSeq[tuple[node: Node, predecentNodes: seq[Node]]]()
+  for node in dg.nodes():
+    var predecessors = dg.pred[node].toSeq()
+    predecessors.sort()
+    ret.add((node, predecessors))
+  return ret
+proc predecenceIterator*(dg: DiGraph): iterator: tuple[node: Node, predecentNodes: seq[Node]] =
+  return iterator: tuple[node: Node, predecentNodes: seq[Node]] =
+    for tpl in dg.predecence():
+      yield tpl
+proc predecenceSet*(dg: DiGraph): HashSet[tuple[node: Node, predecentNodes: seq[Node]]] =
+  var ret = initHashSet[tuple[node: Node, predecentNodes: seq[Node]]]()
+  for tpl in dg.predecence():
+    ret.incl(tpl)
+  return ret
+proc predecenceSeq*(dg: DiGraph): seq[tuple[node: Node, predecentNodes: seq[Node]]] =
+  return dg.predecence()
+iterator predecence*(dg: DiGraph): tuple[node: Node, predecentNodes: seq[Node]] =
+  var predecence = dg.predecenceSeq()
+  for tpl in predecence:
+    yield tpl
+
+proc predecessors*(dg: DiGraph, node: Node): seq[Node] =
+  var ret = newSeq[Node]()
+  if node notin dg.pred:
+    raise newNNNodeNotFound(node)
+  for predecessor in dg.pred[node]:
+    ret.add(predecessor)
+  ret.sort()
+  return ret
+proc predecessorsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  return iterator: Node =
+    for predecessor in dg.predecessors(node):
+      yield predecessor
+proc predecessorsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  var ret = initHashSet[Node]()
+  if node notin dg.pred:
+    raise newNNNodeNotFound(node)
+  for predecessor in dg.pred[node]:
+    ret.incl(predecessor)
+  return ret
+proc predecessorsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.predecessors(node)
+iterator predecessors*(dg: DiGraph, node: Node): Node =
+  var predecessors = dg.predecessorsSeq(node)
+  for predecessor in predecessors:
+    yield predecessor
+
+proc succ*(dg: DiGraph): Table[Node, HashSet[Node]] =
+  return dg.succ
+proc succession*(dg: DiGraph): seq[tuple[node: Node, succeedingNodes: seq[Node]]] =
+  var ret = newSeq[tuple[node: Node, succeedingNodes: seq[Node]]]()
+  for node in dg.nodes():
+    var successors = dg.succ[node].toSeq()
+    successors.sort()
+    ret.add((node, successors))
+  return ret
+proc successionIterator*(dg: DiGraph): iterator: tuple[node: Node, succeedingNodes: seq[Node]] =
+  return iterator: tuple[node: Node, succeedingNodes: seq[Node]] =
+    for tpl in dg.succession():
+      yield tpl
+proc successionSet*(dg: DiGraph): HashSet[tuple[node: Node, succeedingNodes: seq[Node]]] =
+  var ret = initHashSet[tuple[node: Node, succeedingNodes: seq[Node]]]()
+  for tpl in dg.succession():
+    ret.incl(tpl)
+  return ret
+proc successionSeq*(dg: DiGraph): seq[tuple[node: Node, succeedingNodes: seq[Node]]] =
+  return dg.succession()
+iterator succession*(dg: DiGraph): tuple[node: Node, succeedingNodes: seq[Node]] =
+  var succession = dg.successionSeq()
+  for tpl in succession:
+    yield tpl
+
+proc successors*(dg: DiGraph, node: Node): seq[Node] =
+  var ret = newSeq[Node]()
+  if node notin dg.succ:
+    raise newNNNodeNotFound(node)
+  for successor in dg.succ[node]:
+    ret.add(successor)
+  ret.sort()
+  return ret
+proc successorsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  return iterator: Node =
+    for successor in dg.successors(node):
+      yield successor
+proc successorsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  var ret = initHashSet[Node]()
+  if node notin dg.succ:
+    raise newNNNodeNotFound(node)
+  for successor in dg.succ[node]:
+    ret.incl(successor)
+  return ret
+proc successorsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.successors(node)
+iterator successors*(dg: DiGraph, node: Node): Node =
+  var successors = dg.successorsSeq(node)
+  for successor in successors:
+    yield successor
+
+proc neighbors*(dg: DiGraph, node: Node): seq[Node] =
+  let predecessors = dg.predecessors(node)
+  let successors = dg.successors(node)
+  var neighbors = concat(predecessors, successors)
+  neighbors.sort()
+  return neighbors
+proc neighborsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  let predecessors = dg.predecessors(node)
+  let successors = dg.successors(node)
+  var neighbors = concat(predecessors, successors)
+  neighbors.sort()
+  return iterator: Node =
+    for neighbor in neighbors:
+      yield neighbor
+proc neighborsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  let predecessors = dg.predecessorsSet(node)
+  let successors = dg.successorsSet(node)
+  let neighbors = union(predecessors, successors)
+  return neighbors
+proc neighborsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.neighbors(node)
+iterator neighbors*(dg: DiGraph, node: Node): Node =
+  var neighbors = dg.neighborsSeq(node)
+  for neighbor in neighbors:
+    yield neighbor
+
+proc order*(dg: DiGraph): int =
+  return dg.succ.len()
+proc numberOfNodes*(dg: DiGraph): int =
+  return dg.succ.len()
+proc len*(dg: DiGraph): int =
+  return dg.succ.len()
+
+proc size*(dg: DiGraph): int =
+  return len(dg.edgesSet())
+proc numberOfEdges*(dg: DiGraph): int =
+  return len(dg.edgesSet())
+proc numberOfSelfloop*(dg: DiGraph): int =
+  var ret = 0
+  for node in dg.succ.keys():
+    if node in dg.succ[node]:
+      ret += 1
+  return ret
+
+proc inDegree*(dg: DiGraph): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in dg.pred.keys():
+    ret[node] = dg.pred[node].len()
+  return ret
+proc inDegree*(dg: DiGraph, node: Node): int =
+  return dg.pred[node].len()
+proc inDegree*(dg: DiGraph, nodes: seq[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.pred[node].len()
+  return ret
+proc inDegree*(dg: DiGraph, nodes: HashSet[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.pred[node].len()
+  return ret
+proc inDegreeHistogram*(dg: DiGraph): seq[int] =
+  var counts = initTable[int, int]()
+  var maxInDegree = 0
+  for inDegree in dg.inDegree().values():
+    maxInDegree = max(maxInDegree, inDegree)
+    if inDegree notin counts:
+      counts[inDegree] = 1
+    else:
+      counts[inDegree] += 1
+  var ret = newSeq[int](maxInDegree+1)
+  for (inDegree, freq) in counts.pairs():
+    ret[inDegree] = freq
+  return ret
+
+proc outDegree*(dg: DiGraph): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in dg.succ.keys():
+    ret[node] = dg.succ[node].len()
+  return ret
+proc outDegree*(dg: DiGraph, node: Node): int =
+  return dg.succ[node].len()
+proc outDegree*(dg: DiGraph, nodes: seq[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.succ[node].len()
+  return ret
+proc outDegree*(dg: DiGraph, nodes: HashSet[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.succ[node].len()
+  return ret
+proc outDegreeHistogram*(dg: DiGraph): seq[int] =
+  var counts = initTable[int, int]()
+  var maxOutDegree = 0
+  for outDegree in dg.outDegree().values():
+    maxOutDegree = max(maxOutDegree, outDegree)
+    if outDegree notin counts:
+      counts[outDegree] = 1
+    else:
+      counts[outDegree] += 1
+  var ret = newSeq[int](maxOutDegree+1)
+  for (outDegree, freq) in counts.pairs():
+    ret[outDegree] = freq
+  return ret
+
+proc density*(dg: DiGraph): float =
+  var n = dg.numberOfNodes()
+  var m = dg.numberOfEdges()
+  if m == 0 or n <= 1:
+    return 0.0
+  return m.float / (n*(n - 1)).float
+
+proc nodeSubgraph*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
+  var ret = newDiGraph()
+  for u in nodes:
+    for v in dg.succ[u]:
+      if v in nodes:
+        ret.addEdge((u, v))
+  return ret
+proc nodeSubgraph*(dg: DiGraph, nodes: seq[Node]): DiGraph =
+  var ret = newDiGraph()
+  let nodesSet = nodes.toHashSet()
+  for u in nodes:
+    for v in dg.succ[u]:
+      if v in nodesSet:
+        ret.addEdge((u, v))
+  return ret
+proc edgeSubgraph*(dg: DiGraph, edges: HashSet[Edge]): DiGraph =
+  var ret = newDiGraph()
+  for edge in edges:
+    if dg.hasEdge(edge):
+      ret.addEdge(edge)
+  return ret
+proc edgeSubgraph*(dg: DiGraph, edges: seq[Edge]): DiGraph =
+  var ret = newDiGraph()
+  for edge in edges:
+    if dg.hasEdge(edge):
+      ret.addEdge(edge)
+  return ret
+proc subgraph*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
+  return dg.nodeSubgraph(nodes)
+proc subgraph*(dg: DiGraph, nodes: seq[Node]): DiGraph =
+  return dg.nodeSubgraph(nodes)
+
+proc info*(dg :DiGraph): string =
+  var ret = "type: directed graph"
+  ret = ret & "\n"
+  ret = ret & fmt"#nodes: {dg.numberOfNodes()}"
+  ret = ret & "\n"
+  ret = ret & fmt"#edges: {dg.numberOfEdges()}"
+  return ret
+proc info*(dg: DiGraph, node: Node): string =
+  if node notin dg.succ:
+    raise newNNNodeNotFound(node)
+  var ret = fmt"node {node} has following properties:"
+  ret = ret & "\n"
+  ret = ret & fmt"in-degree: {dg.inDegree(node)}"
+  ret = ret & "\n"
+  ret = ret & fmt"predecessors: {dg.predecessors(node)}"
+  ret = ret & "\n"
+  ret = ret & fmt"out-degree: {dg.outDegree(node)}"
+  ret = ret & "\n"
+  ret = ret & fmt"successors: {dg.successors(node)}"
+  return ret
+
+proc addStar*(dg: DiGraph, nodes: seq[Node]) =
+  if len(nodes) < 1:
+    return
+  let centerNode = nodes[0]
+  dg.addNode(centerNode)
+  for i in 1..<len(nodes):
+    dg.addEdge(centerNode, nodes[i])
+proc isStar*(dg: DiGraph, nodes: seq[Node]): bool =
+  if len(nodes) < 1:
+    return true
+  let centerNode = nodes[0]
+  if centerNode notin dg.succ:
+    return false
+  for i in 1..<len(nodes):
+    if nodes[i] notin dg.succ[centerNode]:
+      return false
+  return true
+proc addPath*(dg: DiGraph, nodes: seq[Node]) =
+  if len(nodes) < 1:
+    return
+  for i in 0..<len(nodes)-1:
+    dg.addEdge(nodes[i], nodes[i+1])
+proc isPath*(dg: DiGraph, nodes: seq[Node]): bool =
+  if len(nodes) < 1:
+    return true
+  for i in 0..<len(nodes)-1:
+    if nodes[i] notin dg.succ:
+      return false
+    if nodes[i+1] notin dg.succ[nodes[i]]:
+      return false
+  return true
+proc addCycle*(dg: DiGraph, nodes: seq[Node]) =
+  if len(nodes) < 1:
+    return
+  for i in 0..<len(nodes)-1:
+    dg.addEdge(nodes[i], nodes[i+1])
+  dg.addEdge(nodes[0], nodes[^1])
+proc isCycle*(dg: DiGraph, nodes: seq[Node]): bool =
+  if len(nodes) < 1:
+    return true
+  for i in 0..<len(nodes)-1:
+    if nodes[i] notin dg.succ:
+      return false
+    if nodes[i+1] notin dg.succ[nodes[i]]:
+      return false
+  return nodes[^1] in dg.succ[nodes[0]]
+
+proc nonNeighbors*(dg: DiGraph, node: Node): seq[Node] =
+  var neighbors = dg.neighborsSet(node)
+  neighbors.incl(node)
+  var nonNeighbors = dg.nodesSet() - neighbors
+  var ret = nonNeighbors.toSeq()
+  ret.sort()
+  return ret
+proc nonNeighborsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  var neighbors = dg.neighborsSet(node)
+  neighbors.incl(node)
+  var nonNeighbors = dg.nodesSet() - neighbors
+  var ret = nonNeighbors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for nonNeighbor in ret:
+      yield nonNeighbor
+proc nonNeighborsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  var neighbors = dg.neighborsSet(node)
+  neighbors.incl(node)
+  var nonNeighbors = dg.nodesSet() - neighbors
+  return nonNeighbors
+proc nonNeighborsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.nonNeighbors(node)
+iterator nonNeighbors*(dg: DiGraph, node: Node): Node =
+  var nonNeighbors = dg.nonNeighbors(node)
+  for nonNeighbor in nonNeighbors:
+    yield nonNeighbor
+
+proc nonPredecessors*(dg: DiGraph, node: Node): seq[Node] =
+  var predecessors = dg.predecessorsSet(node)
+  predecessors.incl(node)
+  var nonPredecessors = dg.nodesSet() - predecessors
+  var ret = nonPredecessors.toSeq()
+  ret.sort()
+  return ret
+proc nonPredecessorsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  var predecessors = dg.predecessorsSet(node)
+  predecessors.incl(node)
+  var nonPredecessors = dg.nodesSet() - predecessors
+  var ret = nonPredecessors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for nonNeighbor in ret:
+      yield nonNeighbor
+proc nonPredecessorsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  var predecessors = dg.predecessorsSet(node)
+  predecessors.incl(node)
+  var nonPredecessors = dg.nodesSet() - predecessors
+  return nonPredecessors
+proc nonPredecessorsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.nonPredecessors(node)
+iterator nonPredecessors*(dg: DiGraph, node: Node): Node =
+  var nonPredecessors = dg.nonPredecessors(node)
+  for nonNeighbor in nonPredecessors:
+    yield nonNeighbor
+
+proc nonSuccessors*(dg: DiGraph, node: Node): seq[Node] =
+  var successors = dg.successorsSet(node)
+  successors.incl(node)
+  var nonSuccessors = dg.nodesSet() - successors
+  var ret = nonSuccessors.toSeq()
+  ret.sort()
+  return ret
+proc nonSuccessorsIterator*(dg: DiGraph, node: Node): iterator: Node =
+  var successors = dg.successorsSet(node)
+  successors.incl(node)
+  var nonSuccessors = dg.nodesSet() - successors
+  var ret = nonSuccessors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for nonNeighbor in ret:
+      yield nonNeighbor
+proc nonSuccessorsSet*(dg: DiGraph, node: Node): HashSet[Node] =
+  var successors = dg.successorsSet(node)
+  successors.incl(node)
+  var nonSuccessors = dg.nodesSet() - successors
+  return nonSuccessors
+proc nonSuccessorsSeq*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.nonSuccessors(node)
+iterator nonSuccessors*(dg: DiGraph, node: Node): Node =
+  var nonSuccessors = dg.nonSuccessors(node)
+  for nonNeighbor in nonSuccessors:
+    yield nonNeighbor
+
+proc commonNeighbors*(dg: DiGraph, u, v: Node): seq[Node] =
+  var commonNeighbors = initHashSet[Node]()
+  let neighborsU = dg.neighbors(u)
+  let neighborsV = dg.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
+      commonNeighbors.incl(nbr)
+  var ret = commonNeighbors.toSeq()
+  ret.sort()
+  return ret
+proc commonNeighborsIterator*(dg: DiGraph, u, v: Node): iterator: Node =
+  var commonNeighbors = initHashSet[Node]()
+  let neighborsU = dg.neighbors(u)
+  let neighborsV = dg.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
+      commonNeighbors.incl(nbr)
+  var ret = commonNeighbors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for commonNeighbor in ret:
+      yield commonNeighbor
+proc commonNeighborsSet*(dg: DiGraph, u, v: Node): HashSet[Node] =
+  var commonNeighbors = initHashSet[Node]()
+  let neighborsU = dg.neighbors(u)
+  let neighborsV = dg.neighbors(v)
+  for nbr in neighborsU:
+    if (nbr in neighborsV) and (nbr != u) and (nbr != v):
+      commonNeighbors.incl(nbr)
+  return commonNeighbors
+proc commonNeighborsSeq*(dg: DiGraph, u, v: Node): seq[Node] =
+  return dg.commonNeighbors(u, v)
+iterator commonNeighbors*(dg: DiGraph, u, v: Node): Node =
+  var commonNeighbors = dg.commonNeighbors(u, v)
+  for commonNeighbor in commonNeighbors:
+    yield commonNeighbor
+
+proc commonPredecessors*(dg: DiGraph, u, v: Node): seq[Node] =
+  var commonPredecessors = initHashSet[Node]()
+  let predecessorsU = dg.predecessors(u)
+  let predecessorsV = dg.predecessors(v)
+  for nbr in predecessorsU:
+    if (nbr in predecessorsV) and (nbr != u) and (nbr != v):
+      commonPredecessors.incl(nbr)
+  var ret = commonPredecessors.toSeq()
+  ret.sort()
+  return ret
+proc commonPredecessorsIterator*(dg: DiGraph, u, v: Node): iterator: Node =
+  var commonPredecessors = initHashSet[Node]()
+  let predecessorsU = dg.predecessors(u)
+  let predecessorsV = dg.predecessors(v)
+  for nbr in predecessorsU:
+    if (nbr in predecessorsV) and (nbr != u) and (nbr != v):
+      commonPredecessors.incl(nbr)
+  var ret = commonPredecessors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for commonNeighbor in ret:
+      yield commonNeighbor
+proc commonPredecessorsSet*(dg: DiGraph, u, v: Node): HashSet[Node] =
+  var commonPredecessors = initHashSet[Node]()
+  let predecessorsU = dg.predecessors(u)
+  let predecessorsV = dg.predecessors(v)
+  for nbr in predecessorsU:
+    if (nbr in predecessorsV) and (nbr != u) and (nbr != v):
+      commonPredecessors.incl(nbr)
+  return commonPredecessors
+proc commonPredecessorsSeq*(dg: DiGraph, u, v: Node): seq[Node] =
+  return dg.commonPredecessors(u, v)
+iterator commonPredecessors*(dg: DiGraph, u, v: Node): Node =
+  var commonPredecessors = dg.commonPredecessors(u, v)
+  for commonNeighbor in commonPredecessors:
+    yield commonNeighbor
+
+proc commonSuccessors*(dg: DiGraph, u, v: Node): seq[Node] =
+  var commonSuccessors = initHashSet[Node]()
+  let successorsU = dg.successors(u)
+  let successorsV = dg.successors(v)
+  for nbr in successorsU:
+    if (nbr in successorsV) and (nbr != u) and (nbr != v):
+      commonSuccessors.incl(nbr)
+  var ret = commonSuccessors.toSeq()
+  ret.sort()
+  return ret
+proc commonSuccessorsIterator*(dg: DiGraph, u, v: Node): iterator: Node =
+  var commonSuccessors = initHashSet[Node]()
+  let successorsU = dg.successors(u)
+  let successorsV = dg.successors(v)
+  for nbr in successorsU:
+    if (nbr in successorsV) and (nbr != u) and (nbr != v):
+      commonSuccessors.incl(nbr)
+  var ret = commonSuccessors.toSeq()
+  ret.sort()
+  return iterator: Node =
+    for commonNeighbor in ret:
+      yield commonNeighbor
+proc commonSuccessorsSet*(dg: DiGraph, u, v: Node): HashSet[Node] =
+  var commonSuccessors = initHashSet[Node]()
+  let successorsU = dg.successors(u)
+  let successorsV = dg.successors(v)
+  for nbr in successorsU:
+    if (nbr in successorsV) and (nbr != u) and (nbr != v):
+      commonSuccessors.incl(nbr)
+  return commonSuccessors
+proc commonSuccessorsSeq*(dg: DiGraph, u, v: Node): seq[Node] =
+  return dg.commonSuccessors(u, v)
+iterator commonSuccessors*(dg: DiGraph, u, v: Node): Node =
+  var commonSuccessors = dg.commonSuccessors(u, v)
+  for commonNeighbor in commonSuccessors:
+    yield commonNeighbor
+
+proc nonEdges*(dg: DiGraph): seq[Edge] =
+  var nodes = dg.nodes()
+  var nonEdges = newSeq[Edge]()
+  for node in nodes:
+    for nonSucc in dg.nonSuccessors(node):
+      nonEdges.add((node, nonSucc))
+  nonEdges.sort()
+  return nonEdges
+proc nonEdgesIterator*(dg: DiGraph): iterator: Edge =
+  var nodes = dg.nodes()
+  var nonEdges = newSeq[Edge]()
+  for node in nodes:
+    for nonSucc in dg.nonSuccessors(node):
+      nonEdges.add((node, nonSucc))
+  nonEdges.sort()
+  return iterator: Edge =
+    for nonEdge in nonEdges:
+      yield nonEdge
+proc nonEdgesSet*(dg: DiGraph): HashSet[Edge] =
+  var nodes = dg.nodes()
+  var nonEdges = initHashSet[Edge]()
+  for node in nodes:
+    for nonSucc in dg.nonSuccessors(node):
+      nonEdges.incl((node, nonSucc))
+  return nonEdges
+proc nonEdgesSeq*(dg: DiGraph): seq[Edge] =
+  return dg.nonEdges()
+iterator nonEdges*(dg: DiGraph): Edge =
+  var nodes = dg.nodes()
+  var nonEdges = newSeq[Edge]()
+  for node in nodes:
+    for nonSucc in dg.nonSuccessors(node):
+      nonEdges.add((node, nonSucc))
+  nonEdges.sort()
+  for nonEdge in nonEdges:
+    yield nonEdge
+
+proc nodesWithSelfloopEdge*(dg: DiGraph): seq[Node] =
+  var ret = newSeq[Node]()
+  for node in dg.succ.keys():
+    if node in dg.succ[node]:
+      ret.add(node)
+  ret.sort()
+  return ret
+proc nodesWithSelfloopEdgeIterator*(dg: DiGraph): iterator: Node =
+  var ret = newSeq[Node]()
+  for node in dg.succ.keys():
+    if node in dg.succ[node]:
+      ret.add(node)
+  ret.sort()
+  return iterator: Node =
+    for node in ret:
+      yield node
+proc nodesWithSelfloopEdgeSet*(dg: DiGraph): HashSet[Node] =
+  var ret = initHashSet[Node]()
+  for node in dg.succ.keys():
+    if node in dg.succ[node]:
+      ret.incl(node)
+  return ret
+proc nodesWithSelfloopEdgeSeq*(dg: DiGraph): seq[Node] =
+  return dg.nodesWithSelfloopEdge()
+iterator nodesWithSelfloopEdge*(dg: DiGraph): Node =
+  var ret = newSeq[Node]()
+  for node in dg.succ.keys():
+    if node in dg.succ[node]:
+      ret.add(node)
+  ret.sort()
+  for node in ret:
+    yield node
+
+proc selfloopEdges*(dg: DiGraph): seq[Edge] =
+  var ret = newSeq[Edge]()
+  for node in dg.nodesWithSelfloopEdge():
+    ret.add((node, node))
+  return ret
+proc selfloopEdgesIterator*(dg: DiGraph): iterator: Edge =
+  var ret = newSeq[Edge]()
+  for node in dg.nodesWithSelfloopEdge():
+    ret.add((node, node))
+  return iterator: Edge =
+    for edge in ret:
+      yield edge
+proc selfloopEdgesSet*(dg: DiGraph): HashSet[Edge] =
+  var ret = initHashSet[Edge]()
+  for node in dg.nodesWithSelfloopEdge():
+    ret.incl((node, node))
+  return ret
+proc selfloopEdgesSeq*(dg: DiGraph): seq[Edge] =
+  return dg.selfloopEdges()
+iterator selfloopEdges*(dg: DiGraph): Edge =
+  var ret = newSeq[Edge]()
+  for node in dg.nodesWithSelfloopEdge():
+    ret.add((node, node))
+  for edge in ret:
+    yield edge
+
+proc isDirected*(dg: DiGraph): bool =
+  return true
+
+proc `[]`*(dg: DiGraph, node: Node): seq[Node] =
+  return dg.neighbors(node)
+
+proc `in`*(dg: DiGraph, node: Node): bool =
+  return dg.contains(node)
+proc `notin`*(dg: DiGraph, node: Node): bool =
+  return not dg.contains(node)
+proc `+`*(dg: DiGraph, node: Node): DiGraph =
+  dg.addNode(node)
+  return dg
+proc `+`*(dg: DiGraph, nodes: openArray[Node]): DiGraph =
+  dg.addNodesFrom(nodes)
+  return dg
+proc `+`*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
+  dg.addNodesFrom(nodes)
+  return dg
+proc `-`*(dg: DiGraph, node: Node): DiGraph =
+  dg.removeNode(node)
+  return dg
+proc `-`*(dg: DiGraph, nodes: openArray[Node]): DiGraph =
+  dg.removeNodesFrom(nodes)
+  return dg
+proc `-`*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
+  dg.removeNodesFrom(nodes)
+  return dg
+proc `+=`*(dg: DiGraph, node: Node) =
+    dg.addNode(node)
+proc `+=`*(dg: DiGraph, nodes: HashSet[Node]) =
+    dg.addNodesFrom(nodes)
+proc `+=`*(dg: DiGraph, nodes: openArray[Node]) =
+    dg.addNodesFrom(nodes)
+proc `-=`*(dg: DiGraph, node: Node) =
+    dg.removeNode(node)
+proc `-=`*(dg: DiGraph, nodes: HashSet[Node]) =
+    dg.removeNodesFrom(nodes)
+proc `-=`*(dg: DiGraph, nodes: openArray[Node]) =
+    dg.removeNodesFrom(nodes)
+
+proc `in`*(dg: DiGraph, edge: Edge): bool =
+    return dg.hasEdge(edge)
+proc `+`*(dg: DiGraph, edge: Edge): DiGraph =
+    dg.addEdge(edge)
+    return dg
+proc `+`*(dg: DiGraph, edges: HashSet[Edge]): DiGraph =
+    dg.addEdgesFrom(edges)
+    return dg
+proc `+`*(dg: DiGraph, edges: openArray[Edge]): DiGraph =
+    dg.addEdgesFrom(edges)
+    return dg
+proc `-`*(dg: DiGraph, edge: Edge): DiGraph =
+    dg.removeEdge(edge)
+    return dg
+proc `-`*(dg: DiGraph, edges: HashSet[Edge]): DiGraph =
+    dg.removeEdgesFrom(edges)
+    return dg
+proc `-`*(dg: DiGraph, edges: openArray[Edge]): DiGraph =
+    dg.removeEdgesFrom(edges)
+    return dg
+proc `+=`*(dg: DiGraph, edge: Edge) =
+    dg.addEdge(edge)
+proc `+=`*(dg: DiGraph, edges: HashSet[Edge]) =
+    dg.addEdgesFrom(edges)
+proc `+=`*(dg: DiGraph, edges: openArray[Edge]) =
+    dg.addEdgesFrom(edges)
+proc `-=`*(dg: DiGraph, edge: Edge) =
+    dg.removeEdge(edge)
+proc `-=`*(dg: DiGraph, edges: HashSet[Edge]) =
+    dg.removeEdgesFrom(edges)
+proc `-=`*(dg: DiGraph, edges: openArray[Edge]) =
+    dg.removeEdgesFrom(edges)
+
+
 
 # proc copy*(g: Graph): Graph =
 #   var ret = newGraph()
