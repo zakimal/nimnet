@@ -11,7 +11,7 @@
 - binomial_tree(n[, create_using])
 - [x] complete_graph(n[, create_using])
 - complete_multipartite_graph(*subset_sizes)
-- circular_ladder_graph(n[, create_using])
+- [x] circular_ladder_graph(n[, create_using])
 - circulant_graph(n, offsets[, create_using])
 - [x] cycle_graph(n[, create_using])
 - dorogovtsev_goltsev_mendes_graph(n[, …])

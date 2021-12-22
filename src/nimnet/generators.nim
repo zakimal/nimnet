@@ -203,6 +203,30 @@ proc trivialGraph*(): Graph =
 proc trivialDiGraph*(): DiGraph =
   return newDiGraph(@[0])
 
+proc wheelGraph*(n: int): Graph =
+  let G = newGraph()
+  for i in 1..<n:
+    G.addEdge(0, i)
+  for i in 1..<n:
+    if i == n - 1:
+      G.addEdge(i, 1)
+    else:
+      G.addEdge(i, i + 1)
+  return G
+proc wheelDiGraph*(n: int): DiGraph =
+  let DG = newDiGraph()
+  for i in 1..<n:
+    DG.addEdge(0, i)
+    DG.addEdge(i, 0)
+  for i in 1..<n:
+    if i == n - 1:
+      DG.addEdge(i, 1)
+      DG.addEdge(1, i)
+    else:
+      DG.addEdge(i, i + 1)
+      DG.addEdge(i + 1, i)
+  return DG
+
 # -------------------------------------------------------------------
 # TODO:
 # Expanders

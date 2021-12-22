@@ -161,6 +161,20 @@ test "generate trivial directed graph":
   check DG.numberOfEdges() == 0
   check DG.nodes() == @[0]
 
+test "generate wheel graph":
+  let G = wheelGraph(6)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 6
+  check G.numberOfEdges() == 10
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 2), (1, 5), (2, 3), (3, 4), (4, 5)]
+
+test "generate wheel directed graph":
+  let DG = wheelDiGraph(6)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 6
+  check DG.numberOfEdges() == 20
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 0), (1, 2), (1, 5), (2, 0), (2, 1), (2, 3), (3, 0), (3, 2), (3, 4), (4, 0), (4, 3), (4, 5), (5, 0), (5, 1), (5, 4)]
+
 # -------------------------------------------------------------------
 # TODO:
 # Expanders
