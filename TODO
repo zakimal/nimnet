@@ -47,7 +47,7 @@
 - desargues_graph([create_using])
 - [x] diamond_graph([create_using])
 - dodecahedral_graph([create_using])
-- frucht_graph([create_using])
+- [x] frucht_graph([create_using])
 - heawood_graph([create_using])
 - hoffman_singleton_graph()
 - house_graph([create_using])

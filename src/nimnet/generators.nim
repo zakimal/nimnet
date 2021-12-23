@@ -380,6 +380,15 @@ proc diamondGraph*(): Graph =
   G.addEdgesFrom(@[(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)])
   return G
 
+proc fruchtGraph*(): Graph =
+  let G = cycleGraph(7)
+  G.addEdgesFrom(@[(0, 7), (1, 7), (2, 8), (3, 9), (4, 9), (5, 10), (6, 10), (7, 11), (8, 11), (8, 9), (10, 11)])
+  return G
+proc fruchtDiGraph*(): DiGraph =
+  let DG = cycleDiGraph(7)
+  DG.addEdgesFrom(@[(0, 7), (1, 7), (2, 8), (3, 9), (4, 9), (5, 10), (6, 10), (7, 11), (8, 11), (8, 9), (10, 11)])
+  return DG
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph

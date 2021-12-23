@@ -281,6 +281,20 @@ test "generate diamond graph":
   check G.numberOfEdges() == 5
   check G.edges() == @[(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)]
 
+test "generate frucht graph":
+  let G = fruchtGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 12
+  check G.numberOfEdges() == 18
+  check G.edges() == @[(0, 1), (0, 6), (0, 7), (1, 2), (1, 7), (2, 3), (2, 8), (3, 4), (3, 9), (4, 5), (4, 9), (5, 6), (5, 10), (6, 10), (7, 11), (8, 9), (8, 11), (10, 11)]
+
+test "generate frucht directed graph":
+  let DG = fruchtDiGraph()
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 12
+  check DG.numberOfEdges() == 18
+  check DG.edges() == @[(0, 1), (0, 7), (1, 2), (1, 7), (2, 3), (2, 8), (3, 4), (3, 9), (4, 5), (4, 9), (5, 6), (5, 10), (6, 0), (6, 10), (7, 11), (8, 9), (8, 11), (10, 11)]
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph
