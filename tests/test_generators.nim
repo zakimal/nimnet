@@ -53,6 +53,13 @@ test "generate barbell directed graph":
   check DG.numberOfEdges() == 26
   check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2), (3, 4), (4, 3), (4, 5), (4, 6), (4, 7), (5, 4), (5, 6), (5, 7), (6, 4), (6, 5), (6, 7), (7, 4), (7, 5), (7, 6)]
 
+test "generate binomial tree":
+  let G = binomialTree(3)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 8
+  check G.numberOfEdges() == 7
+  check G.edges() == @[(0, 1), (0, 2), (0, 4), (2, 3), (4, 5), (4, 6), (6, 7)]
+
 test "generate complete graph":
   let G = completeGraph(4)
   check G.isDirected() == false

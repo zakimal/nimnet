@@ -122,6 +122,18 @@ proc barbellDiGraph*(m1, m2: int): DiGraph =
       DG.addEdge(j, i)
   return DG
 
+proc binomialTree*(n: int): Graph =
+  let G = newGraph(@[1])
+  var N = 1
+  for i in 0..<n:
+    var edges: seq[Edge] = @[]
+    for (u, v) in G.edges():
+      edges.add((u + N, v + N))
+    G.addEdgesFrom(edges)
+    G.addEdge(0, N)
+    N *= 2
+  return G
+
 proc completeGraph*(n: int): Graph =
   let G = newGraph()
   for i in 0..<n:
