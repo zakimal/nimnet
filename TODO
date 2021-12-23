@@ -24,7 +24,7 @@
 - [x] star_graph(n[, create_using])
 - [x] trivial_graph([create_using])
 - turan_graph(n, r)
-- wheel_graph(n[, create_using])
+- [x] wheel_graph(n[, create_using])
 
 # Expanders
 - margulis_gabber_galil_graph(n[, create_using])

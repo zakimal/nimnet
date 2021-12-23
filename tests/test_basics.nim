@@ -715,3 +715,57 @@ test "custom operators at digraph":
   check (0, 5) in dg == false
   check (2, 0) in dg == false
   check (0, 2) in dg == false
+
+test "copy graph as graph":
+  let original = newGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = original.copyAsGraph()
+  check copied.isDirected() == false
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 2
+  check copied.edges() == @[(0, 1), (1, 2)]
+
+test "copy graph as directed graph":
+  let original = newGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = original.copyAsDiGraph()
+  check copied.isDirected() == true
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 4
+  check copied.edges() == @[(0, 1), (1, 0), (1, 2), (2, 1)]
+
+test "copy directed graph as directed graph":
+  let original = newDiGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = original.copyAsDiGraph()
+  check copied.isDirected() == true
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 2
+  check copied.edges() == @[(0, 1), (1, 2)]
+
+test "copy directed graph as graph":
+  let original = newDiGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 0), (1, 2), (2, 1)])
+  let copied = original.copyAsGraph()
+  check copied.isDirected() == false
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 2
+  check copied.edges() == @[(0, 1), (1, 2)]
+
+test "convert graph to directed graph":
+  let G = newGraph()
+  G.addEdgesFrom(@[(0, 1), (1, 2)])
+  let DG = G.toDirected()
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 3
+  check DG.numberOfEdges() == 4
+  check DG.edges() == @[(0, 1), (1, 0), (1, 2), (2, 1)]
+
+test "convert directed graph to graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (1, 0), (1, 2), (2, 1)])
+  let G = DG.toUndirected()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 3
+  check G.numberOfEdges() == 2
+  check G.edges() == @[(0, 1), (1, 2)]

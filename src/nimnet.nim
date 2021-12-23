@@ -1674,14 +1674,35 @@ proc `-=`*(dg: DiGraph, edges: HashSet[Edge]) =
 proc `-=`*(dg: DiGraph, edges: openArray[Edge]) =
     dg.removeEdgesFrom(edges)
 
+proc copyAsGraph*(g: Graph): Graph =
+  let ret = newGraph()
+  ret.addEdgesFrom(g.edges())
+  return ret
+proc copyAsDiGraph*(g: Graph): DiGraph =
+  let ret = newDiGraph()
+  for edge in g.edges():
+    ret.addEdge(edge.u, edge.v)
+    ret.addEdge(edge.v, edge.u)
+  return ret
 
+proc copyAsDiGraph*(dg: DiGraph): DiGraph =
+  let ret = newDiGraph()
+  ret.addEdgesFrom(dg.edges())
+  return ret
+proc copyAsGraph*(dg: DiGraph): Graph =
+  let ret = newGraph()
+  for edge in dg.edges():
+    ret.addEdge(edge)
+  return ret
 
-# proc copy*(g: Graph): Graph =
-#   var ret = newGraph()
-#   ret.addEdgesFrom(g.edges())
-#   return ret
-# proc copyAsDiGraph*(g: Graph): DiGraph
-# proc copy*(dg: DiGraph): DiGraph
-# proc copyAsGraph*(dg: DiGraph): Graph
-# proc toDirected*(g: Graph): DiGraph
-# proc toUndirected*(dg: DiGraph): Graph
+proc toDirected*(g: Graph): DiGraph =
+  let ret = newDiGraph()
+  for edge in g.edges():
+    ret.addEdge(edge.u, edge.v)
+    ret.addEdge(edge.v, edge.u)
+  return ret
+proc toUndirected*(dg: DiGraph): Graph =
+  let ret = newGraph()
+  for edge in dg.edges():
+    ret.addEdge(edge.u, edge.v)
+  return ret
