@@ -18,7 +18,7 @@
 - [x] empty_graph([n, create_using, default])
 - [x] full_rary_tree(r, n[, create_using])
 - [x] ladder_graph(n[, create_using])
-- lollipop_graph(m, n[, create_using])
+- [x] lollipop_graph(m, n[, create_using])
 - [x] null_graph([create_using])
 - [x] path_graph(n[, create_using])
 - [x] star_graph(n[, create_using])
