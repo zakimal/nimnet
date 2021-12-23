@@ -356,8 +356,14 @@ proc wheelDiGraph*(n: int): DiGraph =
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
 # Small
+# TODO: make_small_graph(graph_description[, …])
+# TODO: LCF_graph(n, shift_list, repeats[, create_using])
+# TODO: desargues_graph([create_using])
+# TODO: dodecahedral_graph([create_using])
+# TODO: heawood_graph([create_using])
+# TODO: moebius_kantor_graph([create_using])
+# TODO: pappus_graph()
 # -------------------------------------------------------------------
 
 proc bullGraph*(): Graph =
