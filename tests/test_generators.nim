@@ -95,6 +95,13 @@ test "generate cycle directed graph":
   check DG.numberOfEdges() == 4
   check DG.edges() == @[(0, 1), (1, 2), (2, 3), (3, 0)]
 
+test "generate dorogovtsev goltsev mendes graph":
+  let G = dorogovtsevGoltsevMendesGraph(3)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 15
+  check G.numberOfEdges() == 27
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 6), (0, 7), (0, 8), (0, 9), (1, 2), (1, 3), (1, 5), (1, 6), (1, 10), (1, 11), (1, 12), (2, 4), (2, 5), (2, 7), (2, 10), (2, 13), (2, 14), (3, 8), (3, 11), (4, 9), (4, 13), (5, 12), (5, 14)]
+
 test "generate empty graph":
   let G = emptyGraph(4)
   check G.isDirected() == false

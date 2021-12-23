@@ -155,6 +155,21 @@ proc cycleDiGraph*(n: int): DiGraph =
   DG.addEdge(n - 1, 0)
   return DG
 
+proc dorogovtsevGoltsevMendesGraph*(n: int): Graph =
+  let G = newGraph()
+  G.addEdge(0, 1)
+  if n == 0:
+    return G
+  var newNode = 2
+  for i in 1..<(n+1):
+    let lastGenerationEdges = G.edges()
+    let numberOfEdgesInLastGeneration = len(lastGenerationEdges)
+    for j in 0..<numberOfEdgesInLastGeneration:
+      G.addEdge(newNode, lastGenerationEdges[j].u)
+      G.addEdge(newNode, lastGenerationEdges[j].v)
+      newNode += 1
+  return G
+
 proc emptyGraph*(n: int): Graph =
   let G = newGraph()
   for i in 0..<n:
