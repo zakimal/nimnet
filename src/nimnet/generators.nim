@@ -1,3 +1,5 @@
+import deques
+
 import ../nimnet.nim
 
 # -------------------------------------------------------------------
@@ -9,6 +11,31 @@ import ../nimnet.nim
 # TODO:
 # Classic Graph Generator
 # -------------------------------------------------------------------
+
+iterator treeEdges(n: int, r: int): Edge =
+  if n == 0:
+    raise newNNError("n == 0")
+
+  var nodes: seq[int] = @[]
+  for i in 0..<n:
+    nodes.add(i)
+  var parents = @[0].toDeque()
+  var idx = 0
+
+  var flag = false
+  while len(parents) != 0:
+    let source = parents.popFirst()
+    for i in 0..<r:
+      idx += 1
+      if idx == n: # StopIteration
+        flag = true
+        break
+      let target = nodes[idx]
+      parents.addLast(target)
+      yield (source, target)
+    if flag:
+      break
+
 
 proc barbellGraph*(m1, m2: int): Graph =
   ## Returns barbell graph: 2 complete graph connected by a path
@@ -179,6 +206,17 @@ proc emptyDiGraph*(n: int): DiGraph =
   let DG = newDiGraph()
   for i in 0..<n:
     DG.addNode(i)
+  return DG
+
+proc fullRaryTree*(r: int, n: int): Graph =
+  let G = newGraph()
+  for edge in treeEdges(n, r):
+    G.addEdge(edge)
+  return G
+proc fullRaryDiTree*(r: int, n: int): DiGraph =
+  let DG = newDiGraph()
+  for edge in treeEdges(n, r):
+    DG.addEdge(edge)
   return DG
 
 proc ladderGraph*(n: int): Graph =

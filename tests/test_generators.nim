@@ -114,6 +114,20 @@ test "generate empty directed graph":
   check DG.numberOfNodes() == 4
   check DG.numberOfEdges() == 0
 
+test "generate full rary tree":
+  let G = fullRaryTree(3, 16)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 16
+  check G.numberOfEdges() == 15
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 4), (1, 5), (1, 6), (2, 7), (2, 8), (2, 9), (3, 10), (3, 11), (3, 12), (4, 13), (4, 14), (4, 15)]
+
+test "generate full rary directed tree":
+  let DG = fullRaryDiTree(3, 16)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 16
+  check DG.numberOfEdges() == 15
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 4), (1, 5), (1, 6), (2, 7), (2, 8), (2, 9), (3, 10), (3, 11), (3, 12), (4, 13), (4, 14), (4, 15)]
+
 test "generate ladder graph":
   let G = ladderGraph(4)
   check G.isDirected() == false

@@ -16,7 +16,7 @@
 - [x] cycle_graph(n[, create_using])
 - [x] dorogovtsev_goltsev_mendes_graph(n[, …])
 - [x] empty_graph([n, create_using, default])
-- full_rary_tree(r, n[, create_using])
+- [x] full_rary_tree(r, n[, create_using])
 - [x] ladder_graph(n[, create_using])
 - lollipop_graph(m, n[, create_using])
 - [x] null_graph([create_using])
