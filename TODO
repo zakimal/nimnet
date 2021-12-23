@@ -45,7 +45,7 @@
 - [x] chvatal_graph([create_using])
 - [x] cubical_graph([create_using])
 - desargues_graph([create_using])
-- diamond_graph([create_using])
+- [x] diamond_graph([create_using])
 - dodecahedral_graph([create_using])
 - frucht_graph([create_using])
 - heawood_graph([create_using])

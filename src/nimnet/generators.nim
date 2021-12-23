@@ -375,6 +375,11 @@ proc cubicalGraph*(): Graph =
   G.addEdgesFrom(@[(0, 1), (0, 3), (0, 4), (1, 2), (1, 7), (2, 3), (2, 6), (3, 5), (4, 5), (4, 7), (5, 6), (6, 7)])
   return G
 
+proc diamondGraph*(): Graph =
+  let G = newGraph()
+  G.addEdgesFrom(@[(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)])
+  return G
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph
