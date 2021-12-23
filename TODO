@@ -50,7 +50,7 @@
 - [x] frucht_graph([create_using])
 - heawood_graph([create_using])
 - [x] hoffman_singleton_graph()
-- house_graph([create_using])
+- [x] house_graph([create_using])
 - house_x_graph([create_using])
 - icosahedral_graph([create_using])
 - krackhardt_kite_graph([create_using])
