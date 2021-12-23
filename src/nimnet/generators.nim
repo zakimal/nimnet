@@ -9,8 +9,9 @@ import ../nimnet.nim
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
 # Classic Graph Generator
+# TODO: complete_multipartite_graph(*subset_sizes)
+# TODO: turan_graph(n, r)
 # -------------------------------------------------------------------
 
 iterator treeEdges(n: int, r: int): Edge =
@@ -358,6 +359,11 @@ proc wheelDiGraph*(n: int): DiGraph =
 # TODO:
 # Small
 # -------------------------------------------------------------------
+
+proc bullGraph*(): Graph =
+  let G = newGraph()
+  G.addEdgesFrom(@[(0, 1), (0, 2), (1, 2), (1, 3), (2, 4)])
+  return G
 
 # -------------------------------------------------------------------
 # TODO:

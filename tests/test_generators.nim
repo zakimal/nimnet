@@ -253,6 +253,13 @@ test "generate wheel directed graph":
 # Small
 # -------------------------------------------------------------------
 
+test "generate bull graph":
+  let G = bullGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 5
+  check G.numberOfEdges() == 5
+  check G.edges() == @[(0, 1), (0, 2), (1, 2), (1, 3), (2, 4)]
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph
