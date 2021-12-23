@@ -117,6 +117,23 @@ proc circularLadderDiGraph*(n: int): DiGraph =
   DG.addEdge(2 * n - 1, n)
   return DG
 
+proc circulantGraph*(n: int, offsets: seq[int]): Graph =
+  let G = newGraph()
+  for i in 0..<n:
+    for j in offsets:
+      G.addEdge(i, (i - j + n) mod n)
+      G.addEdge(i, (i + j) mod n)
+  return G
+proc circulantDiGraph*(n: int, offsets: seq[int]): DiGraph =
+  let DG = newDiGraph()
+  for i in 0..<n:
+    for j in offsets:
+      DG.addEdge(i, (i - j + n) mod n)
+      DG.addEdge((i - j + n) mod n, i)
+      DG.addEdge(i, (i + j) mod n)
+      DG.addEdge((i + j) mod n, i)
+  return DG
+
 proc cycleGraph*(n: int): Graph =
   let G = newGraph()
   if n < 0:
