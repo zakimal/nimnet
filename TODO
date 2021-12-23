@@ -52,7 +52,7 @@
 - [x] hoffman_singleton_graph()
 - [x] house_graph([create_using])
 - [x] house_x_graph([create_using])
-- icosahedral_graph([create_using])
+- [x] icosahedral_graph([create_using])
 - krackhardt_kite_graph([create_using])
 - moebius_kantor_graph([create_using])
 - octahedral_graph([create_using])

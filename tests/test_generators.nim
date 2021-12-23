@@ -309,12 +309,20 @@ test "generate house graph":
   check G.numberOfEdges() == 6
   check G.edges() == @[(0, 1), (0, 2), (1, 3), (2, 3), (2, 4), (3, 4)]
 
-test "generaet house with x graph":
+test "generate house with x graph":
   let G = houseWithXGraph()
   check G.isDirected() == false
   check G.numberOfNodes() == 5
   check G.numberOfEdges() == 8
   check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)]
+
+test "generate icosahedral graph":
+  let G = icosahedralGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 12
+  check G.numberOfEdges() == 30
+  check G.edges() == @[(0, 1), (0, 5), (0, 7), (0, 8), (0, 11), (1, 2), (1, 5), (1, 6), (1, 8), (2, 3), (2, 6), (2, 8), (2, 9), (3, 4), (3, 6), (3, 9), (3, 10), (4, 5), (4, 6), (4, 10), (4, 11), (5, 6), (5, 11), (7, 8), (7, 9), (7, 10), (7, 11), (8, 9), (9, 10), (10, 11)]
+
 
 # -------------------------------------------------------------------
 # TODO:
