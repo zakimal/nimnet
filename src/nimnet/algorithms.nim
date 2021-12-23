@@ -1,5 +1,8 @@
 import tables
 import strformat
+import sequtils
+import sets
+import math
 
 import ../nimnet
 
@@ -215,6 +218,27 @@ proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
 # TODO:
 # Link Prediction
 # -------------------------------------------------------------------
+
+# proc pageRank*(
+#   G: Graph,
+# ): Table[Node, float] =
+
+# proc pageRank*(
+#   DG: DiGraph,
+#   alpha: float = 0.85,
+#   personalization: TableRef[Node, float] = nil,
+#   maxIter: int = 100,
+#   tol: float = 1.0e-6,
+#   nstart: TableRef[Node, float] = nil,
+#   weight: TableRef[Node, float] = nil,
+#   dangling: TableRef[Node, float] = nil
+# ): Table[Node, float] =
+#   if len(DG) == 0:
+#     return initTable[Node, float]()
+
+
+
+
 
 # -------------------------------------------------------------------
 # TODO:

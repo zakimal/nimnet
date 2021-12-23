@@ -769,3 +769,61 @@ test "convert directed graph to graph":
   check G.numberOfNodes() == 3
   check G.numberOfEdges() == 2
   check G.edges() == @[(0, 1), (1, 2)]
+
+test "create empty copy of graph":
+  let original = newGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = createEmptyCopyAsGraph(original)
+  check copied.isDirected() == false
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 0
+
+test "create emtpy copy of directed graph":
+  let original = newGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = createEmptyCopyAsDiGraph(original)
+  check copied.isDirected() == true
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 0
+
+test "create empty copy of directed graph":
+  let original = newDiGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = createEmptyCopyAsGraph(original)
+  check copied.isDirected() == false
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 0
+
+test "create emtpy copy of directed graph":
+  let original = newDiGraph()
+  original.addEdgesFrom(@[(0, 1), (1, 2)])
+  let copied = createEmptyCopyAsDiGraph(original)
+  check copied.isDirected() == true
+  check copied.numberOfNodes() == 3
+  check copied.numberOfEdges() == 0
+
+test "check empty graph":
+  let G = newGraph(@[0, 1, 2])
+  check G.isDirected() == false
+  check G.numberOfNodes() == 3
+  check G.numberOfEdges() == 0
+  check G.isEmpty() == true
+
+test "check empty directed graph":
+  let DG = newDiGraph(@[0, 1, 2])
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 3
+  check DG.numberOfEdges() == 0
+  check DG.isEmpty() == true
+
+test "reverse edge":
+  let edge = (0, 1)
+  check edge.reversed() == (1, 0)
+
+test "reverse directed graph":
+  let DG = newDiGraph(@[(0, 1), (1, 2)])
+  let revDG = DG.reversed()
+  check revDG.isDirected() == true
+  check revDG.numberOfNodes() == 3
+  check revDG.numberOfEdges() == 2
+  check revDG.edges() == @[(1, 0), (2, 1)]

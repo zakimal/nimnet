@@ -22,6 +22,15 @@ type DiGraph* = ref object of RootObj
   pred*: Table[Node, HashSet[Node]]
   succ*: Table[Node, HashSet[Node]]
 
+type WeightedGraph* = ref object of RootObj
+  ## Weighted Undirected graphs with self loops
+  adjWithWeight*: Table[Node, HashSet[tuple[node: Node, weight: float]]]
+
+type WeightedDiGraph* = ref object of RootObj
+  ## Weighted Directed graphs with self loops
+  predWithWeight*: Table[Node, HashSet[tuple[node: Node, weight: float]]]
+  succ*: Table[Node, HashSet[Node]]
+
 # -------------------------------------------------------------------
 #  Exceptions
 # -------------------------------------------------------------------
@@ -101,10 +110,9 @@ proc newNNPowerIterationFailedConvergence*(numIterations: int): NNPowerIteration
   return e
 
 # -------------------------------------------------------------------
-#  Basic Operations
+# (Undirected) Graph
 # -------------------------------------------------------------------
 
-# (Undirected) Graph
 proc newGraph*(): Graph =
   var g = Graph()
   g.adj = initTable[Node, HashSet[Node]]()
@@ -763,7 +771,9 @@ proc `-=`*(g: Graph, edges: HashSet[Edge]) =
 proc `-=`*(g: Graph, edges: openArray[Edge]) =
     g.removeEdgesFrom(edges)
 
+# -------------------------------------------------------------------
 # Directed Graph
+# -------------------------------------------------------------------
 
 proc newDiGraph*(): DiGraph =
   var dg = DiGraph()
@@ -1674,6 +1684,18 @@ proc `-=`*(dg: DiGraph, edges: HashSet[Edge]) =
 proc `-=`*(dg: DiGraph, edges: openArray[Edge]) =
     dg.removeEdgesFrom(edges)
 
+# -------------------------------------------------------------------
+# TODO: Weighted (Undirected) Graph
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO: Weighted Directed Graph
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# Converter etc
+# -------------------------------------------------------------------
+
 proc copyAsGraph*(g: Graph): Graph =
   let ret = newGraph()
   ret.addEdgesFrom(g.edges())
@@ -1684,7 +1706,6 @@ proc copyAsDiGraph*(g: Graph): DiGraph =
     ret.addEdge(edge.u, edge.v)
     ret.addEdge(edge.v, edge.u)
   return ret
-
 proc copyAsDiGraph*(dg: DiGraph): DiGraph =
   let ret = newDiGraph()
   ret.addEdgesFrom(dg.edges())
@@ -1705,4 +1726,30 @@ proc toUndirected*(dg: DiGraph): Graph =
   let ret = newGraph()
   for edge in dg.edges():
     ret.addEdge(edge.u, edge.v)
+  return ret
+
+proc createEmptyCopyAsGraph*(g: Graph): Graph =
+  let ret = newGraph(g.nodes())
+  return ret
+proc createEmptyCopyAsDiGraph*(g: Graph): DiGraph =
+  let ret = newDiGraph(g.nodes())
+  return ret
+proc createEmptyCopyAsGraph*(dg: DiGraph): Graph =
+  let ret = newGraph(dg.nodes())
+  return ret
+proc createEmptyCopyAsDiGraph*(dg: DiGraph): DiGraph =
+  let ret = newDiGraph(dg.nodes())
+  return ret
+
+proc isEmpty*(g: Graph): bool =
+  return len(g.edges()) == 0
+proc isEmpty*(dg: DiGraph): bool =
+  return len(dg.edges()) == 0
+
+proc reversed*(edge: Edge): Edge =
+  return (edge.v, edge.u)
+proc reversed*(dg: DiGraph): DiGraph =
+  let ret = newDiGraph()
+  for edge in dg.edges():
+    ret.addEdge(reversed(edge))
   return ret
