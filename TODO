@@ -60,7 +60,7 @@
 - [x] petersen_graph([create_using])
 - [x] sedgewick_maze_graph([create_using])
 - [x] tetrahedral_graph([create_using])
-- truncated_cube_graph([create_using])
+- [x] truncated_cube_graph([create_using])
 - truncated_tetrahedron_graph([create_using])
 - tutte_graph([create_using])
 
