@@ -1,4 +1,5 @@
 import deques
+import math
 
 import ../nimnet.nim
 
@@ -35,6 +36,27 @@ iterator treeEdges(n: int, r: int): Edge =
       yield (source, target)
     if flag:
       break
+
+proc balancedTree*(r: int, h: int): Graph =
+  var n: int
+  if r == 1:
+    n = h + 1
+  else:
+    n = (1 - r ^ (h + 1)) div (1 - r)
+  let G = newGraph()
+  for edge in treeEdges(n, r):
+    G.addEdge(edge)
+  return G
+proc balancedDiTree*(r: int, h: int): DiGraph =
+  var n: int
+  if r == 1:
+    n = h + 1
+  else:
+    n = (1 - r ^ (h + 1)) div (1 - r)
+  let DG = newDiGraph()
+  for edge in treeEdges(n, r):
+    DG.addEdge(edge)
+  return DG
 
 
 proc barbellGraph*(m1, m2: int): Graph =

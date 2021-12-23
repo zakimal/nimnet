@@ -13,6 +13,20 @@ import nimnet/generators
 # Classic Graph Generator
 # -------------------------------------------------------------------
 
+test "generate balanced tree":
+  let G = balancedTree(3, 2)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 13
+  check G.numberOfEdges() == 12
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 4), (1, 5), (1, 6), (2, 7), (2, 8), (2, 9), (3, 10), (3, 11), (3, 12)]
+
+test "generate balanced directed tree":
+  let DG = balancedDiTree(3, 2)
+  check DG.isDirected() == true
+  check DG.numberOfNodes() == 13
+  check DG.numberOfEdges() == 12
+  check DG.edges() == @[(0, 1), (0, 2), (0, 3), (1, 4), (1, 5), (1, 6), (2, 7), (2, 8), (2, 9), (3, 10), (3, 11), (3, 12)]
+
 test "generate barbell graph":
   var G = barbellGraph(4, 2)
   check G.isDirected() == false
