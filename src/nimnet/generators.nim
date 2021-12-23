@@ -58,7 +58,6 @@ proc balancedDiTree*(r: int, h: int): DiGraph =
     DG.addEdge(edge)
   return DG
 
-
 proc barbellGraph*(m1, m2: int): Graph =
   ## Returns barbell graph: 2 complete graph connected by a path
   ## 2 <= m1, 0 <= m2

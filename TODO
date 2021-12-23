@@ -6,7 +6,7 @@
 - graph_atlas_g()
 
 # Classic
-- balanced_tree(r, h[, create_using])
+- [x] balanced_tree(r, h[, create_using])
 - [x] barbell_graph(m1, m2[, create_using])
 - binomial_tree(n[, create_using])
 - [x] complete_graph(n[, create_using])
