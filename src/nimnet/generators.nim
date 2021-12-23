@@ -433,6 +433,15 @@ proc sedgewickMazeDiGraph*(): DiGraph =
   DG.addEdgesFrom(@[(0, 2), (0, 5), (0, 7), (1, 7), (2, 6), (3, 4), (3, 5), (4, 5), (4, 6), (4, 7)])
   return DG
 
+proc tetrahedralGraph*(): Graph =
+  let G = newGraph()
+  G.addEdgesFrom(@[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)])
+  return G
+proc tetrahedralDiGraph*(): DiGraph =
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (0, 2), (0, 3), (1, 0), (1, 2), (1, 3), (2, 0), (2, 1), (2, 3), (3, 0), (3, 1), (3, 2)])
+  return DG
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph
