@@ -142,6 +142,13 @@ test "generate ladder directed graph":
   check DG.numberOfEdges() == 20
   check DG.edges() == @[(0, 1), (0, 4), (1, 0), (1, 2), (1, 5), (2, 1), (2, 3), (2, 6), (3, 2), (3, 7), (4, 0), (4, 5), (5, 1), (5, 4), (5, 6), (6, 2), (6, 5), (6, 7), (7, 3), (7, 6)]
 
+test "generate lollipop graph":
+  let G = lollipopGraph(6, 3)
+  check G.isDirected() == false
+  check G.numberOfNodes() == 9
+  check G.numberOfEdges() == 18
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (1, 2), (1, 3), (1, 4), (1, 5), (2, 3), (2, 4), (2, 5), (3, 4), (3, 5), (4, 5), (5, 6), (6, 7), (7, 8)]
+
 test "generate null graph":
   let G = nullGraph()
   check G.isDirected() == false

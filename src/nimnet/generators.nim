@@ -239,6 +239,20 @@ proc ladderDiGraph*(n: int): DiGraph =
     DG.addEdge(i + n, i)
   return DG
 
+proc lollipopGraph*(m: int, n: int): Graph =
+  if m < 2:
+    raise newNNError("invalid graph description: 2 <= m")
+  if n < 0:
+    raise newNNError("invalid graph description: 0 <= n")
+
+  let G = newGraph()
+  for i in 0..<m:
+    for j in (i+1)..<m:
+      G.addEdge(i, j)
+  for i in (m-1)..<(m+n-1):
+    G.addEdge(i, i + 1)
+  return G
+
 proc nullGraph*(): Graph =
   return newGraph()
 proc nullDiGraph*(): DiGraph =
