@@ -62,7 +62,7 @@
 - [x] tetrahedral_graph([create_using])
 - [x] truncated_cube_graph([create_using])
 - [x] truncated_tetrahedron_graph([create_using])
-- tutte_graph([create_using])
+- [x] tutte_graph([create_using])
 
 # Random Graphs
 - fast_gnp_random_graph(n, p[, seed, directed])
