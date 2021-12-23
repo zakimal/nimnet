@@ -49,7 +49,7 @@
 - dodecahedral_graph([create_using])
 - [x] frucht_graph([create_using])
 - heawood_graph([create_using])
-- hoffman_singleton_graph()
+- [x] hoffman_singleton_graph()
 - house_graph([create_using])
 - house_x_graph([create_using])
 - icosahedral_graph([create_using])
