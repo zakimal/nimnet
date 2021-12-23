@@ -58,7 +58,7 @@
 - [x] octahedral_graph([create_using])
 - pappus_graph()
 - [x] petersen_graph([create_using])
-- sedgewick_maze_graph([create_using])
+- [x] sedgewick_maze_graph([create_using])
 - tetrahedral_graph([create_using])
 - truncated_cube_graph([create_using])
 - truncated_tetrahedron_graph([create_using])
