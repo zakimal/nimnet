@@ -309,6 +309,12 @@ test "generate house graph":
   check G.numberOfEdges() == 6
   check G.edges() == @[(0, 1), (0, 2), (1, 3), (2, 3), (2, 4), (3, 4)]
 
+test "generaet house with x graph":
+  let G = houseWithXGraph()
+  check G.isDirected() == false
+  check G.numberOfNodes() == 5
+  check G.numberOfEdges() == 8
+  check G.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)]
 
 # -------------------------------------------------------------------
 # TODO:

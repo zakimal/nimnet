@@ -399,6 +399,11 @@ proc houseGraph*(): Graph =
   G.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (2, 3), (2, 4), (3, 4)])
   return G
 
+proc houseWithXGraph*(): Graph =
+  let G = newGraph()
+  G.addEdgesFrom(@[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (2, 4), (3, 4)])
+  return G
+
 # -------------------------------------------------------------------
 # TODO:
 # Random Graph
