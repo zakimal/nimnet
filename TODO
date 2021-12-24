@@ -535,7 +535,7 @@ Operators
 - networkx.algorithms.operators.product.rooted_product
 - networkx.algorithms.operators.product.strong_product
 - networkx.algorithms.operators.product.tensor_product
-- networkx.algorithms.operators.product.power
+- [x] networkx.algorithms.operators.product.power
 
 Planarity
 - networkx.algorithms.planarity.check_planarity

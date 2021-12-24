@@ -4080,6 +4080,20 @@ test "try to apply intersectionAll to empty directed graph and fail":
   except NNError as e:
     check e.msg == "cannot apply intersectionAll to empty directed graph sequence"
 
+test "power product of graph":
+  let G = pathGraph(4)
+  let G2 = power(G, 2)
+  check G2.isDirected() == false
+  check G2.numberOfNodes() == 4
+  check G2.numberOfEdges() == 5
+  check G2.nodes() == @[0, 1, 2, 3]
+  check G2.edges() == @[(0, 1), (0, 2), (1, 2), (1, 3), (2, 3)]
+  let G4 = power(G, 4)
+  check G4.isDirected() == false
+  check G4.numberOfNodes() == 4
+  check G4.numberOfEdges() == 6
+  check G4.nodes() == @[0, 1, 2, 3]
+  check G4.edges() == @[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
 
 # -------------------------------------------------------------------
 # Planarity

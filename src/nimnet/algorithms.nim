@@ -1133,6 +1133,31 @@ proc intersectionAll*(DGs: seq[DiGraph]): DiGraph =
     DR = intersection(DR, DGs[i])
   return DR
 
+proc power*(G: Graph, k: int): Graph =
+  if k <= 0:
+    raise newNNError("k must be greater than zero")
+  let H = newGraph(G.nodes())
+  for n in G.nodes():
+    var seen = initTable[Node, int]()
+    var level = 1
+    var nextLevel = G.neighborsSet(n)
+    while len(nextLevel) != 0:
+      let thisLevel = nextLevel
+      nextLevel = initHashSet[Node]()
+      for v in thisLevel:
+        if v == n:
+          continue # ignore selfloop
+        if v notin seen:
+          seen[v] = level
+          nextLevel = nextLevel + G.neighborsSet(v)
+      if k <= level:
+        break
+      level += 1
+    for nbr in seen.keys():
+      H.addEdge((n, nbr))
+  return H
+
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity
