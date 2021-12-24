@@ -620,7 +620,7 @@ Tournament
 
 Traversal
 - Depth First Search
-- Breadth First Search
+- [x] Breadth First Search
 - Beam search
 - Depth First Search on Edges
 - Breadth First Search on Edges
@@ -632,7 +632,7 @@ Tree
 - Operations
 - Spanning Trees
 - Decomposition
-- Exceptions
+- [x] Exceptions
 
 Triads
 - networkx.algorithms.triads.triadic_census

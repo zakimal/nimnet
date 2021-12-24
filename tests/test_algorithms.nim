@@ -1,6 +1,7 @@
 import unittest
 
 import tables
+import sets
 
 import nimnet
 import nimnet/generators
@@ -4162,6 +4163,126 @@ test "power product of graph":
 # -------------------------------------------------------------------
 # Traversal
 # -------------------------------------------------------------------
+
+test "bfs edges on graph":
+  let karate = karateClubGraph()
+  var bfsOrderedEdges: seq[Edge] = @[]
+  for edge in bfsEdges(karate, 0):
+    bfsOrderedEdges.add(edge)
+  check bfsOrderedEdges == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 10), (0, 11), (0, 12), (0, 13), (0, 17), (0, 19), (0, 21), (0, 31), (1, 30), (2, 9), (2, 27), (2, 28), (2, 32), (5, 16), (8, 33), (31, 24), (31, 25), (27, 23), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 29), (33, 26)]
+
+test "bfs edges on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var bfsOrderedEdges: seq[Edge] = @[]
+  for edge in bfsEdges(dkarate, 0):
+    bfsOrderedEdges.add(edge)
+  check bfsOrderedEdges == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 10), (0, 11), (0, 12), (0, 13), (0, 17), (0, 19), (0, 21), (0, 31), (1, 30), (2, 9), (2, 27), (2, 28), (2, 32), (5, 16), (8, 33)]
+
+test "bfs tree on graph":
+  let karate = karateClubGraph()
+  let tree = bfsTree(karate, 0)
+  check tree.isDirected() == true
+  check tree.numberOfNodes() == 34
+  check tree.numberOfEdges() == 33
+  check tree.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+  check tree.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 10), (0, 11), (0, 12), (0, 13), (0, 17), (0, 19), (0, 21), (0, 31), (1, 30), (2, 9), (2, 27), (2, 28), (2, 32), (5, 16), (8, 33), (27, 23), (31, 24), (31, 25), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 29), (33, 26)]
+
+test "bfs tree on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let tree = bfsTree(dkarate, 0)
+  check tree.isDirected() == true
+  check tree.numberOfNodes() == 24
+  check tree.numberOfEdges() == 23
+  check tree.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 16, 17, 19, 21, 27, 28, 30, 31, 32, 33]
+  check tree.edges() == @[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 10), (0, 11), (0, 12), (0, 13), (0, 17), (0, 19), (0, 21), (0, 31), (1, 30), (2, 9), (2, 27), (2, 28), (2, 32), (5, 16), (8, 33)]
+
+test "bfs predecessor on graph":
+  let karate = karateClubGraph()
+  var ret: seq[tuple[node: Node, predecessor: Node]] = @[]
+  for pair in karate.bfsPredecessors(0):
+    ret.add(pair)
+  check ret == @[(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (10, 0), (11, 0), (12, 0), (13, 0), (17, 0), (19, 0), (21, 0), (31, 0), (30, 1), (9, 2), (27, 2), (28, 2), (32, 2), (16, 5), (33, 8), (24, 31), (25, 31), (23, 27), (14, 32), (15, 32), (18, 32), (20, 32), (22, 32), (29, 32), (26, 33)]
+
+test "bfs predecessor on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var ret: seq[tuple[node: Node, predecessor: Node]] = @[]
+  for pair in dkarate.bfsPredecessors(0):
+    ret.add(pair)
+  check ret == @[(1, 0), (2, 0), (3, 0), (4, 0), (5, 0), (6, 0), (7, 0), (8, 0), (10, 0), (11, 0), (12, 0), (13, 0), (17, 0), (19, 0), (21, 0), (31, 0), (30, 1), (9, 2), (27, 2), (28, 2), (32, 2), (16, 5), (33, 8)]
+
+test "bfs successors on graph":
+  let karate = karateClubGraph()
+  var ret: seq[tuple[node: Node, successors: seq[Node]]] = @[]
+  for pair in karate.bfsSuccessors(0):
+    ret.add(pair)
+  check ret == @[
+    (0, @[1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 17, 19, 21, 31]),
+    (1, @[30]),
+    (2, @[9, 27, 28, 32]),
+    (5, @[16]),
+    (8, @[33]),
+    (31, @[24, 25]),
+    (27, @[23]),
+    (32, @[14, 15, 18, 20, 22, 29]),
+    (33, @[26])
+  ]
+
+test "bfs successors on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var ret: seq[tuple[node: Node, successors: seq[Node]]] = @[]
+  for pair in dkarate.bfsSuccessors(0):
+    ret.add(pair)
+  check ret == @[
+    (0, @[1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 17, 19, 21, 31]),
+    (1, @[30]),
+    (2, @[9, 27, 28, 32]),
+    (5, @[16]),
+    (8, @[33])]
+
+test "descendants at distance on graph":
+  let karate = karateClubGraph()
+
+  var nodesAtDist0: HashSet[Node] = initHashSet[Node]()
+  for node in @[0]:
+    nodesAtDist0.incl(node)
+  check nodesAtDist0 == karate.descendantsAtDistance(0, 0)
+
+  var nodesAtDist1: HashSet[Node] = initHashSet[Node]()
+  for node in @[1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 17, 19, 21, 31]:
+    nodesAtDist1.incl(node)
+  check nodesAtDist1 == karate.descendantsAtDistance(0, 1)
+
+  var nodesAtDist2: HashSet[Node] = initHashSet[Node]()
+  for node in @[32, 33, 9, 16, 24, 25, 27, 28, 30]:
+    nodesAtDist2.incl(node)
+  check nodesAtDist2 == karate.descendantsAtDistance(0, 2)
+
+  var nodesAtDist3: HashSet[Node] = initHashSet[Node]()
+  for node in @[14, 15, 18, 20, 22, 23, 26, 29]:
+    nodesAtDist3.incl(node)
+  check nodesAtDist3 == karate.descendantsAtDistance(0, 3)
+
+  check len(karate.descendantsAtDistance(0, 4)) == 0
+
+test "descendants at distance on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+
+  var nodesAtDist0: HashSet[Node] = initHashSet[Node]()
+  for node in @[0]:
+    nodesAtDist0.incl(node)
+  check nodesAtDist0 == dkarate.descendantsAtDistance(0, 0)
+
+  var nodesAtDist1: HashSet[Node] = initHashSet[Node]()
+  for node in @[1, 2, 3, 4, 5, 6, 7, 8, 10, 11, 12, 13, 17, 19, 21, 31]:
+    nodesAtDist1.incl(node)
+  check nodesAtDist1 == dkarate.descendantsAtDistance(0, 1)
+
+  var nodesAtDist2: HashSet[Node] = initHashSet[Node]()
+  for node in @[32, 33, 9, 16, 27, 28, 30]:
+    nodesAtDist2.incl(node)
+  check nodesAtDist2 == dkarate.descendantsAtDistance(0, 2)
+
+  check len(dkarate.descendantsAtDistance(0, 3)) == 0
 
 # -------------------------------------------------------------------
 # Tree

@@ -5,6 +5,7 @@ import sets
 import math
 import heapqueue
 import algorithm
+import deques
 
 import ../nimnet
 
@@ -1242,6 +1243,248 @@ proc power*(G: Graph, k: int): Graph =
 # TODO:
 # Traversal
 # -------------------------------------------------------------------
+
+iterator genericBfsEdges(
+  G: Graph,
+  source: Node,
+  neighbors: proc(node: Node): iterator: Node = nil,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var neighborsUsing: proc(node: Node): iterator: Node = neighbors
+
+  if neighbors == nil:
+    neighborsUsing = proc(node: Node): iterator: Node =
+      return G.neighborsIterator(node)
+
+  if sortNeighbors != nil:
+    neighborsUsing =
+      proc(node: Node): iterator: Node =
+        return iterator: Node =
+          for neighbor in sortNeighbors(neighbors(node).toSeq()):
+            yield neighbor
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
+  queue.addLast(
+    (source, depthLimitUsing, neighborsUsing(source))
+  )
+
+  while len(queue) != 0:
+    let (parent, depthNow, children) = queue.popFirst()
+    for child in children:
+      if child notin visited:
+        yield (parent, child)
+        visited.incl(child)
+        if 1 < depthNow:
+          queue.addLast((child, depthNow - 1, neighborsUsing(child)))
+iterator genericBfsEdges(
+  DG: DiGraph,
+  source: Node,
+  successors: proc(node: Node): iterator: Node = nil,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successorsUsing: proc(node: Node): iterator: Node = successors
+
+  if successors == nil:
+    successorsUsing = proc(node: Node): iterator: Node =
+      return DG.successorsIterator(node)
+
+  if sortSuccessors != nil:
+    successorsUsing =
+      proc(node: Node): iterator: Node =
+        return iterator: Node =
+          for neighbor in sortSuccessors(successors(node).toSeq()):
+            yield neighbor
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
+  queue.addLast(
+    (source, depthLimitUsing, successorsUsing(source))
+  )
+
+  while len(queue) != 0:
+    let (parent, depthNow, children) = queue.popFirst()
+    for child in children:
+      if child notin visited:
+        yield (parent, child)
+        visited.incl(child)
+        if 1 < depthNow:
+          queue.addLast((child, depthNow - 1, successorsUsing(child)))
+
+iterator bfsEdges*(
+  G: Graph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successors = proc(node: Node): iterator: Node =
+    return G.neighborsIterator(node)
+  for edge in genericBfsEdges(G, source, successors, depthLimit, sortNeighbors):
+    yield edge
+iterator bfsEdges*(
+  DG: DiGraph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successors: proc(node: Node): iterator: Node
+  if reverse:
+    successors = proc(node: Node): iterator: Node =
+      return DG.predecessorsIterator(node)
+  else:
+    successors = proc(node: Node): iterator: Node =
+      return DG.successorsIterator(node)
+  for edge in genericBfsEdges(DG, source, successors, depthLimit, sortSuccessors):
+    yield edge
+
+proc bfsTree*(
+  G: Graph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): DiGraph =
+  let T = newDiGraph()
+  T.addNode(source)
+  T.addEdgesFrom(
+    bfsEdges(G, source, reverse=reverse, depthLimit=depthLimit, sortNeighbors=sortNeighbors).toSeq()
+  )
+  return T
+proc bfsTree*(
+  DG: DiGraph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): DiGraph =
+  let T = newDiGraph()
+  T.addNode(source)
+  T.addEdgesFrom(
+    bfsEdges(DG, source, reverse=reverse, depthLimit=depthLimit, sortSuccessors=sortSuccessors).toSeq()
+  )
+  return T
+
+iterator bfsPredecessors*(
+  G: Graph,
+  source: Node,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, predecessor: Node] =
+  for (s, t) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
+    yield (t, s)
+iterator bfsPredecessors*(
+  DG: DiGraph,
+  source: Node,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, predecessor: Node] =
+  for (s, t) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
+    yield (t, s)
+
+iterator bfsSuccessors*(
+  G: Graph,
+  source: Node,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, successors: seq[Node]] =
+  var parent = source
+  var children: seq[Node] = @[]
+  for (p, c) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
+    if p == parent:
+      children.add(c)
+      continue
+    yield (parent, children)
+    children = @[c]
+    parent = p
+  yield (parent, children)
+iterator bfsSuccessors*(
+  DG: DiGraph,
+  source: Node,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, successors: seq[Node]] =
+  var parent = source
+  var children: seq[Node] = @[]
+  for (p, c) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
+    if p == parent:
+      children.add(c)
+      continue
+    yield (parent, children)
+    children = @[c]
+    parent = p
+  yield (parent, children)
+
+proc descendantsAtDistance*(
+  G: Graph,
+  source: Node,
+  distance: int
+): HashSet[Node] =
+  if not G.hasNode(source):
+    raise newNNError(fmt"node {source} not in graph")
+
+  var currentDistance = 0
+
+  var currentLayer = initHashSet[Node]()
+  currentLayer.incl(source)
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  while currentDistance < distance:
+    var nextLayer = initHashSet[Node]()
+    for node in currentLayer:
+      for child in G.neighbors(node):
+        if child notin visited:
+          visited.incl(child)
+          nextLayer.incl(child)
+    currentLayer = nextLayer
+    currentDistance += 1
+
+  return currentLayer
+
+proc descendantsAtDistance*(
+  DG: DiGraph,
+  source: Node,
+  distance: int
+): HashSet[Node] =
+  if not DG.hasNode(source):
+    raise newNNError(fmt"node {source} not in graph")
+
+  var currentDistance = 0
+
+  var currentLayer = initHashSet[Node]()
+  currentLayer.incl(source)
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  while currentDistance < distance:
+    var nextLayer = initHashSet[Node]()
+    for node in currentLayer:
+      for child in DG.successors(node):
+        if child notin visited:
+          visited.incl(child)
+          nextLayer.incl(child)
+    currentLayer = nextLayer
+    currentDistance += 1
+
+  return currentLayer
 
 # -------------------------------------------------------------------
 # TODO:
