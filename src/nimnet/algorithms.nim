@@ -92,6 +92,42 @@ proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
 # Clutering
 # -------------------------------------------------------------------
 
+iterator trianglesAndDegree(G: Graph, nodes: seq[Node] = @[]): tuple[v: Node, len: int, nTri: int, genDegree: Table[int, int]] =
+  var nodesNbrs: Table[Node, HashSet[Node]]
+  if len(nodes) == 0:
+    nodesNbrs = G.adj
+  else:
+    for n in nodes:
+      nodesNbrs[n] = G.adj[n]
+
+  for (v, vNbrs) in nodesNbrs.pairs():
+    var vSet = initHashSet[Node]()
+    vSet.incl(v)
+    let vs = vNbrs - vSet
+    var genDegree = initTable[int, int]()
+    for w in vs:
+      var wSet = initHashSet[Node]()
+      wSet.incl(w)
+      if len(vs * (G.adj[w] - wSet)) notin genDegree:
+        genDegree[len(vs * (G.adj[w] - wSet))] = 1
+      else:
+        genDegree[len(vs * (G.adj[w] - wSet))] += 1
+    var nTriangles = 0
+    for (k, val) in genDegree.pairs():
+      nTriangles += (k * val)
+    yield (v, len(vs), nTriangles, genDegree)
+
+proc triangles*(
+  G: Graph,
+  nodes: seq[Node] = @[]
+): Table[Node, int] =
+  if len(nodes) == 1 and nodes[0] in G.nodesSet():
+    return {nodes[0]: trianglesAndDegree(G, nodes).toSeq()[0].nTri div 2}.toTable()
+  var ret = initTable[Node, int]()
+  for (v, d, t, _) in G.trianglesAndDegree(nodes):
+    ret[v] = t div 2
+  return ret
+
 # -------------------------------------------------------------------
 # TODO:
 # Coloring

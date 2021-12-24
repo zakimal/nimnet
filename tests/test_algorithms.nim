@@ -74,6 +74,13 @@ test "out-degree centrality for directed graph":
 # Clutering
 # -------------------------------------------------------------------
 
+test "triangles in graph":
+  let karate = karateClubGraph()
+  let got = karate.triangles()
+  let expected = {0: 18, 1: 12, 2: 11, 3: 10, 4: 2, 5: 3, 6: 3, 7: 6, 8: 5, 9: 0, 10: 2, 11: 0, 12: 1, 13: 6, 14: 1, 15: 1, 16: 1, 17: 1, 18: 1, 19: 1, 20: 1, 21: 1, 22: 1, 23: 4, 24: 1, 25: 1, 26: 1, 27: 1, 28: 1, 29: 4, 30: 3, 31: 3, 32: 13, 33: 15}.toTable()
+  for (node, numTri) in got.pairs():
+    check numTri == expected[node]
+
 # -------------------------------------------------------------------
 # Coloring
 # -------------------------------------------------------------------

@@ -284,7 +284,7 @@ Clique
 - networkx.algorithms.clique.max_weight_clique
 
 Clustering
-- networkx.algorithms.cluster.triangles
+- [x] networkx.algorithms.cluster.triangles
 - networkx.algorithms.cluster.transitivity
 - networkx.algorithms.cluster.clustering
 - networkx.algorithms.cluster.average_clustering
