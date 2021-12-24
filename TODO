@@ -526,10 +526,10 @@ Operators
 - [x] networkx.algorithms.operators.binary.difference
 - [x] networkx.algorithms.operators.binary.symmetric_difference
 - [x] networkx.algorithms.operators.binary.full_join
-- networkx.algorithms.operators.all.compose_all
-- networkx.algorithms.operators.all.union_all
-- networkx.algorithms.operators.all.disjoint_union_all
-- networkx.algorithms.operators.all.intersection_all
+- [x] networkx.algorithms.operators.all.compose_all
+- [x] networkx.algorithms.operators.all.union_all
+- [x] networkx.algorithms.operators.all.disjoint_union_all
+- [x] networkx.algorithms.operators.all.intersection_all
 - networkx.algorithms.operators.product.cartesian_product
 - networkx.algorithms.operators.product.lexicographic_product
 - networkx.algorithms.operators.product.rooted_product

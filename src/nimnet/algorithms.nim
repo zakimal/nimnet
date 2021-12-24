@@ -1073,6 +1073,66 @@ proc fullJoin*(DG: DiGraph, DH: DiGraph): DiGraph =
       DR.addEdge(j, i)
   return DR
 
+proc composeAll*(Gs: seq[Graph]): Graph =
+  if len(Gs) == 0:
+    raise newNNError("cannot apply composeAll to empty graph sequence")
+  var R = Gs[0]
+  for G in Gs:
+    R = compose(R, G)
+  return R
+proc composeAll*(DGs: seq[DiGraph]): DiGraph =
+  if len(DGs) == 0:
+    raise newNNError("cannot apply composeAll to empty graph sequence")
+  var DR = DGs[0]
+  for DG in DGs:
+    DR = compose(DR, DG)
+  return DR
+
+proc unionAll*(Gs: seq[Graph]): Graph =
+  if len(Gs) == 0:
+    raise newNNError("cannot apply unionAll to empty graph sequence")
+  var R = Gs[0]
+  for G in Gs:
+    R = union(R, G)
+  return R
+proc unionAll*(DGs: seq[DiGraph]): DiGraph =
+  if len(DGs) == 0:
+    raise newNNError("cannot apply unionAll to empty graph sequence")
+  var DR = DGs[0]
+  for DG in DGs:
+    DR = union(DR, DG)
+  return DR
+
+proc disjointUnionAll*(Gs: seq[Graph]): Graph =
+  if len(Gs) == 0:
+    raise newNNError("cannot apply disjointUnionAll to empty graph sequence")
+  var R = Gs[0]
+  for G in Gs:
+    R = disjointUnion(R, G)
+  return R
+proc disjointUnionAll*(DGs: seq[DiGraph]): DiGraph =
+  if len(DGs) == 0:
+    raise newNNError("cannot apply disjointUnionAll to empty graph sequence")
+  var DR = DGs[0]
+  for DG in DGs:
+    DR = disjointUnion(DR, DG)
+  return DR
+
+proc intersectionAll*(Gs: seq[Graph]): Graph =
+  if len(Gs) == 0:
+    raise newNNError("cannot apply intersectionAll to empty graph sequence")
+  var R = Gs[0]
+  for G in Gs:
+    R = intersection(R, G)
+  return R
+proc intersectionAll*(DGs: seq[DiGraph]): DiGraph =
+  if len(DGs) == 0:
+    raise newNNError("cannot apply intersectionAll to empty graph sequence")
+  var DR = DGs[0]
+  for DG in DGs:
+    DR = intersection(DR, DG)
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity
