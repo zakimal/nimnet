@@ -3954,6 +3954,26 @@ test "symmetric difference of directed graphs":
   check DR.nodes() == @[0, 1, 2]
   check DR.edges() == @[(0, 1), (0, 2), (2, 1)]
 
+test "full join of graphs":
+  let G = newGraph(@[(0, 3), (1, 2), (1, 3)])
+  let H = newGraph(@[(4, 6), (5, 7), (6, 7)])
+  let R = fullJoin(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 8
+  check R.numberOfEdges() == 22
+  check R.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7]
+  check R.edges() == @[(0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 4), (2, 5), (2, 6), (2, 7), (3, 4), (3, 5), (3, 6), (3, 7), (4, 6), (5, 7), (6, 7)]
+
+test "full join of directed graphs":
+  let DG = newDiGraph(@[(0, 3), (1, 2), (1, 3)])
+  let DH = newDiGraph(@[(4, 6), (5, 7), (6, 7)])
+  let DR = fullJoin(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 8
+  check DR.numberOfEdges() == 38
+  check DR.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7]
+  check DR.edges() == @[(0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 4), (2, 5), (2, 6), (2, 7), (3, 4), (3, 5), (3, 6), (3, 7), (4, 0), (4, 1), (4, 2), (4, 3), (4, 6), (5, 0), (5, 1), (5, 2), (5, 3), (5, 7), (6, 0), (6, 1), (6, 2), (6, 3), (6, 7), (7, 0), (7, 1), (7, 2), (7, 3)]
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------

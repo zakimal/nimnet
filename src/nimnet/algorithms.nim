@@ -1059,6 +1059,20 @@ proc symmetricDifference*(DG: DiGraph, DH: DiGraph): DiGraph =
       DR.addEdge(edge)
   return DR
 
+proc fullJoin*(G: Graph, H: Graph): Graph =
+  let R = union(G, H)
+  for i in G.nodes():
+    for j in H.nodes():
+      R.addEdge(i, j)
+  return R
+proc fullJoin*(DG: DiGraph, DH: DiGraph): DiGraph =
+  let DR = union(DG, DH)
+  for i in DG.nodes():
+    for j in DH.nodes():
+      DR.addEdge(i, j)
+      DR.addEdge(j, i)
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity
