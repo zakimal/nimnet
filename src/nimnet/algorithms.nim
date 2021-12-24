@@ -1082,7 +1082,7 @@ proc composeAll*(Gs: seq[Graph]): Graph =
   return R
 proc composeAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
-    raise newNNError("cannot apply composeAll to empty graph sequence")
+    raise newNNError("cannot apply composeAll to empty directed graph sequence")
   var DR = DGs[0]
   for i in 1..<len(DGs):
     DR = compose(DR, DGs[i])
@@ -1097,7 +1097,7 @@ proc unionAll*(Gs: seq[Graph]): Graph =
   return R
 proc unionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
-    raise newNNError("cannot apply unionAll to empty graph sequence")
+    raise newNNError("cannot apply unionAll to empty directed graph sequence")
   var DR = DGs[0]
   for i in 1..<len(DGs):
     DR = union(DR, DGs[i])
@@ -1112,7 +1112,7 @@ proc disjointUnionAll*(Gs: seq[Graph]): Graph =
   return R
 proc disjointUnionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
-    raise newNNError("cannot apply disjointUnionAll to empty graph sequence")
+    raise newNNError("cannot apply disjointUnionAll to empty directed graph sequence")
   var DR = DGs[0]
   for i in 1..<len(DGs):
     DR = disjointUnion(DR, DGs[i])
@@ -1127,7 +1127,7 @@ proc intersectionAll*(Gs: seq[Graph]): Graph =
   return R
 proc intersectionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
-    raise newNNError("cannot apply intersectionAll to empty graph sequence")
+    raise newNNError("cannot apply intersectionAll to empty directed graph sequence")
   var DR = DGs[0]
   for i in 1..<len(DGs):
     DR = intersection(DR, DGs[i])
