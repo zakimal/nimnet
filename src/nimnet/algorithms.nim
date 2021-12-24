@@ -893,6 +893,34 @@ proc withinInterCluster*(
 # Operators
 # -------------------------------------------------------------------
 
+proc complement*(G: Graph): Graph =
+  let R = newGraph()
+  R.addNodesFrom(G.nodes())
+  var edges: seq[Edge] = @[]
+  for (n, nbrs) in G.adj.pairs():
+    for n2 in G.nodes():
+      if n != n2:
+        if n2 notin nbrs:
+          edges.add((n, n2))
+  R.addEdgesFrom(edges)
+  return R
+proc complement*(DG: DiGraph): DiGraph =
+  let R = newDiGraph()
+  R.addNodesFrom(DG.nodes())
+  var edges: seq[Edge] = @[]
+  for (n, nbrs) in DG.succ.pairs():
+    for n2 in DG.nodes():
+      if n != n2:
+        if n2 notin nbrs:
+          edges.add((n, n2))
+  R.addEdgesFrom(edges)
+  return R
+
+proc reverse*(DG: DiGraph): DiGraph =
+  return DG.reversed()
+proc reverseInplace*(DG: var DiGraph) =
+  DG = DG.reverse()
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity
