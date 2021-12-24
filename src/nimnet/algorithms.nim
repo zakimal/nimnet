@@ -1806,7 +1806,6 @@ iterator bfsBeamEdges*(
   for edge in genericBfsEdges(DG, source, successors=successors):
     yield edge
 
-
 # -------------------------------------------------------------------
 # TODO:
 # Tree
