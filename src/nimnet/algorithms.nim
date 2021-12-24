@@ -204,6 +204,37 @@ proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
 # Isolates
 # -------------------------------------------------------------------
 
+proc isIsolate*(G: Graph, n: Node): bool =
+  return G.degree(n) == 0
+proc isIsolate*(DG: DiGraph, n: Node): bool =
+  return DG.degree(n) == 0
+
+proc isolates*(G: Graph): seq[Node] =
+  var ret: seq[Node] = @[]
+  for n in G.nodes():
+    if G.isIsolate(n):
+      ret.add(n)
+  return ret
+proc isolatesSet*(G: Graph): HashSet[Node] =
+  return G.isolates().toHashSet()
+proc isolatesSeq*(G: Graph): seq[Node] =
+  return G.isolates()
+proc isolates*(DG: DiGraph): seq[Node] =
+  var ret: seq[Node] = @[]
+  for n in DG.nodes():
+    if DG.isIsolate(n):
+      ret.add(n)
+  return ret
+proc isolatesSet*(DG: DiGraph): HashSet[Node] =
+  return DG.isolates().toHashSet()
+proc isolatesSeq*(DG: DiGraph): seq[Node] =
+  return DG.isolates()
+
+proc numberOfIsolates*(G: Graph): int =
+  return len(G.isolates())
+proc numberOfIsolates*(DG: DiGraph): int =
+  return len(DG.isolates())
+
 # -------------------------------------------------------------------
 # TODO:
 # Isomorphism

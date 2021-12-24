@@ -165,6 +165,24 @@ test "out-degree centrality for directed graph":
 # Isolates
 # -------------------------------------------------------------------
 
+test "isolated nodes in graph":
+  let G = newGraph()
+  G.addEdge(1, 2)
+  G.addNode(3)
+  check G.isolates() == @[3]
+  check G.isIsolate(1) == false
+  check G.isIsolate(3) == true
+  check G.numberOfIsolates() == 1
+
+test "isolated nodes in directed graph":
+  let DG = newDiGraph()
+  DG.addEdge(1, 2)
+  DG.addNode(3)
+  check DG.isolates() == @[3]
+  check DG.isIsolate(1) == false
+  check DG.isIsolate(3) == true
+  check DG.numberOfIsolates() == 1
+
 # -------------------------------------------------------------------
 # Isomorphism
 # -------------------------------------------------------------------

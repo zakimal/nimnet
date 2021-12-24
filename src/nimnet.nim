@@ -1212,6 +1212,37 @@ proc outDegreeHistogram*(dg: DiGraph): seq[int] =
     ret[outDegree] = freq
   return ret
 
+proc degree*(dg: DiGraph): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in dg.succ.keys():
+    ret[node] = dg.succ[node].len() + dg.pred[node].len()
+  return ret
+proc degree*(dg: DiGraph, node: Node): int =
+  return dg.succ[node].len() + dg.pred[node].len()
+proc degree*(dg: DiGraph, nodes: seq[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.succ[node].len() + dg.pred[node].len()
+  return ret
+proc degree*(dg: DiGraph, nodes: HashSet[Node]): Table[Node, int] =
+  var ret = initTable[Node, int]()
+  for node in nodes:
+    ret[node] = dg.succ[node].len() + dg.pred[node].len()
+  return ret
+proc degreeHistogram*(dg: DiGraph): seq[int] =
+  var counts = initTable[int, int]()
+  var maxDegree = 0
+  for degree in dg.degree().values():
+    maxDegree = max(maxDegree, degree)
+    if degree notin counts:
+      counts[degree] = 1
+    else:
+      counts[degree] += 1
+  var ret = newSeq[int](maxDegree+1)
+  for (degree, freq) in counts.pairs():
+    ret[degree] = freq
+  return ret
+
 proc density*(dg: DiGraph): float =
   var n = dg.numberOfNodes()
   var m = dg.numberOfEdges()
