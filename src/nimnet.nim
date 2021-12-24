@@ -438,6 +438,7 @@ proc density*(g: Graph): float =
 
 proc nodeSubgraph*(g: Graph, nodes: HashSet[Node]): Graph =
   var ret = newGraph()
+  ret.addNodesFrom(nodes)
   for u in nodes:
     for v in g.adj[u]:
       if v in nodes:
@@ -445,6 +446,7 @@ proc nodeSubgraph*(g: Graph, nodes: HashSet[Node]): Graph =
   return ret
 proc nodeSubgraph*(g: Graph, nodes: seq[Node]): Graph =
   var ret = newGraph()
+  ret.addNodesFrom(nodes)
   let nodesSet = nodes.toHashSet()
   for u in nodes:
     for v in g.adj[u]:
@@ -1252,6 +1254,7 @@ proc density*(dg: DiGraph): float =
 
 proc nodeSubgraph*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
   var ret = newDiGraph()
+  ret.addNodesFrom(nodes)
   for u in nodes:
     for v in dg.succ[u]:
       if v in nodes:
@@ -1259,6 +1262,7 @@ proc nodeSubgraph*(dg: DiGraph, nodes: HashSet[Node]): DiGraph =
   return ret
 proc nodeSubgraph*(dg: DiGraph, nodes: seq[Node]): DiGraph =
   var ret = newDiGraph()
+  ret.addNodesFrom(nodes)
   let nodesSet = nodes.toHashSet()
   for u in nodes:
     for v in dg.succ[u]:
@@ -1729,20 +1733,24 @@ proc `-=`*(dg: DiGraph, edges: openArray[Edge]) =
 
 proc copyAsGraph*(g: Graph): Graph =
   let ret = newGraph()
+  ret.addNodesFrom(g.nodes())
   ret.addEdgesFrom(g.edges())
   return ret
 proc copyAsDiGraph*(g: Graph): DiGraph =
   let ret = newDiGraph()
+  ret.addNodesFrom(g.nodes())
   for edge in g.edges():
     ret.addEdge(edge.u, edge.v)
     ret.addEdge(edge.v, edge.u)
   return ret
 proc copyAsDiGraph*(dg: DiGraph): DiGraph =
   let ret = newDiGraph()
+  ret.addNodesFrom(dg.nodes())
   ret.addEdgesFrom(dg.edges())
   return ret
 proc copyAsGraph*(dg: DiGraph): Graph =
   let ret = newGraph()
+  ret.addNodesFrom(dg.nodes())
   for edge in dg.edges():
     ret.addEdge(edge)
   return ret

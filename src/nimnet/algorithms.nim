@@ -921,6 +921,21 @@ proc reverse*(DG: DiGraph): DiGraph =
 proc reverseInplace*(DG: var DiGraph) =
   DG = DG.reverse()
 
+proc compose*(G: Graph, H: Graph): Graph =
+  let R = newGraph()
+  R.addNodesFrom(G.nodes())
+  R.addNodesFrom(H.nodes())
+  R.addEdgesFrom(G.edges())
+  R.addEdgesFrom(H.edges())
+  return R
+proc compose*(DG: DiGraph, DH: DiGraph): DiGraph =
+  let DR = newDiGraph()
+  DR.addNodesFrom(DG.nodes())
+  DR.addNodesFrom(DH.nodes())
+  DR.addEdgesFrom(DG.edges())
+  DR.addEdgesFrom(DH.edges())
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity

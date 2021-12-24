@@ -519,7 +519,7 @@ Node Classification
 Operators
 - [x] networkx.algorithms.operators.unary.complement
 - [x] networkx.algorithms.operators.unary.reverse
-- networkx.algorithms.operators.binary.compose
+- [x] networkx.algorithms.operators.binary.compose
 - networkx.algorithms.operators.binary.union
 - networkx.algorithms.operators.binary.disjoint_union
 - networkx.algorithms.operators.binary.intersection
