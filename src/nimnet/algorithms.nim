@@ -1244,6 +1244,271 @@ proc power*(G: Graph, k: int): Graph =
 # Traversal
 # -------------------------------------------------------------------
 
+iterator dfsEdges*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1,
+): Edge =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = G.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child notin visited:
+          yield (parent, child)
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
+      else:
+        discard stack.popLast()
+iterator dfsEdges*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1,
+): Edge =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = DG.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, DG.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child notin visited:
+          yield (parent, child)
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
+      else:
+        discard stack.popLast()
+
+proc dfsTree*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): DiGraph =
+  let T = newDiGraph()
+  if source == None:
+    T.addNodesFrom(G.nodes())
+  else:
+    T.addNode(source)
+  for edge in G.dfsEdges(source, depthLimit):
+    T.addEdge(edge)
+  return T
+proc dfsTree*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): DiGraph =
+  let T = newDiGraph()
+  if source == None:
+    T.addNodesFrom(DG.nodes())
+  else:
+    T.addNode(source)
+  for edge in DG.dfsEdges(source, depthLimit):
+    T.addEdge(edge)
+  return T
+
+proc dfsPredecessors*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, Node] =
+  var ret = initTable[Node, Node]()
+  for (s, t) in dfsEdges(G, source, depthLimit):
+    ret[t] = s
+  return ret
+proc dfsPredecessors*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, Node] =
+  var ret = initTable[Node, Node]()
+  for (s, t) in dfsEdges(DG, source, depthLimit):
+    ret[t] = s
+  return ret
+
+proc dfsSuccessors*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, seq[Node]] =
+  var ret = initTable[Node, seq[Node]]()
+  for (s, t) in dfsEdges(G, source, depthLimit):
+    if s notin ret:
+      ret[s] = @[]
+    ret[s].add(t)
+  return ret
+proc dfsSuccessors*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, seq[Node]] =
+  var ret = initTable[Node, seq[Node]]()
+  for (s, t) in dfsEdges(DG, source, depthLimit):
+    if s notin ret:
+      ret[s] = @[]
+    ret[s].add(t)
+  return ret
+
+iterator dfsLabeledEdges*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): tuple[u, v: Node, direction: string] =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = G.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    yield (start, start, "forward")
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child in visited:
+          yield (parent, child, "nontree")
+        else:
+          yield (parent, child, "forward")
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
+      else:
+        discard stack.popLast()
+        if len(stack) != 0:
+          yield (stack.peekLast().parent, parent, "reverse")
+    yield (start, start, "reverse")
+iterator dfsLabeledEdges*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): tuple[u, v: Node, direction: string] =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = DG.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    yield (start, start, "forward")
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, DG.successors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child in visited:
+          yield (parent, child, "nontree")
+        else:
+          yield (parent, child, "forward")
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
+      else:
+        discard stack.popLast()
+        if len(stack) != 0:
+          yield (stack.peekLast().parent, parent, "reverse")
+    yield (start, start, "reverse")
+
+proc dfsPostOrderNodes*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
+    if d == "reverse":
+      ret.add(v)
+  return ret
+proc dfsPostOrderNodes*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
+    if d == "reverse":
+      ret.add(v)
+  return ret
+
+proc dfsPreOrderNodes*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
+    if d == "forward":
+      ret.add(v)
+  return ret
+proc dfsPreOrderNodes*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
+    if d == "forward":
+      ret.add(v)
+  return ret
+
 iterator genericBfsEdges(
   G: Graph,
   source: Node,

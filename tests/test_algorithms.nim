@@ -4164,6 +4164,97 @@ test "power product of graph":
 # Traversal
 # -------------------------------------------------------------------
 
+test "dfs edges on graph":
+  let karate = karateClubGraph()
+  var dfsOrderedEdges: seq[Edge] = @[]
+  for edge in dfsEdges(karate):
+    dfsOrderedEdges.add(edge)
+  check dfsOrderedEdges == @[(0, 1), (1, 2), (2, 3), (3, 7), (3, 12), (3, 13), (13, 33), (33, 8), (8, 30), (30, 32), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 23), (23, 25), (25, 24), (24, 27), (24, 31), (31, 28), (23, 29), (29, 26), (33, 9), (33, 19), (1, 17), (1, 21), (0, 4), (4, 6), (6, 5), (5, 10), (5, 16), (0, 11)]
+
+test "dfs edges on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var dfsOrderedEdges: seq[Edge] = @[]
+  for edge in dfsEdges(dkarate):
+    dfsOrderedEdges.add(edge)
+  check dfsOrderedEdges == @[(0, 1), (1, 2), (2, 3), (3, 7), (3, 12), (3, 13), (13, 33), (2, 8), (8, 30), (30, 32), (2, 9), (2, 27), (2, 28), (28, 31), (1, 17), (1, 19), (1, 21), (0, 4), (4, 6), (6, 16), (4, 10), (0, 5), (0, 11), (23, 25), (23, 29)]
+
+test "dfs tree on graph":
+  let karate = karateClubGraph()
+  let tree = karate.dfsTree()
+  check tree.isDirected() == true
+  check tree.numberOfNodes() == 34
+  check tree.numberOfEdges() == 33
+  check tree.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+  check tree.edges() == @[(0, 1), (0, 4), (0, 11), (1, 2), (1, 17), (1, 21), (2, 3), (3, 7), (3, 12), (3, 13), (4, 6), (5, 10), (5, 16), (6, 5), (8, 30), (13, 33), (23, 25), (23, 29), (24, 27), (24, 31), (25, 24), (29, 26), (30, 32), (31, 28), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 23), (33, 8), (33, 9), (33, 19)]
+
+test "dfs tree on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let tree = dkarate.dfsTree()
+  check tree.isDirected() == true
+  check tree.numberOfNodes() == 34
+  check tree.numberOfEdges() == 25
+  check tree.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+  check tree.edges() == @[(0, 1), (0, 4), (0, 5), (0, 11), (1, 2), (1, 17), (1, 19), (1, 21), (2, 3), (2, 8), (2, 9), (2, 27), (2, 28), (3, 7), (3, 12), (3, 13), (4, 6), (4, 10), (6, 16), (8, 30), (13, 33), (23, 25), (23, 29), (28, 31), (30, 32)]
+
+test "dfs predecessor on graph":
+  let karate = karateClubGraph()
+  let got = karate.dfsPredecessors()
+  let expected = {1: 0, 2: 1, 3: 2, 7: 3, 12: 3, 13: 3, 33: 13, 8: 33, 30: 8, 32: 30, 14: 32, 15: 32, 18: 32, 20: 32, 22: 32, 23: 32, 25: 23, 24: 25, 27: 24, 31: 24, 28: 31, 29: 23, 26: 29, 9: 33, 19: 33, 17: 1, 21: 1, 4: 0, 6: 4, 5: 6, 10: 5, 16: 5, 11: 0}.toTable()
+  for (node, predecessor) in got.pairs():
+    check predecessor == expected[node]
+
+test "dfs predecessor on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = dkarate.dfsPredecessors()
+  let expected = {1: 0, 2: 1, 3: 2, 7: 3, 12: 3, 13: 3, 33: 13, 8: 2, 30: 8, 32: 30, 9: 2, 27: 2, 28: 2, 31: 28, 17: 1, 19: 1, 21: 1, 4: 0, 6: 4, 16: 6, 10: 4, 5: 0, 11: 0, 25: 23, 29: 23}.toTable()
+  for (node, predecessor) in got.pairs():
+    check predecessor == expected[node]
+
+test "dfs successors on graph":
+  let karate = karateClubGraph()
+  let got = karate.dfsSuccessors()
+  let expected = {0: @[1, 4, 11], 1: @[2, 17, 21], 2: @[3], 3: @[7, 12, 13], 13: @[33], 33: @[8, 9, 19], 8: @[30], 30: @[32], 32: @[14, 15, 18, 20, 22, 23], 23: @[25, 29], 25: @[24], 24: @[27, 31], 31: @[28], 29: @[26], 4: @[6], 6: @[5], 5: @[10, 16]
+  }.toTable()
+  for (node, successors) in got.pairs():
+    check successors == expected[node]
+
+test "dfs successors on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = dkarate.dfsSuccessors()
+  let expected = {0: @[1, 4, 5, 11], 1: @[2, 17, 19, 21], 2: @[3, 8, 9, 27, 28], 3: @[7, 12, 13], 13: @[33], 8: @[30], 30: @[32], 28: @[31], 4: @[6, 10], 6: @[16], 23: @[25, 29]}.toTable()
+  for (node, successors) in got.pairs():
+    check successors == expected[node]
+
+test "dfs labeled edges on graph":
+  let karate = karateClubGraph()
+  var labeledEdges: seq[tuple[u, v: Node, direction: string]] = @[]
+  for labeledEdge in karate.dfsLabeledEdges():
+    labeledEdges.add(labeledEdge)
+  check labeledEdges == @[(0, 0, "forward"), (0, 1, "forward"), (1, 0, "nontree"), (1, 2, "forward"), (2, 0, "nontree"), (2, 1, "nontree"), (2, 3, "forward"), (3, 0, "nontree"), (3, 1, "nontree"), (3, 2, "nontree"), (3, 7, "forward"), (7, 0, "nontree"), (7, 1, "nontree"), (7, 2, "nontree"), (7, 3, "nontree"), (3, 7, "reverse"), (3, 12, "forward"), (12, 0, "nontree"), (12, 3, "nontree"), (3, 12, "reverse"), (3, 13, "forward"), (13, 0, "nontree"), (13, 1, "nontree"), (13, 2, "nontree"), (13, 3, "nontree"), (13, 33, "forward"), (33, 8, "forward"), (8, 0, "nontree"), (8, 2, "nontree"), (8, 30, "forward"), (30, 1, "nontree"), (30, 8, "nontree"), (30, 32, "forward"), (32, 2, "nontree"), (32, 8, "nontree"), (32, 14, "forward"), (14, 32, "nontree"), (14, 33, "nontree"), (32, 14, "reverse"), (32, 15, "forward"), (15, 32, "nontree"), (15, 33, "nontree"), (32, 15, "reverse"), (32, 18, "forward"), (18, 32, "nontree"), (18, 33, "nontree"), (32, 18, "reverse"), (32, 20, "forward"), (20, 32, "nontree"), (20, 33, "nontree"), (32, 20, "reverse"), (32, 22, "forward"), (22, 32, "nontree"), (22, 33, "nontree"), (32, 22, "reverse"), (32, 23, "forward"), (23, 25, "forward"), (25, 23, "nontree"), (25, 24, "forward"), (24, 25, "nontree"), (24, 27, "forward"), (27, 2, "nontree"), (27, 23, "nontree"), (27, 24, "nontree"), (27, 33, "nontree"), (24, 27, "reverse"), (24, 31, "forward"), (31, 0, "nontree"), (31, 24, "nontree"), (31, 25, "nontree"), (31, 28, "forward"), (28, 2, "nontree"), (28, 31, "nontree"), (28, 33, "nontree"), (31, 28, "reverse"), (31, 32, "nontree"), (31, 33, "nontree"), (24, 31, "reverse"), (25, 24, "reverse"), (25, 31, "nontree"), (23, 25, "reverse"), (23, 27, "nontree"), (23, 29, "forward"), (29, 23, "nontree"), (29, 26, "forward"), (26, 29, "nontree"), (26, 33, "nontree"), (29, 26, "reverse"), (29, 32, "nontree"), (29, 33, "nontree"), (23, 29, "reverse"), (23, 32, "nontree"), (23, 33, "nontree"), (32, 23, "reverse"), (32, 29, "nontree"), (32, 30, "nontree"), (32, 31, "nontree"), (32, 33, "nontree"), (30, 32, "reverse"), (30, 33, "nontree"), (8, 30, "reverse"), (8, 32, "nontree"), (8, 33, "nontree"), (33, 8, "reverse"), (33, 9, "forward"), (9, 2, "nontree"), (9, 33, "nontree"), (33, 9, "reverse"), (33, 13, "nontree"), (33, 14, "nontree"), (33, 15, "nontree"), (33, 18, "nontree"), (33, 19, "forward"), (19, 0, "nontree"), (19, 1, "nontree"), (19, 33, "nontree"), (33, 19, "reverse"), (33, 20, "nontree"), (33, 22, "nontree"), (33, 23, "nontree"), (33, 26, "nontree"), (33, 27, "nontree"), (33, 28, "nontree"), (33, 29, "nontree"), (33, 30, "nontree"), (33, 31, "nontree"), (33, 32, "nontree"), (13, 33, "reverse"), (3, 13, "reverse"), (2, 3, "reverse"), (2, 7, "nontree"), (2, 8, "nontree"), (2, 9, "nontree"), (2, 13, "nontree"), (2, 27, "nontree"), (2, 28, "nontree"), (2, 32, "nontree"), (1, 2, "reverse"), (1, 3, "nontree"), (1, 7, "nontree"), (1, 13, "nontree"), (1, 17, "forward"), (17, 0, "nontree"), (17, 1, "nontree"), (1, 17, "reverse"), (1, 19, "nontree"), (1, 21, "forward"), (21, 0, "nontree"), (21, 1, "nontree"), (1, 21, "reverse"), (1, 30, "nontree"), (0, 1, "reverse"), (0, 2, "nontree"), (0, 3, "nontree"), (0, 4, "forward"), (4, 0, "nontree"), (4, 6, "forward"), (6, 0, "nontree"), (6, 4, "nontree"), (6, 5, "forward"), (5, 0, "nontree"), (5, 6, "nontree"), (5, 10, "forward"), (10, 0, "nontree"), (10, 4, "nontree"), (10, 5, "nontree"), (5, 10, "reverse"), (5, 16, "forward"), (16, 5, "nontree"), (16, 6, "nontree"), (5, 16, "reverse"), (6, 5, "reverse"), (6, 16, "nontree"), (4, 6, "reverse"), (4, 10, "nontree"), (0, 4, "reverse"), (0, 5, "nontree"), (0, 6, "nontree"), (0, 7, "nontree"), (0, 8, "nontree"), (0, 10, "nontree"), (0, 11, "forward"), (11, 0, "nontree"), (0, 11, "reverse"), (0, 12, "nontree"), (0, 13, "nontree"), (0, 17, "nontree"), (0, 19, "nontree"), (0, 21, "nontree"), (0, 31, "nontree"), (0, 0, "reverse")]
+
+test "dfs labeled edges on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var labeledEdges: seq[tuple[u, v: Node, direction: string]] = @[]
+  for labeledEdge in dkarate.dfsLabeledEdges():
+    labeledEdges.add(labeledEdge)
+  check labeledEdges == @[(0, 0, "forward"), (0, 1, "forward"), (1, 2, "forward"), (2, 3, "forward"), (3, 7, "forward"), (3, 7, "reverse"), (3, 12, "forward"), (3, 12, "reverse"), (3, 13, "forward"), (13, 33, "forward"), (13, 33, "reverse"), (3, 13, "reverse"), (2, 3, "reverse"), (2, 7, "nontree"), (2, 8, "forward"), (8, 30, "forward"), (30, 32, "forward"), (32, 33, "nontree"), (30, 32, "reverse"), (30, 33, "nontree"), (8, 30, "reverse"), (8, 32, "nontree"), (8, 33, "nontree"), (2, 8, "reverse"), (2, 9, "forward"), (9, 33, "nontree"), (2, 9, "reverse"), (2, 13, "nontree"), (2, 27, "forward"), (27, 33, "nontree"), (2, 27, "reverse"), (2, 28, "forward"), (28, 31, "forward"), (31, 32, "nontree"), (31, 33, "nontree"), (28, 31, "reverse"), (28, 33, "nontree"), (2, 28, "reverse"), (2, 32, "nontree"), (1, 2, "reverse"), (1, 3, "nontree"), (1, 7, "nontree"), (1, 13, "nontree"), (1, 17, "forward"), (1, 17, "reverse"), (1, 19, "forward"), (19, 33, "nontree"), (1, 19, "reverse"), (1, 21, "forward"), (1, 21, "reverse"), (1, 30, "nontree"), (0, 1, "reverse"), (0, 2, "nontree"), (0, 3, "nontree"), (0, 4, "forward"), (4, 6, "forward"), (6, 16, "forward"), (6, 16, "reverse"), (4, 6, "reverse"), (4, 10, "forward"), (4, 10, "reverse"), (0, 4, "reverse"), (0, 5, "forward"), (5, 6, "nontree"), (5, 10, "nontree"), (5, 16, "nontree"), (0, 5, "reverse"), (0, 6, "nontree"), (0, 7, "nontree"), (0, 8, "nontree"), (0, 10, "nontree"), (0, 11, "forward"), (0, 11, "reverse"), (0, 12, "nontree"), (0, 13, "nontree"), (0, 17, "nontree"), (0, 19, "nontree"), (0, 21, "nontree"), (0, 31, "nontree"), (0, 0, "reverse"), (14, 14, "forward"), (14, 32, "nontree"), (14, 33, "nontree"), (14, 14, "reverse"), (15, 15, "forward"), (15, 32, "nontree"), (15, 33, "nontree"), (15, 15, "reverse"), (18, 18, "forward"), (18, 32, "nontree"), (18, 33, "nontree"), (18, 18, "reverse"), (20, 20, "forward"), (20, 32, "nontree"), (20, 33, "nontree"), (20, 20, "reverse"), (22, 22, "forward"), (22, 32, "nontree"), (22, 33, "nontree"), (22, 22, "reverse"), (23, 23, "forward"), (23, 25, "forward"), (25, 31, "nontree"), (23, 25, "reverse"), (23, 27, "nontree"), (23, 29, "forward"), (29, 32, "nontree"), (29, 33, "nontree"), (23, 29, "reverse"), (23, 32, "nontree"), (23, 33, "nontree"), (23, 23, "reverse"), (24, 24, "forward"), (24, 25, "nontree"), (24, 27, "nontree"), (24, 31, "nontree"), (24, 24, "reverse"), (26, 26, "forward"), (26, 29, "nontree"), (26, 33, "nontree"), (26, 26, "reverse")]
+
+test "dfs post order nodes on graph":
+  let karate = karateClubGraph()
+  check karate.dfsPostOrderNodes() == @[7, 12, 14, 15, 18, 20, 22, 27, 28, 31, 24, 25, 26, 29, 23, 32, 30, 8, 9, 19, 33, 13, 3, 2, 17, 21, 1, 10, 16, 5, 6, 4, 11, 0]
+
+test "dfs post order nodes on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.dfsPostOrderNodes() == @[7, 12, 33, 13, 3, 32, 30, 8, 9, 27, 31, 28, 2, 17, 19, 21, 1, 16, 6, 10, 4, 5, 11, 0, 14, 15, 18, 20, 22, 25, 29, 23, 24, 26]
+
+test "dfs pre order nodes on graph":
+  let karate = karateClubGraph()
+  check karate.dfsPreOrderNodes() == @[0, 1, 2, 3, 7, 12, 13, 33, 8, 30, 32, 14, 15, 18, 20, 22, 23, 25, 24, 27, 31, 28, 29, 26, 9, 19, 17, 21, 4, 6, 5, 10, 16, 11]
+
+test "dfs pre order nodes on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.dfsPreOrderNodes() == @[0, 1, 2, 3, 7, 12, 13, 33, 8, 30, 32, 9, 27, 28, 31, 17, 19, 21, 4, 6, 16, 10, 5, 11, 14, 15, 18, 20, 22, 23, 25, 29, 24, 26]
+
 test "bfs edges on graph":
   let karate = karateClubGraph()
   var bfsOrderedEdges: seq[Edge] = @[]
