@@ -441,12 +441,12 @@ Graph Hashing
 - networkx.algorithms.graph_hashing.weisfeiler_lehman_graph_hash
 
 Graphical degree sequence
-- networkx.algorithms.graphical.is_graphical
-- networkx.algorithms.graphical.is_digraphical
-- networkx.algorithms.graphical.is_multigraphical
-- networkx.algorithms.graphical.is_pseudographical
-- networkx.algorithms.graphical.is_valid_degree_sequence_havel_hakimi
-- networkx.algorithms.graphical.is_valid_degree_sequence_erdos_gallai
+- [x] networkx.algorithms.graphical.is_graphical
+- [x] networkx.algorithms.graphical.is_digraphical
+- [x] networkx.algorithms.graphical.is_multigraphical
+- [x] networkx.algorithms.graphical.is_pseudographical
+- [x] networkx.algorithms.graphical.is_valid_degree_sequence_havel_hakimi
+- [x] networkx.algorithms.graphical.is_valid_degree_sequence_erdos_gallai
 
 Hierarchy
 - networkx.algorithms.hierarchy.flow_hierarchy

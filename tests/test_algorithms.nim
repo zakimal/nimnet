@@ -153,6 +153,38 @@ test "out-degree centrality for directed graph":
 # Graphical Degree Sequence
 # -------------------------------------------------------------------
 
+test "check whether the degree sequence is valid":
+  let G = pathGraph(4)
+  var sequence: seq[int] = @[]
+  for node in G.nodes():
+    sequence.add(G.degree(node))
+  check isGraphical(sequence) == true
+
+test "check whether the degree sequence is valid":
+  let DG = pathDiGraph(4)
+  var inSequence: seq[int] = @[]
+  var outSequence: seq[int] = @[]
+  for node in DG.nodes():
+    inSequence.add(DG.inDegree(node))
+    outSequence.add(DG.outDegree(node))
+  check isDiGraphical(inSequence, outSequence) == true
+
+test "check whether the degree sequence is valid":
+  let G = karateClubGraph()
+  var sequence: seq[int] = @[]
+  for node in G.nodes():
+    sequence.add(G.degree(node))
+  check isGraphical(sequence) == true
+
+test "check whether the degree sequence is valid":
+  let DG = newDiGraph(karateClubGraph().edges())
+  var inSequence: seq[int] = @[]
+  var outSequence: seq[int] = @[]
+  for node in DG.nodes():
+    inSequence.add(DG.inDegree(node))
+    outSequence.add(DG.outDegree(node))
+  check isDiGraphical(inSequence, outSequence) == true
+
 # -------------------------------------------------------------------
 # Hierarchy
 # -------------------------------------------------------------------
