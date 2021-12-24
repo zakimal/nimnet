@@ -1018,6 +1018,24 @@ proc intersection*(DG: DiGraph, DH: DiGraph): DiGraph =
       if DG.hasEdge(edge):
         DR.addEdge(edge)
   return DR
+
+proc difference*(G: Graph, H: Graph): Graph =
+  if G.nodesSet() != H.nodesSet():
+    raise newNNError("node sets of graphs not equal")
+  let R = newGraph()
+  for edge in G.edges():
+    if not H.hasEdge(edge):
+      R.addEdge(edge)
+  return R
+proc difference*(DG: DiGraph, DH: DiGraph): DiGraph =
+  if DG.nodesSet() != DH.nodesSet():
+    raise newNNError("node sets of directed graphs not equal")
+  let DR = newDiGraph()
+  for edge in DG.edges():
+    if not DH.hasEdge(edge):
+      DR.addEdge(edge)
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity

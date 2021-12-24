@@ -3821,7 +3821,7 @@ test "reverse directed graph in place":
   check dkarate.numberOfEdges() == 78
   check dkarate.edges() == @[(1, 0), (2, 0), (2, 1), (3, 0), (3, 1), (3, 2), (4, 0), (5, 0), (6, 0), (6, 4), (6, 5), (7, 0), (7, 1), (7, 2), (7, 3), (8, 0), (8, 2), (9, 2), (10, 0), (10, 4), (10, 5), (11, 0), (12, 0), (12, 3), (13, 0), (13, 1), (13, 2), (13, 3), (16, 5), (16, 6), (17, 0), (17, 1), (19, 0), (19, 1), (21, 0), (21, 1), (25, 23), (25, 24), (27, 2), (27, 23), (27, 24), (28, 2), (29, 23), (29, 26), (30, 1), (30, 8), (31, 0), (31, 24), (31, 25), (31, 28), (32, 2), (32, 8), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 23), (32, 29), (32, 30), (32, 31), (33, 8), (33, 9), (33, 13), (33, 14), (33, 15), (33, 18), (33, 19), (33, 20), (33, 22), (33, 23), (33, 26), (33, 27), (33, 28), (33, 29), (33, 30), (33, 31), (33, 32)]
 
-test "compose 2 graphs":
+test "compose graphs":
   let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
   let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
   let R = compose(G, H)
@@ -3830,7 +3830,7 @@ test "compose 2 graphs":
   check R.numberOfEdges() == 6
   check R.edges() == @[(1, 2), (1, 3), (1, 4), (3, 5), (3, 6), (3, 7)]
 
-test "compose 2 directed graphs":
+test "compose directed graphs":
   let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
   let DH = newDiGraph(@[(3, 1), (3, 5), (3, 6), (3, 7)])
   let DR = compose(DG, DH)
@@ -3839,7 +3839,7 @@ test "compose 2 directed graphs":
   check DR.numberOfEdges() == 7
   check DR.edges() == @[(1, 2), (1, 3), (1, 4), (3, 1), (3, 5), (3, 6), (3, 7)]
 
-test "try to union 2 graphs":
+test "try to union graphs":
   let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
   let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
   try:
@@ -3847,7 +3847,7 @@ test "try to union 2 graphs":
   except NNError as e:
     check e.msg == "nodes sets of G and H are not disjoint"
 
-test "try to union 2 directed graphs":
+test "try to union directed graphs":
   let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
   let DH = newDiGraph(@[(3, 1), (3, 5), (3, 6), (3, 7)])
   try:
@@ -3855,7 +3855,7 @@ test "try to union 2 directed graphs":
   except NNError as e:
     check e.msg == "nodes sets of DG and DH are not disjoint"
 
-test "union 2 disjoint graphs":
+test "union disjoint graphs":
   let G = newGraph(@[1, 2, 3, 4])
   G.addEdgesFrom(@[(1, 2), (1, 3), (2, 4), (3, 4)])
   let H = newGraph(@[5, 6, 7])
@@ -3866,7 +3866,7 @@ test "union 2 disjoint graphs":
   check R.numberOfEdges() == 5
   check R.edges() == @[(1, 2), (1, 3), (2, 4), (3, 4), (5, 6)]
 
-test "union 2 disjoin directed graphs":
+test "union disjoin directed graphs":
   let DG = newDiGraph(@[1, 2, 3, 4])
   DG.addEdgesFrom(@[(1, 2), (1, 3), (2, 4), (3, 4)])
   let DH = newDiGraph(@[5, 6, 7])
@@ -3877,7 +3877,7 @@ test "union 2 disjoin directed graphs":
   check DR.numberOfEdges() == 5
   check DR.edges() == @[(1, 2), (1, 3), (2, 4), (3, 4), (5, 6)]
 
-test "try to union 2 graphs and success":
+test "try to union graphs and success":
   let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
   let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
   let R = disjointUnion(G, H)
@@ -3886,7 +3886,7 @@ test "try to union 2 graphs and success":
   check R.numberOfEdges() == 7
   check R.edges() == @[(0, 1), (0, 2), (0, 3), (4, 5), (5, 6), (5, 7), (5, 8)]
 
-test "try to union 2 directed graphs and success":
+test "try to union directed graphs and success":
   let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
   let DH = newDiGraph(@[(3, 1), (3, 5), (3, 6), (3, 7)])
   let DR = disjointUnion(DG, DH)
@@ -3895,7 +3895,7 @@ test "try to union 2 directed graphs and success":
   check DR.numberOfEdges() == 7
   check DR.edges() == @[(0, 1), (0, 2), (0, 3), (5, 4), (5, 6), (5, 7), (5, 8)]
 
-test "intersection of 2 graph":
+test "intersection of graphs":
   let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
   let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
   let R = intersection(G, H)
@@ -3904,7 +3904,7 @@ test "intersection of 2 graph":
   check R.numberOfEdges() == 1
   check R.edges() == @[(1, 3)]
 
-test "intersection of 2 directed graph":
+test "intersection of directed graphs":
   let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
   let DH = newDiGraph(@[(1, 2), (3, 1), (3, 5), (3, 6), (3, 7)])
   let DR = intersection(DG, DH)
@@ -3913,6 +3913,26 @@ test "intersection of 2 directed graph":
   check DR.numberOfEdges() == 1
   check DR.nodes() == @[1, 2, 3]
   check DR.edges() == @[(1, 2)]
+
+test "difference of graphs":
+  let G = newGraph(@[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)])
+  let H = newGraph(@[(0, 3), (1, 2)])
+  let R = difference(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 4
+  check R.numberOfEdges() == 4
+  check R.nodes() == @[0, 1, 2, 3]
+  check R.edges() == @[(0, 1), (0, 2), (1, 3), (2, 3)]
+
+test "difference of directed graphs":
+  let DG = newDiGraph(@[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3), (3, 2)])
+  let DH = newDiGraph(@[(0, 3), (1, 2)])
+  let DR = difference(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 4
+  check DR.numberOfEdges() == 5
+  check DR.nodes() == @[0, 1, 2, 3]
+  check DR.edges() == @[(0, 1), (0, 2), (1, 3), (2, 3), (3, 2)]
 
 # -------------------------------------------------------------------
 # Planarity
