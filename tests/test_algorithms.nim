@@ -81,6 +81,14 @@ test "triangles in graph":
   for (node, numTri) in got.pairs():
     check numTri == expected[node]
 
+test "transitivity in graph":
+  let karate = karateClubGraph()
+  check equal(karate.transitivity(), 0.2556818181818182) == true
+
+test "transitivity in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check equal(dkarate.transitivity(), 0.1076555023923445) == true
+
 # -------------------------------------------------------------------
 # Coloring
 # -------------------------------------------------------------------

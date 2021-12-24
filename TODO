@@ -285,7 +285,7 @@ Clique
 
 Clustering
 - [x] networkx.algorithms.cluster.triangles
-- networkx.algorithms.cluster.transitivity
+- [x] networkx.algorithms.cluster.transitivity
 - networkx.algorithms.cluster.clustering
 - networkx.algorithms.cluster.average_clustering
 - networkx.algorithms.cluster.square_clustering

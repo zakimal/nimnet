@@ -116,6 +116,30 @@ iterator trianglesAndDegree(G: Graph, nodes: seq[Node] = @[]): tuple[v: Node, le
     for (k, val) in genDegree.pairs():
       nTriangles += (k * val)
     yield (v, len(vs), nTriangles, genDegree)
+iterator trianglesAndDegree(DG: DiGraph, nodes: seq[Node] = @[]): tuple[v: Node, len: int, nTri: int, genDegree: Table[int, int]] =
+  var nodesNbrs: Table[Node, HashSet[Node]]
+  if len(nodes) == 0:
+    nodesNbrs = DG.succ
+  else:
+    for n in nodes:
+      nodesNbrs[n] = DG.succ[n]
+
+  for (v, vNbrs) in nodesNbrs.pairs():
+    var vSet = initHashSet[Node]()
+    vSet.incl(v)
+    let vs = vNbrs - vSet
+    var genDegree = initTable[int, int]()
+    for w in vs:
+      var wSet = initHashSet[Node]()
+      wSet.incl(w)
+      if len(vs * (DG.succ[w] - wSet)) notin genDegree:
+        genDegree[len(vs * (DG.succ[w] - wSet))] = 1
+      else:
+        genDegree[len(vs * (DG.succ[w] - wSet))] += 1
+    var nTriangles = 0
+    for (k, val) in genDegree.pairs():
+      nTriangles += (k * val)
+    yield (v, len(vs), nTriangles, genDegree)
 
 proc triangles*(
   G: Graph,
@@ -127,6 +151,35 @@ proc triangles*(
   for (v, d, t, _) in G.trianglesAndDegree(nodes):
     ret[v] = t div 2
   return ret
+
+proc transitivity*(G: Graph): float =
+  var trianglesContri: seq[tuple[t: int, d: int]] = @[]
+  for (v, d, t, _) in trianglesAndDegree(G):
+    trianglesContri.add((t, d * (d - 1)))
+  if len(trianglesContri) == 0:
+    return 0.0
+  var triangles = 0
+  var contri = 0
+  for i in 0..<len(trianglesContri):
+    triangles += trianglesContri[i].t
+    contri += trianglesContri[i].d
+  if triangles == 0:
+    return 0.0
+  return triangles.float / contri.float
+proc transitivity*(DG: DiGraph): float =
+  var trianglesContri: seq[tuple[t: int, d: int]] = @[]
+  for (v, d, t, _) in trianglesAndDegree(DG):
+    trianglesContri.add((t, d * (d - 1)))
+  if len(trianglesContri) == 0:
+    return 0.0
+  var triangles = 0
+  var contri = 0
+  for i in 0..<len(trianglesContri):
+    triangles += trianglesContri[i].t
+    contri += trianglesContri[i].d
+  if triangles == 0:
+    return 0.0
+  return triangles.float / contri.float
 
 # -------------------------------------------------------------------
 # TODO:
