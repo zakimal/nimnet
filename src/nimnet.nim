@@ -51,62 +51,67 @@ type
   NNExceededMaxIterations*           = ref object of NNException
   NNPowerIterationFailedConvergence* = ref object of NNExceededMaxIterations
     numIterations: int
+  NNNotATree*                        = ref object of NNException
 proc newNNException*(msg: string): NNException =
-  var e = NNException()
+  let e = NNException()
   e.msg = msg
   return e
 proc newNNError*(msg: string): NNError =
-  var e = NNError()
+  let e = NNError()
   e.msg = msg
   return e
 proc newNNPointlessConcept*(msg: string): NNPointlessConcept =
-  var e = NNPointlessConcept()
+  let e = NNPointlessConcept()
   e.msg = msg
   return e
 proc newNNAlgorithmError*(msg: string): NNAlgorithmError =
-  var e = NNAlgorithmError()
+  let e = NNAlgorithmError()
   e.msg = msg
   return e
 proc newNNUnfeasible*(msg: string): NNUnfeasible =
-  var e = NNUnfeasible()
+  let e = NNUnfeasible()
   e.msg = msg
   return e
 proc newNNNoPath*(msg: string): NNNoPath =
-  var e = NNNoPath()
+  let e = NNNoPath()
   e.msg = msg
   return e
 proc newNNNoCycle*(msg: string): NNNoCycle =
-  var e = NNNoCycle()
+  let e = NNNoCycle()
   e.msg = msg
   return e
 proc newNNHasACycle*(msg: string): NNHasACycle =
-  var e = NNHasACycle()
+  let e = NNHasACycle()
   e.msg = msg
   return e
 proc newNNUnbounded*(msg: string): NNUnbounded =
-  var e = NNUnbounded()
+  let e = NNUnbounded()
   e.msg = msg
   return e
 proc newNNNotImplemented*(algorithmName: string, graphType: string): NNNotImplemented =
-  var e = NNNotImplemented()
+  let e = NNNotImplemented()
   e.msg = fmt"{algorithmName} is not implemented for {graphType}"
   return e
 proc newNNNodeNotFound*(nodeNotFound: Node): NNNodeNotFound =
-  var e = NNNodeNotFound()
+  let e = NNNodeNotFound()
   e.msg = fmt"node {nodeNotFound} not found"
   return e
 proc newNNAmbiguousSolution*(msg: string): NNAmbiguousSolution =
-  var e = NNAmbiguousSolution()
+  let e = NNAmbiguousSolution()
   e.msg = msg
   return e
 proc newNNExceededMaxIterations*(msg: string): NNExceededMaxIterations =
-  var e = NNExceededMaxIterations()
+  let e = NNExceededMaxIterations()
   e.msg = msg
   return e
 proc newNNPowerIterationFailedConvergence*(numIterations: int): NNPowerIterationFailedConvergence =
-  var e = NNPowerIterationFailedConvergence()
+  let e = NNPowerIterationFailedConvergence()
   e.numIterations = numIterations
   e.msg = fmt"power iteration failed to converge within {numIterations} iterations"
+  return e
+proc newNNNotATree*(msg: string): NNNotATree =
+  let e = NNNotATree()
+  e.msg = msg
   return e
 
 # -------------------------------------------------------------------
