@@ -101,6 +101,81 @@ test "out-degree centrality for directed graph":
 # Covering
 # -------------------------------------------------------------------
 
+test "core number of graph":
+  let karate = karateClubGraph()
+  let got = coreNumber(karate)
+  let expected = {0: 4, 1: 4, 2: 4, 3: 4, 4: 3, 5: 3, 6: 3, 7: 4, 8: 4, 9: 2, 10: 3, 11: 1, 12: 2, 13: 4, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 19: 3, 20: 2, 21: 2, 22: 2, 23: 3, 24: 3, 25: 3, 26: 2, 27: 3, 28: 3, 29: 3, 30: 4, 31: 3, 32: 4, 33: 4}.toTable()
+  for (node, val) in got.pairs():
+    check val == expected[node]
+
+test "core number of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = coreNumber(dkarate)
+  let expected = {0: 4, 1: 4, 2: 4, 3: 4, 4: 3, 5: 3, 6: 3, 7: 4, 8: 4, 10: 3, 11: 1, 12: 2, 13: 4, 17: 2, 19: 3, 21: 2, 31: 3, 30: 4, 9: 2, 27: 3, 28: 3, 32: 4, 16: 2, 33: 4, 14: 2, 15: 2, 18: 2, 20: 2, 22: 2, 23: 3, 25: 3, 29: 3, 24: 3, 26: 2}.toTable()
+  for (node, val) in got.pairs():
+    check val == expected[node]
+
+test "k core of graph":
+  let karate = karateClubGraph()
+  let got = kCore(karate)
+  check got.isDirected() == false
+  check got.edges() == @[(0, 1), (0, 2), (0, 3), (0, 7), (0, 8), (0, 13), (1, 2), (1, 3), (1, 7), (1, 13), (1, 30), (2, 3), (2, 7), (2, 8), (2, 13), (2, 32), (3, 7), (3, 13), (8, 30), (8, 32), (8, 33), (13, 33), (30, 32), (30, 33), (32, 33)]
+
+test "k core of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = kCore(dkarate)
+  check got.isDirected() == true
+  check got.edges() == @[(0, 1), (0, 2), (0, 3), (0, 7), (0, 8), (0, 13), (1, 2), (1, 3), (1, 7), (1, 13), (1, 30), (2, 3), (2, 7), (2, 8), (2, 13), (2, 32), (3, 7), (3, 13), (8, 30), (8, 32), (8, 33), (13, 33), (30, 32), (30, 33), (32, 33)]
+
+test "k shell of graph":
+  let karate = karateClubGraph()
+  let got = kShell(karate, 3)
+  check got.isDirected() == false
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (23, 25), (23, 27), (23, 29), (24, 25), (24, 27), (24, 31), (25, 31), (28, 31)]
+
+test "k shell of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = kShell(dkarate, 3)
+  check got.isDirected() == true
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (23, 25), (23, 27), (23, 29), (24, 25), (24, 27), (24, 31), (25, 31), (28, 31)]
+
+test "k crust of graph":
+  let karate = karateClubGraph()
+  let got = kCrust(karate, 3)
+  check got.isDirected() == false
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (5, 16), (6, 16), (23, 25), (23, 27), (23, 29), (24, 25), (24, 27), (24, 31), (25, 31), (26, 29), (28, 31)]
+
+test "k crust of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = kCrust(dkarate, 3)
+  check got.isDirected() == true
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (5, 16), (6, 16), (23, 25), (23, 27), (23, 29), (24, 25), (24, 27), (24, 31), (25, 31), (26, 29), (28, 31)]
+
+test "k corona of graph":
+  let karate = karateClubGraph()
+  let got = kCorona(karate, 3)
+  check got.isDirected() == false
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (24, 25)]
+
+test "k corona of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = kCorona(dkarate, 3)
+  check got.isDirected() == true
+  check got.edges() == @[(4, 6), (4, 10), (5, 6), (5, 10), (24, 25)]
+
+test "k truss of graph":
+  let karate = karateClubGraph()
+  let got = kTruss(karate, 4)
+  check got.isDirected() == false
+  check got.edges() == [(0, 1), (0, 2), (0, 3), (0, 7), (0, 13), (1, 2), (1, 3), (1, 7), (1, 13), (2, 3), (2, 7), (2, 13), (3, 7), (3, 13), (8, 30), (8, 32), (8, 33), (23, 29), (23, 32), (23, 33), (29, 32), (29, 33), (30, 32), (30, 33), (32, 33)]
+
+test "onion layers of graph":
+  let karate = karateClubGraph()
+  let got = onionLayers(karate)
+  let expected = {11: 1, 9: 2, 12: 2, 14: 2, 15: 2, 16: 2, 17: 2, 18: 2, 20: 2, 21: 2, 22: 2, 26: 2, 4: 3, 5: 3, 6: 3, 10: 3, 19: 3, 24: 3, 25: 3, 28: 3, 29: 3, 23: 4, 27: 4, 31: 4, 7: 5, 30: 5, 32: 5, 33: 5, 8: 6, 1: 6, 3: 6, 13: 6, 0: 7, 2: 7}.toTable()
+  for (node, val) in got.pairs():
+    check val == expected[node]
+
 # -------------------------------------------------------------------
 # Cycle
 # -------------------------------------------------------------------
@@ -154,35 +229,35 @@ test "out-degree centrality for directed graph":
 # -------------------------------------------------------------------
 
 test "check whether the degree sequence is valid":
-  let G = pathGraph(4)
+  let karate = pathGraph(4)
   var sequence: seq[int] = @[]
-  for node in G.nodes():
-    sequence.add(G.degree(node))
+  for node in karate.nodes():
+    sequence.add(karate.degree(node))
   check isGraphical(sequence) == true
 
 test "check whether the degree sequence is valid":
-  let DG = pathDiGraph(4)
+  let dkarate = pathDiGraph(4)
   var inSequence: seq[int] = @[]
   var outSequence: seq[int] = @[]
-  for node in DG.nodes():
-    inSequence.add(DG.inDegree(node))
-    outSequence.add(DG.outDegree(node))
+  for node in dkarate.nodes():
+    inSequence.add(dkarate.inDegree(node))
+    outSequence.add(dkarate.outDegree(node))
   check isDiGraphical(inSequence, outSequence) == true
 
 test "check whether the degree sequence is valid":
-  let G = karateClubGraph()
+  let karate = karateClubGraph()
   var sequence: seq[int] = @[]
-  for node in G.nodes():
-    sequence.add(G.degree(node))
+  for node in karate.nodes():
+    sequence.add(karate.degree(node))
   check isGraphical(sequence) == true
 
 test "check whether the degree sequence is valid":
-  let DG = newDiGraph(karateClubGraph().edges())
+  let dkarate = newDiGraph(karateClubGraph().edges())
   var inSequence: seq[int] = @[]
   var outSequence: seq[int] = @[]
-  for node in DG.nodes():
-    inSequence.add(DG.inDegree(node))
-    outSequence.add(DG.outDegree(node))
+  for node in dkarate.nodes():
+    inSequence.add(dkarate.inDegree(node))
+    outSequence.add(dkarate.outDegree(node))
   check isDiGraphical(inSequence, outSequence) == true
 
 # -------------------------------------------------------------------

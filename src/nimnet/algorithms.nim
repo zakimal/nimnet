@@ -117,9 +117,247 @@ proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
 # Cores
 # -------------------------------------------------------------------
+
+proc coreNumber*(g: Graph): Table[Node, int] =
+  if 0 < g.numberOfSelfloop():
+    raise newNNError("input graph has self loops which is not permitted")
+  var degrees = g.degree()
+  var cmpDegree = proc (x, y: Node): int =
+    result = system.cmp(degrees[x], degrees[y])
+  var nodes = g.nodes()
+  nodes.sort(cmpDegree)
+  var binBoundaries = @[0]
+  var currDegree = 0
+  for i, v in nodes:
+    if currDegree < degrees[v] :
+      for d in 0..<(degrees[v] - currDegree):
+        binBoundaries.add(i)
+      currDegree = degrees[v]
+  var nodePos: Table[Node, int] = initTable[Node, int]()
+  for pos, v in nodes:
+    nodePos[v] = pos
+  var core = degrees
+  var nbrs: Table[Node, seq[Node]] = initTable[Node, seq[Node]]()
+  for v in g.nodes():
+    nbrs[v] = g.neighbors(v)
+  for v in nodes:
+    for u in nbrs[v]:
+      if core[v] < core[u]:
+        nbrs[u].delete(nbrs[u].find(v))
+        var pos = nodePos[u]
+        var binStart = binBoundaries[core[u]]
+        nodePos[u] = binStart
+        nodePos[nodes[binStart]] = pos
+        swap(nodes[binStart], nodes[pos])
+        binBoundaries[core[u]] += 1
+        core[u] -= 1
+  return core
+proc coreNumber*(dg: DiGraph): Table[Node, int] =
+  if 0 < dg.numberOfSelfloop():
+    raise newNNError("input graph has self loops which is not permitted")
+  var degrees = dg.degree()
+  var cmpDegree = proc (x, y: Node): int =
+    result = system.cmp(degrees[x], degrees[y])
+  var nodes = dg.nodes()
+  nodes.sort(cmpDegree)
+  var binBoundaries = @[0]
+  var currDegree = 0
+  for i, v in nodes:
+    if currDegree < degrees[v] :
+      for d in 0..<(degrees[v] - currDegree):
+        binBoundaries.add(i)
+      currDegree = degrees[v]
+  var nodePos: Table[Node, int] = initTable[Node, int]()
+  for pos, v in nodes:
+    nodePos[v] = pos
+  var core = degrees
+  var nbrs: Table[Node, seq[Node]] = initTable[Node, seq[Node]]()
+  for v in dg.nodes():
+    nbrs[v] = dg.neighbors(v)
+  for v in nodes:
+    for u in nbrs[v]:
+      if core[v] < core[u]:
+        nbrs[u].delete(nbrs[u].find(v))
+        var pos = nodePos[u]
+        var binStart = binBoundaries[core[u]]
+        nodePos[u] = binStart
+        nodePos[nodes[binStart]] = pos
+        swap(nodes[binStart], nodes[pos])
+        binBoundaries[core[u]] += 1
+        core[u] -= 1
+  return core
+
+proc coreSubgraph(
+  g: Graph,
+  kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool,
+  k : int = -1,
+  core: Table[Node, int] = initTable[Node, int]()
+): Graph =
+  var coreUsing = core
+  if len(core.keys().toSeq()) == 0:
+    coreUsing = g.coreNumber()
+  var kUsing = k
+  if k == -1:
+    kUsing = max(coreUsing.values().toSeq())
+  var nodes: HashSet[Node] = initHashSet[Node]()
+  for v in coreUsing.keys():
+    if kFilter(v, kUsing, coreUsing):
+      nodes.incl(v)
+  return g.subgraph(nodes)
+proc coreSubgraph(
+  dg: DiGraph,
+  kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool,
+  k : int = -1,
+  core: Table[Node, int] = initTable[Node, int]()
+): DiGraph =
+  var coreUsing = core
+  if len(core.keys().toSeq()) == 0:
+    coreUsing = dg.coreNumber()
+  var kUsing = k
+  if k == -1:
+    kUsing = max(coreUsing.values().toSeq())
+  var nodes: HashSet[Node] = initHashSet[Node]()
+  for v in coreUsing.keys():
+    if kFilter(v, kUsing, coreUsing):
+      nodes.incl(v)
+  return dg.subgraph(nodes)
+
+proc kCore*(g: Graph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): Graph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      return cutoff <= core[node]
+  return coreSubgraph(g, kFilter, k, coreNumber)
+proc kCore*(dg: DiGraph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): DiGraph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      return cutoff <= core[node]
+  return coreSubgraph(dg, kFilter, k, coreNumber)
+
+proc kShell*(g: Graph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): Graph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      return cutoff == core[node]
+  return coreSubgraph(g, kFilter, k, coreNumber)
+proc kShell*(dg: DiGraph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): DiGraph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      return cutoff == core[node]
+  return coreSubgraph(dg, kFilter, k, coreNumber)
+
+proc kCrust*(g: Graph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): Graph =
+  var coreNumberUsing = coreNumber
+  if len(coreNumber.keys().toSeq()) == 0:
+    coreNumberUsing = g.coreNumber()
+  var kUsing = k
+  if k == -1:
+    kUsing = max(coreNumberUsing.values().toSeq()) - 1
+  var nodes: HashSet[Node] = initHashSet[Node]()
+  for (k, v) in coreNumberUsing.pairs():
+    if v <= kUsing:
+      nodes.incl(k)
+  return g.subgraph(nodes)
+proc kCrust*(dg: DiGraph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): DiGraph =
+  var coreNumberUsing = coreNumber
+  if len(coreNumber.keys().toSeq()) == 0:
+    coreNumberUsing = dg.coreNumber()
+  var kUsing = k
+  if k == -1:
+    kUsing = max(coreNumberUsing.values().toSeq()) - 1
+  var nodes: HashSet[Node] = initHashSet[Node]()
+  for (k, v) in coreNumberUsing.pairs():
+    if v <= kUsing:
+      nodes.incl(k)
+  return dg.subgraph(nodes)
+
+proc kCorona*(g: Graph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): Graph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      var s = 0
+      for w in g.neighbors(node):
+        if core[w] >= cutoff:
+          s += 1
+      return cutoff == core[node] and cutoff == s
+  return coreSubgraph(g, kFilter, k, coreNumber)
+proc kCorona*(dg: DiGraph, k: int = -1, coreNumber: Table[Node, int] = initTable[Node, int]()): DiGraph =
+  let kFilter: proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+    proc(node: Node, cutoff: int, core: Table[Node, int]): bool =
+      var s = 0
+      for w in dg.neighbors(node):
+        if core[w] >= cutoff:
+          s += 1
+      return cutoff == core[node] and cutoff == s
+  return coreSubgraph(dg, kFilter, k, coreNumber)
+
+proc kTruss*(g: Graph, k: int): Graph =
+  var h = g.copyAsGraph()
+
+  var nDropped = 1
+  while 0 < nDropped:
+    nDropped = 0
+    var toDrop: seq[Edge] = @[]
+    var seen = initHashSet[Node]()
+    for u in h.nodes():
+      var nbrsU = h.neighborsSet(u)
+      seen.incl(u)
+      var newNbrs: seq[Node] = @[]
+      for v in nbrsU:
+        if v notin seen:
+          newNbrs.add(v)
+      for v in newNbrs:
+        if len(nbrsU * h.neighborsSet(v)) < (k - 2):
+          toDrop.add((u, v))
+    h.removeEdgesFrom(toDrop)
+    nDropped = len(toDrop)
+    var isolatedNodes: seq[Node] = @[]
+    for v in h.nodes():
+      if h.degree(v) == 0:
+        isolatedNodes.add(v)
+    h.removeNodesFrom(isolatedNodes)
+  return h
+
+proc onionLayers*(g: Graph): Table[Node, int] =
+  var h = g.copyAsGraph()
+  if 0 < g.numberOfSelfloop():
+    raise newNNError("input graph contains self loops which is not permitted")
+  var odLayers: Table[Node, int] = initTable[Node, int]()
+  var neighbors: Table[Node, seq[Node]] = initTable[Node, seq[Node]]()
+  for v in g.nodes():
+    neighbors[v] = g.neighbors(v)
+  var degrees = g.degree()
+  var currentCore = 1
+  var currentLayer = 1
+  var isolatedNodes: seq[Node] = @[]
+  for v in h.nodes():
+    if h.degree(v) == 0:
+      isolatedNodes.add(v)
+  if 0 < len(isolatedNodes):
+    for v in isolatedNodes:
+      odLayers[v] = currentLayer
+      degrees.del(v)
+    currentLayer = 2
+  while 0 < len(degrees):
+    var nodes = degrees.keys().toSeq()
+    var cmpDegree = proc (x, y: Node): int =
+      result = system.cmp(degrees[x], degrees[y])
+    nodes.sort(cmpDegree)
+    var minDegree = degrees[nodes[0]]
+    if currentCore < minDegree:
+      currentCore = minDegree
+    var thisLayer: seq[Node] = @[]
+    for n in nodes:
+      if currentCore < degrees[n]:
+        break
+      thisLayer.add(n)
+    for v in thisLayer:
+      odLayers[v] = currentLayer
+      for n in neighbors[v]:
+        neighbors[n].delete(neighbors[n].find(v))
+        degrees[n] -= 1
+      degrees.del(v)
+    currentLayer += 1
+  return odLayers
 
 # -------------------------------------------------------------------
 # TODO:
