@@ -936,6 +936,25 @@ proc compose*(DG: DiGraph, DH: DiGraph): DiGraph =
   DR.addEdgesFrom(DH.edges())
   return DR
 
+proc union*(G: Graph, H: Graph): Graph =
+  if len(G.nodesSet() * H.nodesSet()) != 0:
+    raise newNNError("nodes sets of G and H are not disjoint")
+  let R = newGraph()
+  R.addNodesFrom(G.nodes())
+  R.addNodesFrom(H.nodes())
+  R.addEdgesFrom(G.edges())
+  R.addEdgesFrom(H.edges())
+  return R
+proc union*(DG: DiGraph, DH: DiGraph): DiGraph =
+  if len(DG.nodesSet() * DH.nodesSet()) != 0:
+    raise newNNError("nodes sets of DG and DH are not disjoint")
+  let DR = newDiGraph()
+  DR.addNodesFrom(DG.nodes())
+  DR.addNodesFrom(DH.nodes())
+  DR.addEdgesFrom(DG.edges())
+  DR.addEdgesFrom(DH.edges())
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity

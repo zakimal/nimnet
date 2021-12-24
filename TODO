@@ -520,7 +520,7 @@ Operators
 - [x] networkx.algorithms.operators.unary.complement
 - [x] networkx.algorithms.operators.unary.reverse
 - [x] networkx.algorithms.operators.binary.compose
-- networkx.algorithms.operators.binary.union
+- [x] networkx.algorithms.operators.binary.union
 - networkx.algorithms.operators.binary.disjoint_union
 - networkx.algorithms.operators.binary.intersection
 - networkx.algorithms.operators.binary.difference

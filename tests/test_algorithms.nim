@@ -3839,6 +3839,44 @@ test "compose 2 directed graphs":
   check DR.numberOfEdges() == 7
   check DR.edges() == @[(1, 2), (1, 3), (1, 4), (3, 1), (3, 5), (3, 6), (3, 7)]
 
+test "try to union 2 graphs":
+  let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
+  try:
+    discard compose(G, H)
+  except NNError as e:
+    check e.msg == "nodes sets of G and H are not disjoint"
+
+test "try to union 2 directed graphs":
+  let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
+  let DH = newDiGraph(@[(3, 1), (3, 5), (3, 6), (3, 7)])
+  try:
+    discard compose(DG, DH)
+  except NNError as e:
+    check e.msg == "nodes sets of DG and DH are not disjoint"
+
+test "union 2 disjoint graphs":
+  let G = newGraph(@[1, 2, 3, 4])
+  G.addEdgesFrom(@[(1, 2), (1, 3), (2, 4), (3, 4)])
+  let H = newGraph(@[5, 6, 7])
+  H.addEdgesFrom(@[(5, 6)])
+  let R = compose(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 7
+  check R.numberOfEdges() == 5
+  check R.edges() == @[(1, 2), (1, 3), (2, 4), (3, 4), (5, 6)]
+
+test "union 2 disjoin directed graphs":
+  let DG = newDiGraph(@[1, 2, 3, 4])
+  DG.addEdgesFrom(@[(1, 2), (1, 3), (2, 4), (3, 4)])
+  let DH = newDiGraph(@[5, 6, 7])
+  DH.addEdgesFrom(@[(5, 6)])
+  let DR = compose(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 7
+  check DR.numberOfEdges() == 5
+  check DR.edges() == @[(1, 2), (1, 3), (2, 4), (3, 4), (5, 6)]
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------
