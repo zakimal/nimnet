@@ -994,6 +994,30 @@ proc disjointUnion*(DG: DiGraph, DH: DiGraph): DiGraph =
     DR.addEdge((originalToNew[("DH", edge.u)], originalToNew[("DH", edge.v)]))
   return DR
 
+proc intersection*(G: Graph, H: Graph): Graph =
+  let R = newGraph()
+  R.addNodesFrom(G.nodesSet() * H.nodesSet())
+  if len(G.edges()) <= len(H.edges()):
+    for edge in G.edges():
+      if H.hasEdge(edge):
+        R.addEdge(edge)
+  else:
+    for edge in H.edges():
+      if G.hasEdge(edge):
+        R.addEdge(edge)
+  return R
+proc intersection*(DG: DiGraph, DH: DiGraph): DiGraph =
+  let DR = newDiGraph()
+  DR.addNodesFrom(DG.nodesSet() * DH.nodesSet())
+  if len(DG.edges()) <= len(DH.edges()):
+    for edge in DG.edges():
+      if DH.hasEdge(edge):
+        DR.addEdge(edge)
+  else:
+    for edge in DH.edges():
+      if DG.hasEdge(edge):
+        DR.addEdge(edge)
+  return DR
 # -------------------------------------------------------------------
 # TODO:
 # Planarity

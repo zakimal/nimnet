@@ -3895,6 +3895,25 @@ test "try to union 2 directed graphs and success":
   check DR.numberOfEdges() == 7
   check DR.edges() == @[(0, 1), (0, 2), (0, 3), (5, 4), (5, 6), (5, 7), (5, 8)]
 
+test "intersection of 2 graph":
+  let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
+  let R = intersection(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 2
+  check R.numberOfEdges() == 1
+  check R.edges() == @[(1, 3)]
+
+test "intersection of 2 directed graph":
+  let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
+  let DH = newDiGraph(@[(1, 2), (3, 1), (3, 5), (3, 6), (3, 7)])
+  let DR = intersection(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 3
+  check DR.numberOfEdges() == 1
+  check DR.nodes() == @[1, 2, 3]
+  check DR.edges() == @[(1, 2)]
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------
