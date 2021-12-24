@@ -1751,6 +1751,62 @@ proc descendantsAtDistance*(
 
   return currentLayer
 
+iterator bfsBeamEdges*(
+  G: Graph,
+  source: Node,
+  value: proc(node: Node): float,
+  width: int = -1
+): Edge =
+  var widthUsing = width
+  if width == -1:
+    widthUsing = len(G)
+
+  let successors = proc(v: Node): iterator: Node =
+    var nodes = G.neighbors(v)
+    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
+    for node in nodes:
+      nodeWithValue.add((-value(node), node))
+    nodeWithValue.sort()
+    for i in 0..<len(nodeWithValue):
+      nodes[i] = nodeWithValue[i].node
+    var sortedClippedNodes: seq[Node] = @[]
+    for i in 0..<min(width, len(nodes)):
+      sortedClippedNodes.add(nodes[i])
+    return iterator: Node =
+      for node in sortedClippedNodes:
+        yield node
+
+  for edge in genericBfsEdges(G, source, neighbors=successors):
+    yield edge
+iterator bfsBeamEdges*(
+  DG: DiGraph,
+  source: Node,
+  value: proc(node: Node): float,
+  width: int = -1
+): Edge =
+  var widthUsing = width
+  if width == -1:
+    widthUsing = len(DG)
+
+  let successors = proc(v: Node): iterator: Node =
+    var nodes = DG.successors(v)
+    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
+    for node in nodes:
+      nodeWithValue.add((-value(node), node))
+    nodeWithValue.sort()
+    for i in 0..<len(nodeWithValue):
+      nodes[i] = nodeWithValue[i].node
+    var sortedClippedNodes: seq[Node] = @[]
+    for i in 0..<min(width, len(nodes)):
+      sortedClippedNodes.add(nodes[i])
+    return iterator: Node =
+      for node in sortedClippedNodes:
+        yield node
+
+  for edge in genericBfsEdges(DG, source, successors=successors):
+    yield edge
+
+
 # -------------------------------------------------------------------
 # TODO:
 # Tree
