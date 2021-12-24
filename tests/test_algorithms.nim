@@ -3934,6 +3934,26 @@ test "difference of directed graphs":
   check DR.nodes() == @[0, 1, 2, 3]
   check DR.edges() == @[(0, 1), (0, 2), (1, 3), (2, 3), (3, 2)]
 
+test "symmetric difference of graphs":
+  let G = newGraph(@[(0, 1), (0, 3), (1, 2)])
+  let H = newGraph(@[(0, 2), (0, 3), (1, 2)])
+  let R = symmetricDifference(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 3
+  check R.numberOfEdges() == 2
+  check R.nodes() == @[0, 1, 2]
+  check R.edges() == @[(0, 1), (0, 2)]
+
+test "symmetric difference of directed graphs":
+  let DG = newDiGraph(@[(0, 1), (0, 3), (1, 2)])
+  let DH = newDiGraph(@[(0, 2), (0, 3), (1, 2), (2, 1)])
+  let DR = symmetricDifference(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 3
+  check DR.numberOfEdges() == 3
+  check DR.nodes() == @[0, 1, 2]
+  check DR.edges() == @[(0, 1), (0, 2), (2, 1)]
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------

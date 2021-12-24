@@ -524,7 +524,7 @@ Operators
 - [x] networkx.algorithms.operators.binary.disjoint_union
 - [x] networkx.algorithms.operators.binary.intersection
 - [x] networkx.algorithms.operators.binary.difference
-- networkx.algorithms.operators.binary.symmetric_difference
+- [x] networkx.algorithms.operators.binary.symmetric_difference
 - networkx.algorithms.operators.binary.full_join
 - networkx.algorithms.operators.all.compose_all
 - networkx.algorithms.operators.all.union_all
