@@ -1077,60 +1077,60 @@ proc composeAll*(Gs: seq[Graph]): Graph =
   if len(Gs) == 0:
     raise newNNError("cannot apply composeAll to empty graph sequence")
   var R = Gs[0]
-  for G in Gs:
-    R = compose(R, G)
+  for i in 1..<len(Gs):
+    R = compose(R, Gs[i])
   return R
 proc composeAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
     raise newNNError("cannot apply composeAll to empty graph sequence")
   var DR = DGs[0]
-  for DG in DGs:
-    DR = compose(DR, DG)
+  for i in 1..<len(DGs):
+    DR = compose(DR, DGs[i])
   return DR
 
 proc unionAll*(Gs: seq[Graph]): Graph =
   if len(Gs) == 0:
     raise newNNError("cannot apply unionAll to empty graph sequence")
   var R = Gs[0]
-  for G in Gs:
-    R = union(R, G)
+  for i in 1..<len(Gs):
+    R = union(R, Gs[i])
   return R
 proc unionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
     raise newNNError("cannot apply unionAll to empty graph sequence")
   var DR = DGs[0]
-  for DG in DGs:
-    DR = union(DR, DG)
+  for i in 1..<len(DGs):
+    DR = union(DR, DGs[i])
   return DR
 
 proc disjointUnionAll*(Gs: seq[Graph]): Graph =
   if len(Gs) == 0:
     raise newNNError("cannot apply disjointUnionAll to empty graph sequence")
   var R = Gs[0]
-  for G in Gs:
-    R = disjointUnion(R, G)
+  for i in 1..<len(Gs):
+    R = disjointUnion(R, Gs[i])
   return R
 proc disjointUnionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
     raise newNNError("cannot apply disjointUnionAll to empty graph sequence")
   var DR = DGs[0]
-  for DG in DGs:
-    DR = disjointUnion(DR, DG)
+  for i in 1..<len(DGs):
+    DR = disjointUnion(DR, DGs[i])
   return DR
 
 proc intersectionAll*(Gs: seq[Graph]): Graph =
   if len(Gs) == 0:
     raise newNNError("cannot apply intersectionAll to empty graph sequence")
   var R = Gs[0]
-  for G in Gs:
-    R = intersection(R, G)
+  for i in 1..<len(Gs):
+    R = intersection(R, Gs[i])
   return R
 proc intersectionAll*(DGs: seq[DiGraph]): DiGraph =
   if len(DGs) == 0:
     raise newNNError("cannot apply intersectionAll to empty graph sequence")
   var DR = DGs[0]
-  for DG in DGs:
-    DR = intersection(DR, DG)
+  for i in 1..<len(DGs):
+    DR = intersection(DR, DGs[i])
   return DR
 
 # -------------------------------------------------------------------

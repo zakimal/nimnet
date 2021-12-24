@@ -3974,6 +3974,113 @@ test "full join of directed graphs":
   check DR.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7]
   check DR.edges() == @[(0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (1, 2), (1, 3), (1, 4), (1, 5), (1, 6), (1, 7), (2, 4), (2, 5), (2, 6), (2, 7), (3, 4), (3, 5), (3, 6), (3, 7), (4, 0), (4, 1), (4, 2), (4, 3), (4, 6), (5, 0), (5, 1), (5, 2), (5, 3), (5, 7), (6, 0), (6, 1), (6, 2), (6, 3), (6, 7), (7, 0), (7, 1), (7, 2), (7, 3)]
 
+test "compose all graphs":
+  let G = newGraph(@[(0, 1), (1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let I = newGraph(@[(4, 7), (7, 8), (7, 9), (7, 10)])
+  let R = composeAll(@[G, H, I])
+  check R.isDirected() == false
+  check R.numberOfNodes() == 11
+  check R.numberOfEdges() == 10
+  check R.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  check R.edges() == @[(0, 1), (1, 2), (1, 3), (1, 4), (4, 5), (4, 6), (4, 7), (7, 8), (7, 9), (7, 10)]
+
+test "compose all directed graphs":
+  let DG = newDiGraph(@[(0, 1), (1, 2), (1, 3), (1, 4), (4, 1)])
+  let DH = newDiGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let DI = newDiGraph(@[(4, 7), (7, 8), (7, 9), (7, 10)])
+  let DR = composeAll(@[DG, DH, DI])
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 11
+  check DR.numberOfEdges() == 11
+  check DR.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  check DR.edges() == @[(0, 1), (1, 2), (1, 3), (1, 4), (4, 1), (4, 5), (4, 6), (4, 7), (7, 8), (7, 9), (7, 10)]
+
+test "union all graphs":
+  let G = newGraph(@[(1, 2), (2, 3)])
+  let H = newGraph(@[(4, 5)])
+  let I = newGraph(@[(6, 7), (7, 8), (8, 9)])
+  let R = unionAll(@[G, H, I])
+  check R.isDirected() == false
+  check R.numberOfNodes() == 9
+  check R.numberOfEdges() == 6
+  check R.nodes() == @[1, 2, 3, 4, 5, 6, 7, 8, 9]
+  check R.edges() == @[(1, 2), (2, 3), (4, 5), (6, 7), (7, 8), (8, 9)]
+
+test "union all directed graphs":
+  let DG = newDiGraph(@[(1, 2), (2, 3)])
+  let DH = newDiGraph(@[(4, 5)])
+  let DI = newDiGraph(@[(6, 7), (7, 8), (8, 9)])
+  let DR = unionAll(@[DG, DH, DI])
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 9
+  check DR.numberOfEdges() == 6
+  check DR.nodes() == @[1, 2, 3, 4, 5, 6, 7, 8, 9]
+  check DR.edges() == @[(1, 2), (2, 3), (4, 5), (6, 7), (7, 8), (8, 9)]
+
+test "union disjoint all graphs":
+  let G = newGraph(@[(0, 1), (1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let I = newGraph(@[(4, 7), (7, 8), (7, 9), (7, 10)])
+  let R = disjointUnionAll(@[G, H, I])
+  check R.isDirected() == false
+  check R.numberOfNodes() == 15
+  check R.numberOfEdges() == 12
+  check R.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  check R.edges() == @[(0, 1), (1, 2), (1, 3), (1, 4), (5, 6), (6, 7), (6, 8), (6, 9), (10, 11), (11, 12), (11, 13), (11, 14)]
+
+test "union disjoint all directed graphs":
+  let DG = newDiGraph(@[(0, 1), (1, 2), (1, 3), (1, 4), (4, 1)])
+  let DH = newDiGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let DI = newDiGraph(@[(4, 7), (7, 8), (7, 9), (7, 10)])
+  let DR = disjointUnionAll(@[DG, DH, DI])
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 15
+  check DR.numberOfEdges() == 13
+  check DR.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+  check DR.edges() == @[(0, 1), (1, 2), (1, 3), (1, 4), (4, 1), (5, 6), (6, 7), (6, 8), (6, 9), (10, 11), (11, 12), (11, 13), (11, 14)]
+
+test "intersection all graphs":
+  let G = newGraph(@[(0, 1), (1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let I = newGraph(@[(1, 4), (4, 7), (7, 8), (7, 9), (7, 10)])
+  let R = intersectionAll(@[G, H, I])
+  check R.isDirected() == false
+  check R.numberOfNodes() == 2
+  check R.numberOfEdges() == 1
+  check R.nodes() == @[1, 4]
+  check R.edges() == @[(1, 4)]
+
+test "intersection all directed graphs":
+  let DG = newDiGraph(@[(0, 1), (1, 2), (1, 3), (1, 4), (4, 1)])
+  let DH = newDiGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let DI = newDiGraph(@[(1, 4), (4, 7), (7, 8), (7, 9), (7, 10)])
+  let DR = intersectionAll(@[DG, DH, DI])
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 2
+  check DR.numberOfEdges() == 1
+  check DR.nodes() == @[1, 4]
+  check DR.edges() == @[(1, 4)]
+
+test "try to apply intersectionAll to empty graph and fail":
+  let G = newGraph(@[(0, 1), (1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let I = newGraph()
+  try:
+    discard intersectionAll(@[G, H, I])
+  except NNError as e:
+    check e.msg == "cannot apply intersectionAll to empty graph sequence"
+
+test "try to apply intersectionAll to empty directed graph and fail":
+  let DG = newDiGraph(@[(0, 1), (1, 2), (1, 3), (1, 4)])
+  let DH = newDiGraph(@[(1, 4), (4, 5), (4, 6), (4, 7)])
+  let DI = newDiGraph()
+  try:
+    discard intersectionAll(@[DG, DH, DI])
+  except NNError as e:
+    check e.msg == "cannot apply intersectionAll to empty directed graph sequence"
+
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------
