@@ -3877,6 +3877,24 @@ test "union 2 disjoin directed graphs":
   check DR.numberOfEdges() == 5
   check DR.edges() == @[(1, 2), (1, 3), (2, 4), (3, 4), (5, 6)]
 
+test "try to union 2 graphs and success":
+  let G = newGraph(@[(1, 2), (1, 3), (1, 4)])
+  let H = newGraph(@[(1, 3), (3, 5), (3, 6), (3, 7)])
+  let R = disjointUnion(G, H)
+  check R.isDirected() == false
+  check R.numberOfNodes() == 9
+  check R.numberOfEdges() == 7
+  check R.edges() == @[(0, 1), (0, 2), (0, 3), (4, 5), (5, 6), (5, 7), (5, 8)]
+
+test "try to union 2 directed graphs and success":
+  let DG = newDiGraph(@[(1, 2), (1, 3), (1, 4)])
+  let DH = newDiGraph(@[(3, 1), (3, 5), (3, 6), (3, 7)])
+  let DR = disjointUnion(DG, DH)
+  check DR.isDirected() == true
+  check DR.numberOfNodes() == 9
+  check DR.numberOfEdges() == 7
+  check DR.edges() == @[(0, 1), (0, 2), (0, 3), (5, 4), (5, 6), (5, 7), (5, 8)]
+
 # -------------------------------------------------------------------
 # Planarity
 # -------------------------------------------------------------------

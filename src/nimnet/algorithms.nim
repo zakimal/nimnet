@@ -955,6 +955,45 @@ proc union*(DG: DiGraph, DH: DiGraph): DiGraph =
   DR.addEdgesFrom(DH.edges())
   return DR
 
+proc disjointUnion*(G: Graph, H: Graph): Graph =
+  var originalToNew = initTable[tuple[which: string, node: Node], int]()
+  var newLabel = 0
+  for node in G.nodes():
+    originalToNew[("G", node)] = newLabel
+    newLabel += 1
+  for node in H.nodes():
+    originalToNew[("H", node)] = newLabel
+    newLabel += 1
+  let R = newGraph()
+  for node in G.nodes():
+    R.addNode(originalToNew[("G", node)])
+  for edge in G.edges():
+    R.addEdge((originalToNew[("G", edge.u)], originalToNew[("G", edge.v)]))
+  for node in H.nodes():
+    R.addNode(originalToNew[("H", node)])
+  for edge in H.edges():
+    R.addEdge((originalToNew[("H", edge.u)], originalToNew[("H", edge.v)]))
+  return R
+proc disjointUnion*(DG: DiGraph, DH: DiGraph): DiGraph =
+  var originalToNew = initTable[tuple[which: string, node: Node], int]()
+  var newLabel = 0
+  for node in DG.nodes():
+    originalToNew[("DG", node)] = newLabel
+    newLabel += 1
+  for node in DH.nodes():
+    originalToNew[("DH", node)] = newLabel
+    newLabel += 1
+  let DR = newDiGraph()
+  for node in DG.nodes():
+    DR.addNode(originalToNew[("DG", node)])
+  for edge in DG.edges():
+    DR.addEdge((originalToNew[("DG", edge.u)], originalToNew[("DG", edge.v)]))
+  for node in DH.nodes():
+    DR.addNode(originalToNew[("DH", node)])
+  for edge in DH.edges():
+    DR.addEdge((originalToNew[("DH", edge.u)], originalToNew[("DH", edge.v)]))
+  return DR
+
 # -------------------------------------------------------------------
 # TODO:
 # Planarity
