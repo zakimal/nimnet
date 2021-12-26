@@ -74,11 +74,6 @@ proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
 
 # -------------------------------------------------------------------
 # TODO:
-# Chains
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Chordal
 # -------------------------------------------------------------------
 
@@ -1919,3 +1914,59 @@ iterator bfsBeamEdges*(
 # TODO:
 # Wiener Index
 # -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# Chains
+# -------------------------------------------------------------------
+
+proc dfsCycleForest(
+  G: Graph, root: Node = None
+): tuple[H: DiGraph, nodes: seq[Node], parents: Table[Node, Node], isNonTree: Table[Edge, bool]] =
+  let H = newDiGraph()
+  var nodes: seq[Node] = @[]
+  var parents = initTable[Node, Node]()
+  var isNonTree = initTable[Edge, bool]()
+  for (u, v, d) in G.dfsLabeledEdges(source=root):
+    if d == "forward":
+      if u == v:
+        H.addNode(v)
+        parents[v] = None
+        nodes.add(v)
+      else:
+        H.addNode(v)
+        parents[v] = u
+        H.addEdge(v, u)
+        isNonTree[(v, u)] = false
+        nodes.add(v)
+    elif d == "nontree" and v notin H.successorsSet(u):
+      H.addEdge(v, u)
+      isNonTree[(v, u)] = true
+  return (H, nodes, parents, isNonTree)
+iterator buildChain(
+  DG: DiGraph,
+  u, v: Node,
+  visited: var HashSet[Node],
+  parents: var Table[Node, Node]
+): tuple[u, v: Node] =
+  var uUsing = u
+  var vUsing = v
+  while vUsing notin visited:
+    yield (uUsing, vUsing)
+    visited.incl(vUsing)
+    uUsing = vUsing
+    vUsing = parents[vUsing]
+  yield (uUsing, vUsing)
+
+iterator chainDecomposition*(
+  G: Graph, root: Node = None
+): seq[tuple[u, v: Node]] =
+  var (H, nodes, parents, isNonTree) = dfsCycleForest(G, root)
+  var visited = initHashSet[Node]()
+  for u in nodes:
+    visited.incl(u)
+    var edges: seq[Edge] = @[]
+    for v in H.successors(u):
+      if isNonTree[(u, v)]:
+        edges.add((u, v))
+    for (u, v) in edges:
+      yield buildChain(H, u, v, visited, parents).toSeq()

@@ -262,7 +262,7 @@ Centrality
 - VoteRank
 
 Chains
-- networkx.algorithms.chains.chain_decomposition
+- [x] networkx.algorithms.chains.chain_decomposition
 
 Chordal
 - networkx.algorithms.chordal.is_chordal
