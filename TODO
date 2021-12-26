@@ -321,7 +321,7 @@ Communities
 Components
 - [x] Connectivity
 - [△] Strong connectivity
-- Weak connectivity
+- [x] Weak connectivity
 - Attracting components
 - Biconnected components
 - Semiconnectedness

@@ -4544,3 +4544,28 @@ test "condensation of directed graph":
   check c.numberOfEdges() == 78
   check c.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
   check c.edges() == @[(3, 2), (4, 0), (4, 1), (4, 3), (5, 2), (6, 2), (6, 5), (7, 2), (7, 5), (7, 6), (8, 2), (9, 2), (10, 2), (10, 5), (11, 2), (11, 10), (12, 0), (12, 3), (12, 4), (12, 5), (12, 7), (12, 8), (12, 9), (12, 11), (14, 2), (16, 0), (16, 3), (16, 4), (16, 6), (16, 12), (16, 13), (16, 14), (16, 15), (18, 17), (20, 18), (20, 19), (21, 17), (21, 18), (21, 19), (23, 0), (23, 1), (23, 3), (23, 4), (23, 7), (23, 10), (23, 12), (23, 13), (23, 14), (23, 15), (23, 16), (23, 18), (23, 19), (23, 20), (23, 21), (23, 22), (24, 2), (24, 5), (25, 2), (25, 5), (26, 2), (26, 5), (27, 2), (27, 5), (28, 2), (28, 5), (29, 10), (30, 2), (30, 5), (31, 2), (31, 5), (31, 9), (31, 29), (31, 30), (32, 9), (32, 10), (32, 29), (33, 2), (33, 30)]
+
+test "weakly connected components on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  var wcc = @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33].toHashSet()
+  check dkarate.weaklyConnectedComponents.toSeq() == @[wcc]
+
+test "check number of weakly connected components on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.numberOfWeaklyConnectedComponents() == 1
+
+test "check whether it is weakly connected directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.isWeaklyConnected() == true
+
+test "check whether it is weakly connected directed graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (1, 2), (2, 3), (4, 5), (4, 6), (5, 4), (6, 4)])
+  check DG.isWeaklyConnected() == false
+
+test "check whether it is weakly connected directed graph and fail":
+  let DG = newDiGraph()
+  try:
+    discard DG.isWeaklyConnected()
+  except NNPointlessConcept as e:
+    check e.msg == "connectivity is undefined for null graph"

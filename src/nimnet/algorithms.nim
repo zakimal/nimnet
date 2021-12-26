@@ -2104,3 +2104,39 @@ proc condensation*(DG: DiGraph, scc: seq[HashSet[Node]] = @[]): DiGraph =
     if mapping[u] != mapping[v]:
       C.addEdge((mapping[u], mapping[v]))
   return C
+
+iterator plainBfs(DG: DiGraph, source: Node): Node =
+  var seen = initHashSet[Node]()
+  var nextLevel = initHashSet[Node]()
+  nextLevel.incl(source)
+  while len(nextLevel) != 0:
+    var thisLevel = nextLevel
+    nextLevel = initHashSet[Node]()
+    for v in thisLevel:
+      if v notin seen:
+        seen.incl(v)
+        for succ in DG.succ[v]:
+          nextLevel.incl(succ)
+        for pred in DG.pred[v]:
+          nextLevel.incl(pred)
+        yield v
+
+iterator weaklyConnectedComponents*(DG: DiGraph): HashSet[Node] =
+  var seen = initHashSet[Node]()
+  for v in DG.nodes():
+    if v notin seen:
+      let c = plainBfs(DG, v).toSeq().toHashSet()
+      for ele in c:
+        seen.incl(ele)
+      yield c
+
+proc numberOfWeaklyConnectedComponents*(DG: DiGraph): int =
+  var s = 0
+  for wcc in DG.weaklyConnectedComponents():
+    s += 1
+  return s
+
+proc isWeaklyConnected*(DG: DiGraph): bool =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("connectivity is undefined for null graph")
+  return len(DG.weaklyConnectedComponents().toSeq()[0]) == len(DG)
