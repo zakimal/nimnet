@@ -202,6 +202,22 @@ test "onion layers of graph":
 # DAG
 # -------------------------------------------------------------------
 
+test "topological generations in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.topologicalGenerations().toSeq() == @[@[0, 14, 15, 18, 20, 22, 23, 24, 26], @[1, 4, 5, 11, 25, 29], @[2, 17, 19, 21, 6, 10], @[3, 8, 9, 27, 28, 16], @[7, 12, 13, 30, 31], @[32], @[33]]
+
+test "topological sort in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.topologicalSort().toSeq() == @[0, 14, 15, 18, 20, 22, 23, 24, 26, 1, 4, 5, 11, 25, 29, 2, 17, 19, 21, 6, 10, 3, 8, 9, 27, 28, 16, 7, 12, 13, 30, 31, 32, 33]
+
+test "lexicographical sort in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.lexicographicalTopologicalSort().toSeq() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+
+test "all topological sorts on directed graph":
+  let DG = newDiGraph(@[(1, 2), (2, 3), (2, 4)])
+  check DG.allTopologicalSorts().toSeq() == @[@[1, 2, 4, 3], @[1, 2, 3, 4]]
+
 # -------------------------------------------------------------------
 # Distance Measures
 # -------------------------------------------------------------------

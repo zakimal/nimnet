@@ -374,10 +374,10 @@ D-Separation
 Directed Acyclic Graphs
 - networkx.algorithms.dag.ancestors
 - networkx.algorithms.dag.descendants
-- networkx.algorithms.dag.topological_sort
-- networkx.algorithms.dag.topological_generations
-- networkx.algorithms.dag.all_topological_sorts
-- networkx.algorithms.dag.lexicographical_topological_sort
+- [x] networkx.algorithms.dag.topological_sort
+- [x] networkx.algorithms.dag.topological_generations
+- [x] networkx.algorithms.dag.all_topological_sorts
+- [x] networkx.algorithms.dag.lexicographical_topological_sort
 - networkx.algorithms.dag.is_directed_acyclic_graph
 - networkx.algorithms.dag.is_aperiodic
 - networkx.algorithms.dag.transitive_closure

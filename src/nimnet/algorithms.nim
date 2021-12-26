@@ -464,6 +464,97 @@ proc onionLayers*(g: Graph): Table[Node, int] =
 # DAG
 # -------------------------------------------------------------------
 
+iterator topologicalGenerations*(DG: DiGraph): seq[Node] =
+  var indegreeMap = initTable[Node, int]()
+  for (v, ind) in DG.inDegree().pairs():
+    if ind > 0:
+      indegreeMap[v] = ind
+  var zeroIndegree: seq[Node] = @[]
+  for (v, ind) in DG.inDegree().pairs():
+    if ind == 0:
+      zeroIndegree.add(v)
+  zeroIndegree.sort()
+
+  while len(zeroIndegree) != 0:
+    var thisGeneration = zeroIndegree
+    zeroIndegree = @[]
+    for node in thisGeneration:
+      for child in DG.successors(node):
+        indegreeMap[child] -= 1
+        if indegreeMap[child] == 0:
+          zeroIndegree.add(child)
+          indegreeMap.del(child)
+    yield thisGeneration
+  if len(indegreeMap.keys().toSeq()) != 0:
+    raise newNNUnfeasible("graph contains a cycle")
+
+iterator topologicalSort*(DG: DiGraph): Node =
+  for generation in DG.topologicalGenerations():
+    for node in generation:
+      yield node
+
+iterator lexicographicalTopologicalSort*(DG: DiGraph, key: proc(node: Node): int = nil): Node =
+  var keyUsing = key
+  if key == nil:
+    keyUsing = proc(node: Node): int = return node
+  var nodeidMap = initTable[Node, int]()
+  for i, n in DG.nodesSeq():
+    nodeidMap[n] = i
+  var indegreeMap = initTable[Node, int]()
+  for (v, d) in DG.inDegree().pairs():
+    if d > 0:
+      indegreeMap[v] = d
+  var zeroIndegree = initHeapQueue[tuple[key: int, id: int, node: Node]]()
+  for (v, d) in DG.inDegree().pairs():
+    if d == 0:
+      zeroIndegree.push((keyUsing(v), nodeidMap[v], v))
+  while len(zeroIndegree) != 0:
+    var (_, _, node) = zeroIndegree.pop()
+    for (_, child) in DG.edges(node):
+      indegreeMap[child] -= 1
+      if indegreeMap[child] == 0:
+        zeroIndegree.push((keyUsing(child), nodeidMap[child], child))
+        indegreeMap.del(child)
+    yield node
+  if len(indegreeMap.keys().toSeq()) != 0:
+    raise newNNUnfeasible("graph contains a cycle")
+
+iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
+  var count = DG.inDegree()
+  var D = initDeque[Node]()
+  for v, d in DG.inDegree().pairs():
+    if d == 0:
+      D.addLast(v)
+  var bases: seq[Node] = @[]
+  var currentSort: seq[Node] = @[]
+  while true:
+    if len(currentSort) == len(DG):
+      yield currentSort
+      while len(currentSort) > 0:
+        var q = currentSort.pop()
+        for _, j in DG.successorsSeq(q):
+          count[j] += 1
+        while len(D) > 0 and count[D.peekLast()] > 0:
+          D.popLast()
+        D.addFirst(q)
+        if D.peekLast() == bases[^1]:
+          bases.pop()
+        else:
+          break
+    else:
+      if len(D) == 0:
+        raise newNNUnfeasible("graph contains a cycle")
+      var q = D.popLast()
+      for _, j in DG.successorsSeq(q):
+        count[j] -= 1
+        if count[j] == 0:
+          D.addLast(j)
+      currentSort.add(q)
+      if len(bases) < len(currentSort):
+        bases.add(q)
+    if len(bases) == 0:
+      break
+
 # -------------------------------------------------------------------
 # TODO:
 # Distance Measures
