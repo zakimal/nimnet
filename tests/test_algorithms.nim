@@ -234,6 +234,24 @@ test "all topological sorts on directed graph":
 # Dominating Sets
 # -------------------------------------------------------------------
 
+test "dominating set of graph":
+  let karate = karateClubGraph()
+  check karate.dominatingSet() == @[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30].toHashSet()
+
+test "dominating set of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.dominatingSet() == @[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30].toHashSet()
+
+test "check node set is dominating set of graph":
+  let karate = karateClubGraph()
+  check karate.isDominatingSet(@[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30]) == true
+  check karate.isDominatingSet(@[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30].toHashSet()) == true
+
+test "check node set is dominating set of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.isDominatingSet(@[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30]) == true
+  check dkarate.isDominatingSet(@[0, 9, 14, 15, 16, 18, 20, 22, 23, 24, 26, 28, 30].toHashSet()) == true
+
 # -------------------------------------------------------------------
 # Efficiency
 # -------------------------------------------------------------------

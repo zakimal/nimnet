@@ -409,8 +409,8 @@ Dominance
 - networkx.algorithms.dominance.dominance_frontiers
 
 Dominating Sets
-- networkx.algorithms.dominating.dominating_set
-- networkx.algorithms.dominating.is_dominating_set
+- [x] networkx.algorithms.dominating.dominating_set
+- [x] networkx.algorithms.dominating.is_dominating_set
 
 Efficiency
 - networkx.algorithms.efficiency_measures.efficiency

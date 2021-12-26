@@ -575,6 +575,90 @@ iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
 # Dominating Sets
 # -------------------------------------------------------------------
 
+proc dominatingSet*(G: Graph, startWith: Node = None): HashSet[Node] =
+  let allNodes = G.nodesSet()
+  var startWithUsing = startWith
+  if startWith == None:
+    startWithUsing = G.nodes()[0]
+  if startWithUsing notin allNodes:
+    raise newNNError(fmt"node {startWithUsing} not in graph")
+  var dominatingSet = initHashSet[Node]()
+  dominatingSet.incl(startWithUsing)
+  var dominatedNodes = G.neighborsSet(startWithUsing)
+  var remainingNodes = allNodes - dominatedNodes - dominatingSet
+  while len(remainingNodes) != 0:
+    var tmp = remainingNodes.toSeq()
+    tmp.sort()
+    var v = tmp[0]
+    remainingNodes.excl(v)
+    var undominatedNeighbors = G.neighborsSet(v) - dominatingSet
+    dominatingSet.incl(v)
+    dominatedNodes = dominatedNodes + undominatedNeighbors
+    remainingNodes = remainingNodes - undominatedNeighbors
+  return dominatingSet
+proc dominatingSet*(DG: DiGraph, startWith: Node = None): HashSet[Node] =
+  let allNodes = DG.nodesSet()
+  var startWithUsing = startWith
+  if startWith == None:
+    startWithUsing = DG.nodes()[0]
+  if startWithUsing notin allNodes:
+    raise newNNError(fmt"node {startWithUsing} not in graph")
+  var dominatingSet = initHashSet[Node]()
+  dominatingSet.incl(startWithUsing)
+  var dominatedNodes = DG.successorsSet(startWithUsing)
+  var remainingNodes = allNodes - dominatedNodes - dominatingSet
+  while len(remainingNodes) != 0:
+    var tmp = remainingNodes.toSeq()
+    tmp.sort()
+    var v = tmp[0]
+    remainingNodes.excl(v)
+    var undominatedNeighbors = DG.successorsSet(v) - dominatingSet
+    dominatingSet.incl(v)
+    dominatedNodes = dominatedNodes + undominatedNeighbors
+    remainingNodes = remainingNodes - undominatedNeighbors
+  return dominatingSet
+
+proc isDominatingSet*(G: Graph, nbunch: seq[Node]): bool =
+  var testset = initHashSet[Node]()
+  for node in nbunch:
+    if node in G.nodesSet():
+      testset.incl(node)
+  var nbrs = initHashSet[Node]()
+  for node in testset:
+    for nbr in G.neighbors(node):
+      nbrs.incl(nbr)
+  return len(G.nodesSet() - testset - nbrs) == 0
+proc isDominatingSet*(G: Graph, nbunch: HashSet[Node]): bool =
+  var testset = initHashSet[Node]()
+  for node in nbunch:
+    if node in G.nodesSet():
+      testset.incl(node)
+  var nbrs = initHashSet[Node]()
+  for node in testset:
+    for nbr in G.neighbors(node):
+      nbrs.incl(nbr)
+  return len(G.nodesSet() - testset - nbrs) == 0
+proc isDominatingSet*(DG: DiGraph, nbunch: seq[Node]): bool =
+  var testset = initHashSet[Node]()
+  for node in nbunch:
+    if node in DG.nodesSet():
+      testset.incl(node)
+  var nbrs = initHashSet[Node]()
+  for node in testset:
+    for nbr in DG.successors(node):
+      nbrs.incl(nbr)
+  return len(DG.nodesSet() - testset - nbrs) == 0
+proc isDominatingSet*(DG: DiGraph, nbunch: HashSet[Node]): bool =
+  var testset = initHashSet[Node]()
+  for node in nbunch:
+    if node in DG.nodesSet():
+      testset.incl(node)
+  var nbrs = initHashSet[Node]()
+  for node in testset:
+    for nbr in DG.successors(node):
+      nbrs.incl(nbr)
+  return len(DG.nodesSet() - testset - nbrs) == 0
+
 # -------------------------------------------------------------------
 # TODO:
 # Efficiency
