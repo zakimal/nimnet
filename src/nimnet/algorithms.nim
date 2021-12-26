@@ -571,7 +571,6 @@ iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
 # Dominating Sets
 # -------------------------------------------------------------------
 
@@ -662,11 +661,6 @@ proc isDominatingSet*(DG: DiGraph, nbunch: HashSet[Node]): bool =
 # -------------------------------------------------------------------
 # TODO:
 # Efficiency
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Eulerian
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
@@ -2457,3 +2451,18 @@ proc isBiconnected*(G: Graph): bool =
     return len(bcc[0]) == len(G)
   return false
 
+# -------------------------------------------------------------------
+# TODO:
+# Eulerian
+# -------------------------------------------------------------------
+
+proc isEulerian*(G: Graph): bool =
+  var d: seq[bool] = @[]
+  for node in G.nodes():
+    d.add(G.degree(node) mod 2 == 0)
+  return all(d, proc(b: bool): bool = return b) and G.isConnected()
+proc isEulerian*(DG: DiGraph): bool =
+  var d: seq[bool] = @[]
+  for node in DG.nodes():
+    d.add(DG.inDegree(node) == DG.outDegree(node))
+  return all(d, proc(b: bool): bool = return b) and DG.isStronglyConnected()

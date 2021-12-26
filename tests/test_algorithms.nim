@@ -257,10 +257,6 @@ test "check node set is dominating set of directed graph":
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# Eulerian
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Flows
 # -------------------------------------------------------------------
 
@@ -4633,3 +4629,19 @@ test "check whether it is biconnected graph":
   check G.isBiconnected() == false
   G.addEdge(0, 3)
   check G.isBiconnected() == true
+
+# -------------------------------------------------------------------
+# Eulerian
+# -------------------------------------------------------------------
+
+test "check whether graph is eulerian":
+  let G = completeGraph(5)
+  check G.isEulerian() == true
+  let petersen = petersenGraph()
+  check petersen.isEulerian() == false
+
+test "check whether directed graph is eulerian":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 3), (1, 2), (2, 3), (3, 0), (3, 1)])
+  check DG.isEulerian() == true
+

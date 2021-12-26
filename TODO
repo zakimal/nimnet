@@ -418,7 +418,7 @@ Efficiency
 - networkx.algorithms.efficiency_measures.global_efficiency
 
 Eulerian
-- networkx.algorithms.euler.is_eulerian
+- [x] networkx.algorithms.euler.is_eulerian
 - networkx.algorithms.euler.eulerian_circuit
 - networkx.algorithms.euler.eulerize
 - networkx.algorithms.euler.is_semieulerian
