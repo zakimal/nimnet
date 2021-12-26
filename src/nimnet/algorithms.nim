@@ -197,51 +197,6 @@ proc transitivity*(DG: DiGraph): float =
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
-# Connectivity
-# -------------------------------------------------------------------
-
-proc plainBfs(G: Graph, source: Node): HashSet[Node] =
-  var seen = initHashSet[Node]()
-  var nextLevel = initHashSet[Node]()
-  nextLevel.incl(source)
-  while len(nextLevel) != 0:
-    var thisLevel = nextLevel
-    nextLevel = initHashSet[Node]()
-    for v in thisLevel:
-      if v notin seen:
-        seen.incl(v)
-        for adjNode in G.adj[v]:
-          nextLevel.incl(adjNode)
-  return seen
-
-proc isConnected*(G: Graph): bool =
-  if len(G) == 0:
-    raise newNNPointlessConcept("connectivity is undifined for null graph")
-  var s = 0
-  for node in plainBfs(G, G.nodes[0]):
-    s += 1
-  return s == len(G)
-
-iterator connectedComponents*(G: Graph): HashSet[Node] =
-  var seen = initHashSet[Node]()
-  for v in G.nodes():
-    if v notin seen:
-      let c = plainBfs(G, v)
-      for node in c:
-        seen.incl(node)
-      yield c
-
-proc numberOfConnectedComponents*(G: Graph): int =
-  var s = 0
-  for cc in G.connectedComponents():
-    s += 1
-  return s
-
-proc nodeConnectedComponents*(G: Graph, n: Node): HashSet[Node] =
-  return plainBfs(G, n)
-
-# -------------------------------------------------------------------
 # Cores
 # -------------------------------------------------------------------
 
@@ -2010,3 +1965,142 @@ iterator chainDecomposition*(
         edges.add((u, v))
     for (u, v) in edges:
       yield buildChain(H, u, v, visited, parents).toSeq()
+
+# -------------------------------------------------------------------
+# TODO:
+# Connectivity
+# -------------------------------------------------------------------
+
+proc plainBfs(G: Graph, source: Node): HashSet[Node] =
+  var seen = initHashSet[Node]()
+  var nextLevel = initHashSet[Node]()
+  nextLevel.incl(source)
+  while len(nextLevel) != 0:
+    var thisLevel = nextLevel
+    nextLevel = initHashSet[Node]()
+    for v in thisLevel:
+      if v notin seen:
+        seen.incl(v)
+        for adjNode in G.adj[v]:
+          nextLevel.incl(adjNode)
+  return seen
+
+proc isConnected*(G: Graph): bool =
+  if len(G) == 0:
+    raise newNNPointlessConcept("connectivity is undifined for null graph")
+  var s = 0
+  for node in plainBfs(G, G.nodes[0]):
+    s += 1
+  return s == len(G)
+
+iterator connectedComponents*(G: Graph): HashSet[Node] =
+  var seen = initHashSet[Node]()
+  for v in G.nodes():
+    if v notin seen:
+      let c = plainBfs(G, v)
+      for node in c:
+        seen.incl(node)
+      yield c
+
+proc numberOfConnectedComponents*(G: Graph): int =
+  var s = 0
+  for cc in G.connectedComponents():
+    s += 1
+  return s
+
+proc nodeConnectedComponents*(G: Graph, n: Node): HashSet[Node] =
+  return plainBfs(G, n)
+
+iterator stronglyConnectedComponents*(DG: DiGraph): HashSet[Node] =
+  var preorder = initTable[Node, int]()
+  var lowlink = initTable[Node, int]()
+  var sccFound = initHashSet[Node]()
+  var sccQueue = initDeque[Node]()
+  var i = 0 # preorder counter
+  for source in DG.nodes():
+    if source notin sccFound:
+      var queue = initDeque[Node]()
+      queue.addFirst(source)
+      while len(queue) != 0:
+        var v = queue.peekLast()
+        if v notin preorder:
+          i += 1
+          preorder[v] = i
+        var done = true
+        for w in DG.successors(v):
+          if w notin preorder:
+            queue.addLast(w)
+            done = false
+            break
+        if done:
+          lowlink[v] = preorder[v]
+          for w in DG.successors(v):
+            if w notin sccFound:
+              if preorder[w] > preorder[v]:
+                lowlink[v] = min(lowlink[v], lowlink[w])
+              else:
+                lowlink[v] = min(lowlink[v], preorder[w])
+          queue.popLast()
+          if lowlink[v] == preorder[v]:
+            var scc = initHashSet[Node]()
+            scc.incl(v)
+            while len(sccQueue) != 0 and preorder[sccQueue.peekLast()] > preorder[v]:
+              let k = sccQueue.popLast()
+              scc.incl(k)
+            for c in scc:
+              sccFound.incl(c)
+            yield scc
+          else:
+            sccQueue.addLast(v)
+
+proc numberOfStronglyConnectedComponents*(DG: DiGraph): int =
+  var s = 0
+  for scc in DG.stronglyConnectedComponents():
+    s += 1
+  return s
+
+proc isStronglyConnected*(DG: DiGraph): bool =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("connectivity is undefined for null graph")
+  return len(DG.stronglyConnectedComponents().toSeq()[0]) == len(DG)
+
+iterator kosarajuStronglyConnectedComponents*(DG: DiGraph, source: Node = None): HashSet[Node] =
+  let RDG = DG.reversed()
+  var post = RDG.dfsPostOrderNodes(source=source).toSeq().toDeque()
+  var seen = initHashSet[Node]()
+  while len(post) != 0:
+    var r = post.popLast()
+    if r in seen:
+      continue
+    var c = RDG.dfsPreOrderNodes(r)
+    var newNodes = initHashSet[Node]()
+    for v in c:
+      if v notin seen:
+        newNodes.incl(v)
+    for n in newNodes:
+      seen.incl(n)
+    yield newNodes
+
+# iterator stronglyConnectedComponents*(DG: DiGraph): HashSet[Node]
+# recursion of iterator is not supported in nim?
+
+proc condensation*(DG: DiGraph, scc: seq[HashSet[Node]] = @[]): DiGraph =
+  var sccUsing: seq[HashSet[Node]] = scc
+  if len(scc) == 0:
+    sccUsing = DG.stronglyConnectedComponents().toSeq()
+  var mapping = initTable[Node, int]()
+  var members = initTable[int, HashSet[Node]]()
+  let C = newDiGraph()
+  if len(DG) == 0:
+    return C
+  for i, component in sccUsing:
+    members[i] = component
+    for n in component:
+      mapping[n] = i
+  var numberOfComponents = len(sccUsing)
+  for i in 0..<numberOfComponents:
+    C.addNode(i)
+  for (u, v) in DG.edges():
+    if mapping[u] != mapping[v]:
+      C.addEdge((mapping[u], mapping[v]))
+  return C

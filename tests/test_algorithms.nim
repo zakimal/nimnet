@@ -104,54 +104,6 @@ test "transitivity in directed graph":
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# Connectivity
-# -------------------------------------------------------------------
-
-test "check whether it is connected graph":
-  let G = pathGraph(4)
-  check G.isConnected() ==  true
-
-test "check wheter null graph is connected and fail":
-  let G = newGraph()
-  try:
-    discard G.isConnected()
-  except NNPointlessConcept as e:
-    check e.msg == "connectivity is undifined for null graph"
-
-test "connected components in graph":
-  let G = pathGraph(4)
-  G.addPath(@[10, 11, 12])
-  var cc = G.connectedComponents().toSeq()
-  const cmpLen = proc (x, y: HashSet[Node]): int =
-    result = system.cmp(-len(x), -len(y))
-  cc.sort(cmpLen)
-  var cc1 = initHashSet[Node]()
-  cc1.incl(0)
-  cc1.incl(1)
-  cc1.incl(2)
-  cc1.incl(3)
-  var cc2 = initHashSet[Node]()
-  cc2.incl(10)
-  cc2.incl(11)
-  cc2.incl(12)
-  check cc == @[cc1, cc2]
-
-test "check number of connected components in graph":
-  let G = pathGraph(4)
-  G.addPath(@[10, 11, 12])
-  check G.numberOfConnectedComponents() == 2
-
-test "node connected components in graph":
-  let G = pathGraph(4)
-  G.addPath(@[10, 11, 12])
-  var cc1 = initHashSet[Node]()
-  cc1.incl(0)
-  cc1.incl(1)
-  cc1.incl(2)
-  cc1.incl(3)
-  check G.nodeConnectedComponents(0) == cc1
-
-# -------------------------------------------------------------------
 # Cores
 # -------------------------------------------------------------------
 
@@ -4482,3 +4434,113 @@ test "chain decomposition of graph":
   for comp in karate.chainDecomposition():
     ret.add(comp)
   check ret == @[@[(0, 2), (2, 1), (1, 0)], @[(0, 3), (3, 2)], @[(0, 5), (5, 6), (6, 4), (4, 0)], @[(0, 6)], @[(0, 7), (7, 3)], @[(0, 8), (8, 33), (33, 13), (13, 3)], @[(0, 10), (10, 5)], @[(0, 12), (12, 3)], @[(0, 13)], @[(0, 17), (17, 1)], @[(0, 19), (19, 33)], @[(0, 21), (21, 1)], @[(0, 31), (31, 24), (24, 25), (25, 23), (23, 32), (32, 30), (30, 8)], @[(1, 3)], @[(1, 7)], @[(1, 13)], @[(1, 19)], @[(1, 30)], @[(2, 7)], @[(2, 8)], @[(2, 9), (9, 33)], @[(2, 13)], @[(2, 27), (27, 24)], @[(2, 28), (28, 31)], @[(2, 32)], @[(33, 14), (14, 32)], @[(33, 15), (15, 32)], @[(33, 18), (18, 32)], @[(33, 20), (20, 32)], @[(33, 22), (22, 32)], @[(33, 23)], @[(33, 26), (26, 29), (29, 23)], @[(33, 27)], @[(33, 28)], @[(33, 29)], @[(33, 30)], @[(33, 31)], @[(33, 32)], @[(8, 32)], @[(32, 29)], @[(32, 31)], @[(23, 27)], @[(25, 31)], @[(4, 10)], @[(6, 16), (16, 5)]]
+
+# -------------------------------------------------------------------
+# Connectivity
+# -------------------------------------------------------------------
+
+test "check whether it is connected graph":
+  let G = pathGraph(4)
+  check G.isConnected() ==  true
+
+test "check wheter null graph is connected and fail":
+  let G = newGraph()
+  try:
+    discard G.isConnected()
+  except NNPointlessConcept as e:
+    check e.msg == "connectivity is undifined for null graph"
+
+test "connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  var cc = G.connectedComponents().toSeq()
+  const cmpLen = proc (x, y: HashSet[Node]): int =
+    result = system.cmp(-len(x), -len(y))
+  cc.sort(cmpLen)
+  var cc1 = initHashSet[Node]()
+  cc1.incl(0)
+  cc1.incl(1)
+  cc1.incl(2)
+  cc1.incl(3)
+  var cc2 = initHashSet[Node]()
+  cc2.incl(10)
+  cc2.incl(11)
+  cc2.incl(12)
+  check cc == @[cc1, cc2]
+
+test "check number of connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  check G.numberOfConnectedComponents() == 2
+
+test "node connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  var cc1 = initHashSet[Node]()
+  cc1.incl(0)
+  cc1.incl(1)
+  cc1.incl(2)
+  cc1.incl(3)
+  check G.nodeConnectedComponents(0) == cc1
+
+test "strongly connected components in directed graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (1, 2), (2, 3), (4, 5), (4, 6), (5, 4), (6, 4)])
+  var scc1 = initHashSet[Node]()
+  scc1.incl(3)
+  var scc2 = initHashSet[Node]()
+  scc2.incl(2)
+  var scc3 = initHashSet[Node]()
+  scc3.incl(1)
+  var scc4 = initHashSet[Node]()
+  scc4.incl(0)
+  var scc5 = initHashSet[Node]()
+  scc5.incl(4)
+  scc5.incl(5)
+  scc5.incl(6)
+  check DG.stronglyConnectedComponents().toSeq() == @[scc1, scc2, scc3, scc4, scc5]
+
+test "check number of strongly connected components in directed graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (1, 2), (2, 3), (4, 5), (4, 6), (5, 4), (6, 4)])
+  check DG.numberOfStronglyConnectedComponents() == 5
+
+test "check whether it is strongly connected directed graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(4, 5), (4, 6), (5, 4), (6, 4)])
+  check DG.isStronglyConnected() == true
+
+test "check whether it is strongly connected directed graph":
+  let DG = newDiGraph()
+  DG.addEdgesFrom(@[(0, 1), (1, 2), (2, 3), (4, 5), (4, 6), (5, 4), (6, 4)])
+  check DG.isStronglyConnected() == false
+
+test "check whether it is strongly connected directed graph and fail":
+  let DG = newDiGraph()
+  try:
+    discard DG.isStronglyConnected()
+  except NNPointlessConcept as e:
+    check e.msg == "connectivity is undefined for null graph"
+
+test "kosaraju strongly connected components":
+  let DG = cycleDiGraph(4)
+  DG.addCycle(@[10, 11, 12])
+  var cc1 = initHashSet[Node]()
+  cc1.incl(10)
+  cc1.incl(11)
+  cc1.incl(12)
+  var cc2 = initHashSet[Node]()
+  cc2.incl(0)
+  cc2.incl(1)
+  cc2.incl(2)
+  cc2.incl(3)
+  check DG.kosarajuStronglyConnectedComponents().toSeq() == @[cc1, cc2]
+
+test "condensation of directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let c = dkarate.condensation()
+  check c.isDirected() == true
+  check c.numberOfNodes() == 34
+  check c.numberOfEdges() == 78
+  check c.nodes() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+  check c.edges() == @[(3, 2), (4, 0), (4, 1), (4, 3), (5, 2), (6, 2), (6, 5), (7, 2), (7, 5), (7, 6), (8, 2), (9, 2), (10, 2), (10, 5), (11, 2), (11, 10), (12, 0), (12, 3), (12, 4), (12, 5), (12, 7), (12, 8), (12, 9), (12, 11), (14, 2), (16, 0), (16, 3), (16, 4), (16, 6), (16, 12), (16, 13), (16, 14), (16, 15), (18, 17), (20, 18), (20, 19), (21, 17), (21, 18), (21, 19), (23, 0), (23, 1), (23, 3), (23, 4), (23, 7), (23, 10), (23, 12), (23, 13), (23, 14), (23, 15), (23, 16), (23, 18), (23, 19), (23, 20), (23, 21), (23, 22), (24, 2), (24, 5), (25, 2), (25, 5), (26, 2), (26, 5), (27, 2), (27, 5), (28, 2), (28, 5), (29, 10), (30, 2), (30, 5), (31, 2), (31, 5), (31, 9), (31, 29), (31, 30), (32, 9), (32, 10), (32, 29), (33, 2), (33, 30)]
