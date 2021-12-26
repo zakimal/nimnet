@@ -319,7 +319,7 @@ Communities
 - Validating partitions
 
 Components
-- Connectivity
+- [x] Connectivity
 - Strong connectivity
 - Weak connectivity
 - Attracting components

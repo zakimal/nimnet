@@ -201,6 +201,46 @@ proc transitivity*(DG: DiGraph): float =
 # Connectivity
 # -------------------------------------------------------------------
 
+proc plainBfs(G: Graph, source: Node): HashSet[Node] =
+  var seen = initHashSet[Node]()
+  var nextLevel = initHashSet[Node]()
+  nextLevel.incl(source)
+  while len(nextLevel) != 0:
+    var thisLevel = nextLevel
+    nextLevel = initHashSet[Node]()
+    for v in thisLevel:
+      if v notin seen:
+        seen.incl(v)
+        for adjNode in G.adj[v]:
+          nextLevel.incl(adjNode)
+  return seen
+
+proc isConnected*(G: Graph): bool =
+  if len(G) == 0:
+    raise newNNPointlessConcept("connectivity is undifined for null graph")
+  var s = 0
+  for node in plainBfs(G, G.nodes[0]):
+    s += 1
+  return s == len(G)
+
+iterator connectedComponents*(G: Graph): HashSet[Node] =
+  var seen = initHashSet[Node]()
+  for v in G.nodes():
+    if v notin seen:
+      let c = plainBfs(G, v)
+      for node in c:
+        seen.incl(node)
+      yield c
+
+proc numberOfConnectedComponents*(G: Graph): int =
+  var s = 0
+  for cc in G.connectedComponents():
+    s += 1
+  return s
+
+proc nodeConnectedComponents*(G: Graph, n: Node): HashSet[Node] =
+  return plainBfs(G, n)
+
 # -------------------------------------------------------------------
 # Cores
 # -------------------------------------------------------------------

@@ -2,6 +2,8 @@ import unittest
 
 import tables
 import sets
+import sequtils
+import algorithm
 
 import nimnet
 import nimnet/generators
@@ -104,6 +106,50 @@ test "transitivity in directed graph":
 # -------------------------------------------------------------------
 # Connectivity
 # -------------------------------------------------------------------
+
+test "check whether it is connected graph":
+  let G = pathGraph(4)
+  check G.isConnected() ==  true
+
+test "check wheter null graph is connected and fail":
+  let G = newGraph()
+  try:
+    discard G.isConnected()
+  except NNPointlessConcept as e:
+    check e.msg == "connectivity is undifined for null graph"
+
+test "connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  var cc = G.connectedComponents().toSeq()
+  const cmpLen = proc (x, y: HashSet[Node]): int =
+    result = system.cmp(-len(x), -len(y))
+  cc.sort(cmpLen)
+  var cc1 = initHashSet[Node]()
+  cc1.incl(0)
+  cc1.incl(1)
+  cc1.incl(2)
+  cc1.incl(3)
+  var cc2 = initHashSet[Node]()
+  cc2.incl(10)
+  cc2.incl(11)
+  cc2.incl(12)
+  check cc == @[cc1, cc2]
+
+test "check number of connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  check G.numberOfConnectedComponents() == 2
+
+test "node connected components in graph":
+  let G = pathGraph(4)
+  G.addPath(@[10, 11, 12])
+  var cc1 = initHashSet[Node]()
+  cc1.incl(0)
+  cc1.incl(1)
+  cc1.incl(2)
+  cc1.incl(3)
+  check G.nodeConnectedComponents(0) == cc1
 
 # -------------------------------------------------------------------
 # Cores
