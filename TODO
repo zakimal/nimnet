@@ -470,7 +470,7 @@ Isomorphism
 
 Link Analysis
 - [x] PageRank
-- Hits
+- [x] Hits
 
 Link Prediction
 - [x] networkx.algorithms.link_prediction.resource_allocation_index

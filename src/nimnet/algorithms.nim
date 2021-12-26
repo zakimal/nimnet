@@ -979,7 +979,7 @@ proc pagerankNim(
     dangleSum *= alpha
     for n in x.keys():
       for nbr in DG.successors(n):
-        let wt = weight[(n, nbr)]
+        let wt = weight.getOrDefault((n, nbr), 1.0 / DG.outDegree(n).float)
         x[nbr] += alpha * xlast[n] * wt
       x[n] += dangleSum * danglingWeights.getOrDefault(n, 0.0) + (1.0 - alpha) * p.getOrDefault(n, 0.0)
     var err = 0.0
@@ -1011,6 +1011,167 @@ proc pagerank*(
   dangling: TableRef[Node, float] = nil
 ): Table[Node, float] =
   return pagerankNim(DG, alpha, personalization, maxIter, tol, nstart, weight, dangling)
+
+proc hitsNim(
+  G: Graph,
+  maxIter: int = 100,
+  tol: float = 1.0e-8,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  normalized: bool = true
+): tuple[hubs: Table[Node, float], authorities: Table[Node, float]] =
+  if len(G) == 0:
+    return (initTable[Node, float](), initTable[Node, float]())
+
+  let N = G.numberOfNodes()
+
+  var h: Table[Node, float]
+  if nstart == nil:
+    for node in G.nodes():
+      h[node] = 1.0 / N.float
+  else:
+    var s = sum(nstart.values().toSeq())
+    for (k, v) in nstart.pairs():
+      h[k] = v / s
+
+  var a = initTable[Node, float]()
+  for node in h.keys():
+    a[node] = 0.0
+
+  var converged = false
+  for _ in 0..<maxIter:
+    var hlast = h
+    for node in h.keys():
+      h[node] = 0.0
+    for n in h.keys():
+      for nbr in G.neighbors(n):
+        if weight != nil:
+          a[nbr] += hlast[n] * weight.getOrDefault((n, nbr), 1.0)
+        else:
+          a[nbr] += hlast[n]
+    for n in a.keys():
+      for nbr in G.neighbors(n):
+        if weight != nil:
+          h[n] += a[nbr] * weight.getOrDefault((n, nbr), 1.0)
+        else:
+          h[n] += a[nbr]
+
+    var s = 1.0 / max(h.values().toSeq())
+    for n in h.keys():
+      h[n] *= s
+
+    s = 1.0 / max(a.values().toSeq())
+    for n in a.keys():
+      a[n] *= s
+
+    var err = 0.0
+    for n in h.keys():
+      err += abs(h[n] - hlast[n])
+    if err < tol:
+      converged = true
+      break
+
+  if not converged:
+    raise newNNPowerIterationFailedConvergence(maxIter)
+
+  if normalized:
+    var s = 1.0 / sum(a.values().toSeq())
+    for n in a.keys():
+      a[n] *= s
+    s = 1.0 / sum(h.values().toSeq())
+    for n in h.keys():
+      h[n] *= s
+  return (h, a)
+
+proc hitsNim(
+  DG: DiGraph,
+  maxIter: int = 100,
+  tol: float = 1.0e-8,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  normalized: bool = true
+): tuple[hubs: Table[Node, float], authorities: Table[Node, float]] =
+  if len(DG) == 0:
+    return (initTable[Node, float](), initTable[Node, float]())
+
+  let N = DG.numberOfNodes()
+
+  var h: Table[Node, float]
+  if nstart == nil:
+    for node in DG.nodes():
+      h[node] = 1.0 / N.float
+  else:
+    var s = sum(nstart.values().toSeq())
+    for (k, v) in nstart.pairs():
+      h[k] = v / s
+
+  var a = initTable[Node, float]()
+  for node in h.keys():
+    a[node] = 0.0
+
+  var converged = false
+  for _ in 0..<maxIter:
+    var hlast = h
+    for node in h.keys():
+      h[node] = 0.0
+    for n in h.keys():
+      for succ in DG.successors(n):
+        if weight != nil:
+          a[succ] += hlast[n] * weight.getOrDefault((n, succ), 1.0)
+        else:
+          a[succ] += hlast[n]
+    for n in a.keys():
+      for succ in DG.successors(n):
+        if weight != nil:
+          h[n] += a[succ] * weight.getOrDefault((n, succ), 1.0)
+        else:
+          h[n] += a[succ]
+
+    var s = 1.0 / max(h.values().toSeq())
+    for n in h.keys():
+      h[n] *= s
+
+    s = 1.0 / max(a.values().toSeq())
+    for n in a.keys():
+      a[n] *= s
+
+    var err = 0.0
+    for n in h.keys():
+      err += abs(h[n] - hlast[n])
+    if err < tol:
+      converged = true
+      break
+
+  if not converged:
+    raise newNNPowerIterationFailedConvergence(maxIter)
+
+  if normalized:
+    var s = 1.0 / sum(a.values().toSeq())
+    for n in a.keys():
+      a[n] *= s
+    s = 1.0 / sum(h.values().toSeq())
+    for n in h.keys():
+      h[n] *= s
+  return (h, a)
+
+proc hits*(
+  G: Graph,
+  maxIter: int = 100,
+  tol: float = 1.0e-8,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  normalized: bool = true
+): tuple[hubs: Table[Node, float], authorities: Table[Node, float]] =
+  return hitsNim(G, maxIter, tol, nstart, weight, normalized)
+proc hits*(
+  DG: DiGraph,
+  maxIter: int = 100,
+  tol: float = 1.0e-8,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  normalized: bool = true
+): tuple[hubs: Table[Node, float], authorities: Table[Node, float]] =
+  return hitsNim(DG, maxIter, tol, nstart, weight, normalized)
 
 # -------------------------------------------------------------------
 # TODO:
