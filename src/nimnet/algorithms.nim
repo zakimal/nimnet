@@ -2140,3 +2140,22 @@ proc isWeaklyConnected*(DG: DiGraph): bool =
   if len(DG) == 0:
     raise newNNPointlessConcept("connectivity is undefined for null graph")
   return len(DG.weaklyConnectedComponents().toSeq()[0]) == len(DG)
+
+iterator attractingComponents*(DG: DiGraph): HashSet[Node] =
+  var scc = DG.stronglyConnectedComponents().toSeq()
+  var cG = DG.condensation(scc)
+  for n in cG.nodes():
+    if cG.outDegree(n) == 0:
+      yield scc[n]
+
+proc numberOfAttractingComponents*(DG: DiGraph): int =
+  var s = 0
+  for ac in DG.attractingComponents():
+    s += 1
+  return s
+
+proc isAttractingComponent*(DG: DiGraph): bool =
+  let ac = DG.attractingComponents().toSeq()
+  if len(ac) == 1:
+    return len(ac[0]) == len(DG)
+  return false

@@ -4569,3 +4569,15 @@ test "check whether it is weakly connected directed graph and fail":
     discard DG.isWeaklyConnected()
   except NNPointlessConcept as e:
     check e.msg == "connectivity is undefined for null graph"
+
+test "attracting components on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.attractingComponents().toSeq() == @[@[7].toHashSet(), @[12].toHashSet(), @[33].toHashSet(), @[17].toHashSet(), @[21].toHashSet(), @[16].toHashSet(), @[10].toHashSet(), @[11].toHashSet()]
+
+test "check number of attracting components on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.numberOfAttractingComponents() == 8
+
+test "check whether directed graph is a single attracting component":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.isAttractingComponent() == false
