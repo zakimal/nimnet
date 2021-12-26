@@ -917,47 +917,100 @@ proc numberOfIsolates*(DG: DiGraph): int =
 # Link Analysis
 # -------------------------------------------------------------------
 
-# proc pageRank*(
-#   G: Graph,
-#   alpha: float = 0.85,
-#   personalization: TableRef[Node, float] = nil,
-#   maxIter: int = 100,
-#   tol: float = 1.0e-6,
-#   nstart: TableRef[Node, float] = nil,
-#   dangling: TableRef[Node, float] = nil
-# ): Table[Node, float] =
+proc pagerankNim(
+  DG: DiGraph,
+  alpha: float = 0.85,
+  personalization: TableRef[Node, float] = nil,
+  maxIter: int = 100,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  dangling: TableRef[Node, float] = nil
+): Table[Node, float] =
+  if len(DG) == 0:
+    return initTable[Node, float]()
+  let N = DG.numberOfNodes()
 
-# proc pageRank*(
-#   DG: DiGraph,
-#   alpha: float = 0.85,
-#   personalization: TableRef[Node, float] = nil,
-#   maxIter: int = 100,
-#   tol: float = 1.0e-6,
-#   nstart: TableRef[Node, float] = nil,
-#   dangling: TableRef[Node, float] = nil
-# ): Table[Node, float] =
+  var x: Table[Node, float]
+  if nstart == nil:
+    for node in DG.nodes():
+      x[node] = 1.0 / N.float
+  else:
+    var s = 0.0
+    for val in nstart.values():
+      s += val
+    for (k, v) in nstart.pairs():
+      x[k] = v / s
 
-# proc pageRank*(
-#   G: Graph,
-#   alpha: float = 0.85,
-#   personalization: TableRef[Node, float] = nil,
-#   maxIter: int = 100,
-#   tol: float = 1.0e-6,
-#   nstart: TableRef[Node, float] = nil,
-#   weight: TableRef[Node, float] = nil,
-#   dangling: TableRef[Node, float] = nil
-# ): Table[Node, float] =
+  var p: Table[Node, float]
+  if personalization == nil:
+    for node in DG.nodes():
+      p[node] = 1.0 / N.float
+  else:
+    var s = 0.0
+    for val in personalization.values():
+      s += val
+    for (k, v) in personalization.pairs():
+      p[k] = v / s
 
-# proc pageRank*(
-#   DG: DiGraph,
-#   alpha: float = 0.85,
-#   personalization: TableRef[Node, float] = nil,
-#   maxIter: int = 100,
-#   tol: float = 1.0e-6,
-#   nstart: TableRef[Node, float] = nil,
-#   weight: TableRef[Node, float] = nil,
-#   dangling: TableRef[Node, float] = nil
-# ): Table[Node, float] =
+  var danglingWeights: Table[Node, float]
+  if dangling == nil:
+    danglingWeights = p
+  else:
+    var s = 0.0
+    for val in dangling.values():
+      s += val
+    for (k, v) in dangling.pairs():
+      danglingWeights[k] = v / s
+
+  var danglingNodes: seq[Node] = @[]
+  for node in DG.nodes():
+    if DG.outDegree(node) == 0:
+      danglingNodes.add(node)
+
+  for _ in 0..<maxIter:
+    var xlast = x
+    x = initTable[Node, float]()
+    for node in x.keys():
+      x[node] = 0.0
+    var dangleSum = 0.0
+    for node in danglingNodes:
+      dangleSum += xlast[node]
+    dangleSum *= alpha
+    for n in x.keys():
+      for nbr in DG.successors(n):
+        let wt = weight[(n, nbr)]
+        x[nbr] += alpha * xlast[n] * wt
+      x[n] += dangleSum * danglingWeights.getOrDefault(n, 0.0) + (1.0 - alpha) * p.getOrDefault(n, 0.0)
+    var err = 0.0
+    for n in x.keys():
+      err += abs(x[n] - xlast[n])
+    if err < N.float * tol:
+      return x
+  raise newNNPowerIterationFailedConvergence(maxIter)
+
+proc pagerank*(
+  G: Graph,
+  alpha: float = 0.85,
+  personalization: TableRef[Node, float] = nil,
+  maxIter: int = 100,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  dangling: TableRef[Node, float] = nil
+): Table[Node, float] =
+  return pagerankNim(G.toDirected(), alpha, personalization, maxIter, tol, nstart, weight, dangling)
+proc pagerank*(
+  DG: DiGraph,
+  alpha: float = 0.85,
+  personalization: TableRef[Node, float] = nil,
+  maxIter: int = 100,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+  dangling: TableRef[Node, float] = nil
+): Table[Node, float] =
+  return pagerankNim(DG, alpha, personalization, maxIter, tol, nstart, weight, dangling)
 
 # -------------------------------------------------------------------
 # TODO:
