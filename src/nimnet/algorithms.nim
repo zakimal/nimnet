@@ -2159,3 +2159,126 @@ proc isAttractingComponent*(DG: DiGraph): bool =
   if len(ac) == 1:
     return len(ac[0]) == len(DG)
   return false
+
+iterator biconnectedDfsWithoutComponent(G: Graph): Node  =
+  var visited = initHashSet[Node]()
+  for start in G.nodes():
+    if start in visited:
+      continue
+    var discovery = initTable[Node, int]()
+    discovery[start] = 0
+    var lowt = initTable[Node, int]()
+    var rootChildren = 0
+    visited.incl(start)
+    var stack = initDeque[tuple[grandparent, parent: Node, children: seq[Node], idx: int]]()
+    stack.addFirst((start, start, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (grandparent, parent, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((grandparent, parent, children, idx+1))
+        var child = children[idx]
+        if grandparent == child:
+          continue
+        if child in visited:
+          if discovery[child] <= discovery[parent]:
+            lowt[parent] = min(lowt[parent], discovery[child])
+        else:
+          lowt[child] = len(discovery.keys().toSeq())
+          discovery[child] = len(discovery.keys().toSeq())
+          visited.incl(child)
+          stack.addLast((parent, child, G.neighbors(child), 0))
+      else:
+        discard stack.popLast()
+        if 1 < len(stack):
+          if lowt[parent] >= discovery[grandparent]:
+            yield grandparent
+          lowt[grandparent] = min(lowt[parent], lowt[grandparent])
+        elif len(stack) != 0:
+          rootChildren  += 1
+    if rootChildren > 1:
+      yield start
+iterator biconnectedDfsWithComponents(G: Graph): seq[Edge]  =
+  var visited = initHashSet[Node]()
+  for start in G.nodes():
+    if start in visited:
+      continue
+    var discovery = initTable[Node, int]()
+    discovery[start] = 0
+    var lowt = initTable[Node, int]()
+    var rootChildren = 0
+    visited.incl(start)
+    var edgeStack = initDeque[Edge]()
+    var stack = initDeque[tuple[grandparent, parent: Node, children: seq[Node], idx: int]]()
+    stack.addFirst((start, start, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (grandparent, parent, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((grandparent, parent, children, idx+1))
+        var child = children[idx]
+        if grandparent == child:
+          continue
+        if child in visited:
+          if discovery[child] <= discovery[parent]:
+            lowt[parent] = min(lowt[parent], discovery[child])
+            edgeStack.addLast((parent, child))
+        else:
+          lowt[child] = len(discovery.keys().toSeq())
+          discovery[child] = len(discovery.keys().toSeq())
+          visited.incl(child)
+          stack.addLast((parent, child, G.neighbors(child), 0))
+          edgeStack.addLast((parent, child))
+      else:
+        discard stack.popLast()
+        if 1 < len(stack):
+          if lowt[parent] >= discovery[grandparent]:
+            var ind = 0
+            for i, edge in edgeStack.toSeq():
+              if edge == (grandparent, parent):
+                ind = i
+            var ret: seq[Edge] = @[]
+            for i in ind..<len(edgeStack.toSeq()):
+              ret.add(edgeStack.toSeq()[i])
+            yield ret
+            var tmp = edgeStack.toSeq()
+            edgeStack = initDeque[Edge]()
+            for i in 0..<ind:
+              edgeStack.addLast(tmp[i])
+          lowt[grandparent] = min(lowt[parent], lowt[grandparent])
+        elif len(stack) != 0:
+          rootChildren  += 1
+          var ind = 0
+          for i, edge in edgeStack.toSeq():
+            if edge == (grandparent, parent):
+              ind = i
+          var ret: seq[Edge] = @[]
+          for i in ind..<len(edgeStack.toSeq()):
+              ret.add(edgeStack.toSeq()[i])
+          yield ret
+
+iterator articulationPoints*(G: Graph): Node =
+  var seen = initHashSet[Node]()
+  for articulation in G.biconnectedDfsWithoutComponent():
+    if articulation notin seen:
+      seen.incl(articulation)
+      yield articulation
+
+iterator biconnectedComponents*(G: Graph): HashSet[Node] =
+  for comp in G.biconnectedDfsWithComponents():
+    var ret = initHashSet[Node]()
+    for edge in comp:
+      ret.incl(edge.u)
+      ret.incl(edge.v)
+    yield ret
+
+iterator biconnectedComponentEdges*(G: Graph): seq[Edge] =
+  for edges in G.biconnectedDfsWithComponents():
+    yield edges
+
+proc isBiconnected*(G: Graph): bool =
+  let bcc = G.biconnectedComponents().toSeq()
+  if len(bcc) == 1:
+    return len(bcc[0]) == len(G)
+  return false
+

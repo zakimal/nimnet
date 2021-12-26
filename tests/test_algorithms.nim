@@ -4581,3 +4581,21 @@ test "check number of attracting components on directed graph":
 test "check whether directed graph is a single attracting component":
   let dkarate = newDiGraph(karateClubGraph().edges())
   check dkarate.isAttractingComponent() == false
+
+test "articulation points in grpah":
+  let G = barbellGraph(4, 2)
+  check G.articulationPoints().toSeq() == @[6, 5, 4, 3]
+
+test "biconnected components in graph":
+  let G = lollipopGraph(5, 1)
+  check G.biconnectedComponents().toSeq() == @[@[4, 5].toHashSet(), @[0, 1, 2, 3, 4].toHashSet()]
+
+test "biconnected component edges in graph":
+  let G = barbellGraph(4, 2)
+  check G.biconnectedComponentEdges().toSeq() == @[@[(6, 7), (7, 8), (8, 6), (8, 9), (9, 6), (9, 7)], @[(5, 6)], @[(4, 5)], @[(3, 4)], @[(0, 1), (1, 2), (2, 0), (2, 3), (3, 0), (3, 1)]]
+
+test "check whether it is biconnected graph":
+  let G = pathGraph(4)
+  check G.isBiconnected() == false
+  G.addEdge(0, 3)
+  check G.isBiconnected() == true
