@@ -2619,6 +2619,397 @@ iterator bfsBeamEdges*(
   for edge in genericBfsEdges(DG, source, successors=successors):
     yield edge
 
+proc dijkstraMultiSource(
+  G: Graph,
+  sources: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  cutoff: float = NaN,
+  target: Node = None
+): Table[Node, float] =
+  var dist = initTable[Node, float]()
+  var seen = initTable[Node, float]()
+  var c = -1
+  var fringe = initHeapQueue[tuple[dist: float, cnt: int, node: Node]]()
+  for source in sources:
+    seen[source] = 0.0
+    c += 1
+    fringe.push((0.0, c, source))
+  while len(fringe) != 0:
+    var (d, _, v) = fringe.pop()
+    if v in dist:
+      continue
+    dist[v] = d
+    if v == target:
+      break
+    for u in G.neighbors(v):
+      var cost: float
+      if weight != nil:
+        cost = weight.getOrDefault((v, u), weight.getOrDefault((u, v), Inf))
+      else:
+        cost = 1.0
+      var vuDist = dist[v] + cost
+      if cutoff != NaN:
+        if vuDist > cutoff:
+          continue
+      if u in dist:
+        var uDist = dist[u]
+        if vuDist < uDist:
+          raise newNNError("contradictory path found: negative weights?")
+        elif pred != nil and vuDist == uDist:
+          pred[u].add(v)
+      elif u notin seen or vuDist < seen[u]:
+        seen[u] = vuDist
+        c += 1
+        fringe.push((vuDist, c, u))
+        if paths != nil:
+          paths[u] = paths[v] & @[u]
+        if pred != nil:
+          pred[u] = @[v]
+      elif vuDist == seen[u]:
+        if pred != nil:
+          pred[u].add(v)
+  return dist
+proc dijkstraMultiSource(
+  DG: DiGraph,
+  sources: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  cutoff: float = NaN,
+  target: Node = None
+): Table[Node, float] =
+  var dist = initTable[Node, float]()
+  var seen = initTable[Node, float]()
+  var c = -1
+  var fringe = initHeapQueue[tuple[dist: float, cnt: int, node: Node]]()
+  for source in sources:
+    seen[source] = 0.0
+    c += 1
+    fringe.push((0.0, c, source))
+  while len(fringe) != 0:
+    var (d, _, v) = fringe.pop()
+    if v in dist:
+      continue
+    dist[v] = d
+    if v == target:
+      break
+    for u in DG.successors(v):
+      var cost: float
+      if weight != nil:
+        cost = weight[(v, u)]
+      else:
+        cost = 1.0
+      var vuDist = dist[v] + cost
+      if cutoff != NaN:
+        if vuDist > cutoff:
+          continue
+      if u in dist:
+        var uDist = dist[u]
+        if vuDist < uDist:
+          raise newNNError("contradictory path found: negative weights?")
+        elif pred != nil and vuDist == uDist:
+          pred[u].add(v)
+      elif u notin seen or vuDist < seen[u]:
+        seen[u] = vuDist
+        c += 1
+        fringe.push((vuDist, c, u))
+        if paths != nil:
+          paths[u] = paths[v] & @[u]
+        if pred != nil:
+          pred[u] = @[v]
+      elif vuDist == seen[u]:
+        if pred != nil:
+          pred[u].add(v)
+  return dist
+proc dijkstra(
+  G: Graph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  cutoff: float = NaN,
+  target: Node = None
+): Table[Node, float] =
+  return dijkstraMultiSource(G, @[source], weight, pred, paths, cutoff, target)
+proc dijkstra(
+  DG: DiGraph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  cutoff: float = NaN,
+  target: Node = None
+): Table[Node, float] =
+  return dijkstraMultiSource(DG, @[source], weight, pred, paths, cutoff, target)
+
+proc multiSourceDijkstra*(
+  G: Graph,
+  sources: seq[Node],
+  target: Node = None,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  if len(sources) == 0:
+    raise newNNError("sources must not be empty")
+  for s in sources:
+    if s notin G.nodesSet():
+      raise newNNNodeNotFound(s)
+  if target in sources.toHashSet():
+    return ({target: 0.0}.toTable(), {target: newSeq[Node]()}.toTable())
+  var paths = newTable[Node, seq[Node]]()
+  for source in sources:
+    paths[source] = @[source]
+  var dist = dijkstraMultiSource(G, sources, weight=weight, pred=nil, paths=paths, cutoff=cutoff, target=target)
+  if target == None:
+    return (dist, paths[])
+  var retDist = initTable[Node, float]()
+  var retPath = initTable[Node, seq[Node]]()
+  retDist[target] = dist[target]
+  retPath[target] = paths[target]
+  return (retDist, retPath)
+proc multiSourceDijkstra*(
+  DG: DiGraph,
+  sources: seq[Node],
+  target: Node = None,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  if len(sources) == 0:
+    raise newNNError("sources must not be empty")
+  for s in sources:
+    if s notin DG.nodesSet():
+      raise newNNNodeNotFound(s)
+  if target in sources.toHashSet():
+    return ({target: 0.0}.toTable(), {target: newSeq[Node]()}.toTable())
+  var paths = newTable[Node, seq[Node]]()
+  for source in sources:
+    paths[source] = @[source]
+  var dist = dijkstraMultiSource(DG, sources, weight=weight, pred=nil, paths=paths, cutoff=cutoff, target=target)
+  if target == None:
+    return (dist, paths[])
+  var retDist = initTable[Node, float]()
+  var retPath = initTable[Node, seq[Node]]()
+  retDist[target] = dist[target]
+  retPath[target] = paths[target]
+  return (retDist, retPath)
+
+proc multiSourceDijkstraPathLength*(
+  G: Graph,
+  sources: seq[Node],
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  if len(sources) == 0:
+    raise newNNError("sources must not be empty")
+  for s in sources:
+    if s notin G.nodesSet():
+      raise newNNNodeNotFound(s)
+  return dijkstraMultiSource(G, sources, weight=weight, cutoff=cutoff)
+proc multiSourceDijkstraPathLength*(
+  DG: DiGraph,
+  sources: seq[Node],
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  if len(sources) == 0:
+    raise newNNError("sources must not be empty")
+  for s in sources:
+    if s notin DG.nodesSet():
+      raise newNNNodeNotFound(s)
+  return dijkstraMultiSource(DG, sources, weight=weight, cutoff=cutoff)
+
+proc multiSourceDijkstraPath*(
+  G: Graph,
+  sources: seq[Node],
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return multiSourceDijkstra(G, sources, cutoff=cutoff, weight=weight).paths
+proc multiSourceDijkstraPath*(
+  DG: DiGraph,
+  sources: seq[Node],
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return multiSourceDijkstra(DG, sources, cutoff=cutoff, weight=weight).paths
+
+proc singleSourceDijkstra*(
+  G: Graph,
+  source: Node,
+  target: Node = None,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  return multiSourceDijkstra(G, @[source], cutoff=cutoff, target=target, weight=weight)
+proc singleSourceDijkstra*(
+  DG: DiGraph,
+  source: Node,
+  target: Node = None,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  return multiSourceDijkstra(DG, @[source], cutoff=cutoff, target=target, weight=weight)
+
+proc singleSourceDijkstraPathLength*(
+  G: Graph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  return multiSourceDijkstraPathLength(G, @[source], cutoff=cutoff, weight=weight)
+proc singleSourceDijkstraPathLength*(
+  DG: DiGraph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  return multiSourceDijkstraPathLength(DG, @[source], cutoff=cutoff, weight=weight)
+
+proc singleSourceDijkstraPath*(
+  G: Graph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return multiSourceDijkstraPath(G, @[source], cutoff=cutoff, weight=weight)
+proc singleSourceDijkstraPath*(
+  DG: DiGraph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return multiSourceDijkstraPath(DG, @[source], cutoff=cutoff, weight=weight)
+
+proc dijkstraPathLength*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): float =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  if source == target:
+    return 0.0
+  let length = dijkstra(G, source, weight=weight, target=target)
+  try:
+    return length[target]
+  except KeyError:
+    raise newNNNoPath(fmt"node {target} not reachable from node {source}")
+proc dijkstraPathLength*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): float =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  if source == target:
+    return 0.0
+  let length = dijkstra(DG, source, weight=weight, target=target)
+  try:
+    return length[target]
+  except KeyError:
+    raise newNNNoPath(fmt"node {target} not reachable from node {source}")
+
+proc dijkstraPath*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): seq[Node] =
+  try:
+    return singleSourceDijkstra(G, source, target=target, weight=weight).paths[target]
+  except KeyError:
+    raise newNNNoPath(fmt"node {target} not reachable from node {source}")
+proc dijkstraPath*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): seq[Node] =
+  try:
+    return singleSourceDijkstra(DG, source, target=target, weight=weight).paths[target]
+  except KeyError:
+    raise newNNNoPath(fmt"node {target} not reachable from node {source}")
+
+iterator allPairsDijkstra*(
+  G: Graph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, result: tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]]] =
+  for n in G.nodes():
+    var (dist, paths) = singleSourceDijkstra(G, n, cutoff=cutoff, weight=weight)
+    yield (n, (dist, paths))
+iterator allPairsDijkstra*(
+  DG: DiGraph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, result: tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]]] =
+  for n in DG.nodes():
+    var (dist, paths) = singleSourceDijkstra(DG, n, cutoff=cutoff, weight=weight)
+    yield (n, (dist, paths))
+
+iterator allPairsDijkstraPathLength*(
+  G: Graph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, dist: Table[Node, float]] =
+  for n in G.nodes():
+    let dist = singleSourceDijkstraPathLength(G, n, cutoff=cutoff, weight=weight)
+    yield (n, dist)
+iterator allPairsDijkstraPathLength*(
+  DG: DiGraph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, dist: Table[Node, float]] =
+  for n in DG.nodes():
+    let dist = singleSourceDijkstraPathLength(DG, n, cutoff=cutoff, weight=weight)
+    yield (n, dist)
+
+iterator allPairsDijkstraPath*(
+  G: Graph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, paths: Table[Node, seq[Node]]] =
+  for n in G.nodes():
+    let paths = singleSourceDijkstraPath(G, n, cutoff=cutoff, weight=weight)
+    yield (n, paths)
+iterator allPairsDijkstraPath*(
+  DG: DiGraph,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[node: Node, paths: Table[Node, seq[Node]]] =
+  for n in DG.nodes():
+    let paths = singleSourceDijkstraPath(DG, n, cutoff=cutoff, weight=weight)
+    yield (n, paths)
+
+proc dijkstraPrdecessorAndDistance*(
+  G: Graph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[pred: Table[Node, seq[Node]], distance: Table[Node, float]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  let pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+  let dist = dijkstra(G, source, weight=weight, pred=pred, cutoff=cutoff)
+  return (pred[], dist)
+proc dijkstraPrdecessorAndDistance*(
+  DG: DiGraph,
+  source: Node,
+  cutoff: float = NaN,
+  weight: TableRef[Edge, float] = nil
+): tuple[pred: Table[Node, seq[Node]], distance: Table[Node, float]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  let pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+  let dist = dijkstra(DG, source, weight=weight, pred=pred, cutoff=cutoff)
+  return (pred[], dist)
+
 # -------------------------------------------------------------------
 # TODO:
 # Tree
