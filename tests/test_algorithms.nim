@@ -4193,6 +4193,144 @@ test "power product of graph":
 # Shortest Paths
 # -------------------------------------------------------------------
 
+test "single source shortest path length on graph":
+  let karate = karateClubGraph()
+  let got = karate.singleSourceShortestPathLength(0)
+  let expected = {0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 9: 2, 16: 2, 24: 2, 25: 2, 27: 2, 28: 2, 30: 2, 32: 2, 33: 2, 14: 3, 15: 3, 18: 3, 20: 3, 22: 3, 23: 3, 26: 3, 29: 3}.toTable()
+  for (node, length) in got.pairs():
+    check length == expected[node]
+
+test "single source shortest path length on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = dkarate.singleSourceShortestPathLength(0)
+  let expected = {0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 32: 2, 33: 2, 9: 2, 16: 2, 27: 2, 28: 2, 30: 2}.toTable()
+  for (node, length) in got.pairs():
+    check length == expected[node]
+
+test "single target shortest path length on graph":
+  let karate = karateClubGraph()
+  let got = karate.singleTargetShortestPathLength(0)
+  let expected = {0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 9: 2, 16: 2, 24: 2, 25: 2, 27: 2, 28: 2, 30: 2, 32: 2, 33: 2, 14: 3, 15: 3, 18: 3, 20: 3, 22: 3, 23: 3, 26: 3, 29: 3}.toTable()
+  for (node, length) in got.pairs():
+    check length == expected[node]
+
+test "single target shortest path length on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = dkarate.singleTargetShortestPathLength(0)
+  let expected = {0: 0}.toTable()
+  for (node, length) in got.pairs():
+    check length == expected[node]
+
+test "all pairs shortest path length on graph":
+  let karate = karateClubGraph()
+  let got = karate.allPairsShortestPathLength().toSeq()
+  let expected = @[(0, { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 9: 2, 16: 2, 24: 2, 25: 2, 27: 2, 28: 2, 30: 2, 32: 2, 33: 2, 14: 3, 15: 3, 18: 3, 20: 3, 22: 3, 23: 3, 26: 3, 29: 3 }.toTable()), (1, { 1: 0, 0: 1, 2: 1, 3: 1, 7: 1, 13: 1, 17: 1, 19: 1, 21: 1, 30: 1, 4: 2, 5: 2, 6: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 27: 2, 28: 2, 31: 2, 32: 2, 33: 2, 14: 3, 15: 3, 16: 3, 18: 3, 20: 3, 22: 3, 23: 3, 24: 3, 25: 3, 26: 3, 29: 3 }.toTable()), (2, { 2: 0, 0: 1, 1: 1, 32: 1, 3: 1, 7: 1, 8: 1, 9: 1, 13: 1, 27: 1, 28: 1, 4: 2, 5: 2, 6: 2, 10: 2, 11: 2, 12: 2, 14: 2, 15: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 24: 2, 29: 2, 30: 2, 31: 2, 33: 2, 16: 3, 25: 3, 26: 3 }.toTable()), (3, { 3: 0, 0: 1, 1: 1, 2: 1, 7: 1, 12: 1, 13: 1, 4: 2, 5: 2, 6: 2, 8: 2, 9: 2, 10: 2, 11: 2, 17: 2, 19: 2, 21: 2, 27: 2, 28: 2, 30: 2, 31: 2, 32: 2, 33: 2, 14: 3, 15: 3, 16: 3, 18: 3, 20: 3, 22: 3, 23: 3, 24: 3, 25: 3, 26: 3, 29: 3 }.toTable()), (4, { 4: 0, 0: 1, 10: 1, 6: 1, 1: 2, 2: 2, 3: 2, 5: 2, 7: 2, 8: 2, 11: 2, 12: 2, 13: 2, 16: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (5, { 5: 0, 0: 1, 16: 1, 10: 1, 6: 1, 1: 2, 2: 2, 3: 2, 4: 2, 7: 2, 8: 2, 11: 2, 12: 2, 13: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (6, { 6: 0, 0: 1, 16: 1, 4: 1, 5: 1, 1: 2, 2: 2, 3: 2, 7: 2, 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (7, { 7: 0, 0: 1, 1: 1, 2: 1, 3: 1, 4: 2, 5: 2, 6: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 17: 2, 19: 2, 21: 2, 27: 2, 28: 2, 30: 2, 31: 2, 32: 2, 14: 3, 15: 3, 16: 3, 18: 3, 20: 3, 22: 3, 23: 3, 24: 3, 25: 3, 29: 3, 33: 3, 26: 4 }.toTable()), (8, { 8: 0, 0: 1, 33: 1, 2: 1, 32: 1, 30: 1, 1: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 31: 2, 16: 3, 24: 3, 25: 3 }.toTable()), (9, { 9: 0, 33: 1, 2: 1, 0: 2, 1: 2, 3: 2, 7: 2, 8: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 32: 2, 4: 3, 5: 3, 6: 3, 10: 3, 11: 3, 12: 3, 17: 3, 21: 3, 24: 3, 25: 3, 16: 4 }.toTable()), (10, { 10: 0, 0: 1, 4: 1, 5: 1, 1: 2, 2: 2, 3: 2, 6: 2, 7: 2, 8: 2, 11: 2, 12: 2, 13: 2, 16: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (11, { 11: 0, 0: 1, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 10: 2, 12: 2, 13: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 16: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (12, { 12: 0, 0: 1, 3: 1, 1: 2, 2: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 10: 2, 11: 2, 13: 2, 17: 2, 19: 2, 21: 2, 31: 2, 9: 3, 16: 3, 24: 3, 25: 3, 27: 3, 28: 3, 30: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (13, { 13: 0, 0: 1, 1: 1, 2: 1, 3: 1, 33: 1, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 14: 2, 15: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 32: 2, 16: 3, 24: 3, 25: 3 }.toTable()), (14, { 14: 0, 32: 1, 33: 1, 2: 2, 8: 2, 9: 2, 13: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (15, { 15: 0, 32: 1, 33: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 18: 2, 19: 2, 20: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (16, { 16: 0, 5: 1, 6: 1, 0: 2, 4: 2, 10: 2, 1: 3, 2: 3, 3: 3, 7: 3, 8: 3, 11: 3, 12: 3, 13: 3, 17: 3, 19: 3, 21: 3, 31: 3, 9: 4, 24: 4, 25: 4, 27: 4, 28: 4, 30: 4, 32: 4, 33: 4, 14: 5, 15: 5, 18: 5, 20: 5, 22: 5, 23: 5, 26: 5, 29: 5 }.toTable()), (17, { 17: 0, 0: 1, 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 19: 2, 21: 2, 30: 2, 31: 2, 9: 3, 16: 3, 24: 3, 25: 3, 27: 3, 28: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (18, { 18: 0, 32: 1, 33: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 19: 2, 20: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (19, { 19: 0, 0: 1, 1: 1, 33: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 17: 2, 18: 2, 20: 2, 21: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 32: 2, 16: 3, 24: 3, 25: 3 }.toTable()), (20, { 20: 0, 32: 1, 33: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (21, { 21: 0, 0: 1, 1: 1, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 10: 2, 11: 2, 12: 2, 13: 2, 17: 2, 19: 2, 30: 2, 31: 2, 9: 3, 16: 3, 24: 3, 25: 3, 27: 3, 28: 3, 32: 3, 33: 3, 14: 4, 15: 4, 18: 4, 20: 4, 22: 4, 23: 4, 26: 4, 29: 4 }.toTable()), (22, { 22: 0, 32: 1, 33: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (23, { 23: 0, 32: 1, 33: 1, 25: 1, 27: 1, 29: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 24: 2, 26: 2, 28: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (24, { 24: 0, 25: 1, 27: 1, 31: 1, 0: 2, 33: 2, 2: 2, 32: 2, 23: 2, 28: 2, 1: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3, 13: 3, 14: 3, 15: 3, 17: 3, 18: 3, 19: 3, 20: 3, 21: 3, 22: 3, 26: 3, 29: 3, 30: 3, 16: 4 }.toTable()), (25, { 25: 0, 24: 1, 31: 1, 23: 1, 0: 2, 32: 2, 33: 2, 27: 2, 28: 2, 29: 2, 1: 3, 2: 3, 3: 3, 4: 3, 5: 3, 6: 3, 7: 3, 8: 3, 9: 3, 10: 3, 11: 3, 12: 3, 13: 3, 14: 3, 15: 3, 17: 3, 18: 3, 19: 3, 20: 3, 21: 3, 22: 3, 26: 3, 30: 3, 16: 4 }.toTable()), (26, { 26: 0, 33: 1, 29: 1, 32: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 23: 2, 27: 2, 28: 2, 30: 2, 31: 2, 0: 3, 1: 3, 2: 3, 3: 3, 24: 3, 25: 3, 4: 4, 5: 4, 6: 4, 7: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (27, { 27: 0, 24: 1, 33: 1, 2: 1, 23: 1, 0: 2, 1: 2, 3: 2, 7: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 25: 2, 26: 2, 28: 2, 29: 2, 30: 2, 31: 2, 32: 2, 4: 3, 5: 3, 6: 3, 10: 3, 11: 3, 12: 3, 17: 3, 21: 3, 16: 4 }.toTable()), (28, { 28: 0, 33: 1, 2: 1, 31: 1, 0: 2, 1: 2, 3: 2, 7: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 23: 2, 24: 2, 25: 2, 26: 2, 27: 2, 29: 2, 30: 2, 32: 2, 4: 3, 5: 3, 6: 3, 10: 3, 11: 3, 12: 3, 17: 3, 21: 3, 16: 4 }.toTable()), (29, { 29: 0, 32: 1, 33: 1, 26: 1, 23: 1, 2: 2, 8: 2, 9: 2, 13: 2, 14: 2, 15: 2, 18: 2, 19: 2, 20: 2, 22: 2, 25: 2, 27: 2, 28: 2, 30: 2, 31: 2, 0: 3, 1: 3, 3: 3, 7: 3, 24: 3, 4: 4, 5: 4, 6: 4, 10: 4, 11: 4, 12: 4, 17: 4, 21: 4, 16: 5 }.toTable()), (30, { 30: 0, 8: 1, 1: 1, 32: 1, 33: 1, 0: 2, 2: 2, 3: 2, 7: 2, 9: 2, 13: 2, 14: 2, 15: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 26: 2, 27: 2, 28: 2, 29: 2, 31: 2, 4: 3, 5: 3, 6: 3, 10: 3, 11: 3, 12: 3, 24: 3, 25: 3, 16: 4 }.toTable()), (31, { 31: 0, 0: 1, 32: 1, 33: 1, 24: 1, 25: 1, 28: 1, 1: 2, 2: 2, 3: 2, 4: 2, 5: 2, 6: 2, 7: 2, 8: 2, 9: 2, 10: 2, 11: 2, 12: 2, 13: 2, 14: 2, 15: 2, 17: 2, 18: 2, 19: 2, 20: 2, 21: 2, 22: 2, 23: 2, 26: 2, 27: 2, 29: 2, 30: 2, 16: 3 }.toTable()), (32, { 32: 0, 33: 1, 2: 1, 8: 1, 14: 1, 15: 1, 18: 1, 20: 1, 22: 1, 23: 1, 29: 1, 30: 1, 31: 1, 0: 2, 1: 2, 3: 2, 7: 2, 9: 2, 13: 2, 19: 2, 24: 2, 25: 2, 26: 2, 27: 2, 28: 2, 4: 3, 5: 3, 6: 3, 10: 3, 11: 3, 12: 3, 17: 3, 21: 3, 16: 4 }.toTable()), (33, { 33: 0, 32: 1, 8: 1, 9: 1, 13: 1, 14: 1, 15: 1, 18: 1, 19: 1, 20: 1, 22: 1, 23: 1, 26: 1, 27: 1, 28: 1, 29: 1, 30: 1, 31: 1, 0: 2, 1: 2, 2: 2, 3: 2, 24: 2, 25: 2, 4: 3, 5: 3, 6: 3, 7: 3, 10: 3, 11: 3, 12: 3, 17: 3, 21: 3, 16: 4 }.toTable())]
+  for i in 0..<len(got):
+    check got[i] == expected[i]
+
+test "all pairs shortest path length on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let got = dkarate.allPairsShortestPathLength().toSeq()
+  let expected = @[(0, { 0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 32: 2, 33: 2, 9: 2, 16: 2, 27: 2, 28: 2, 30: 2 }.toTable()), (1, { 1: 0, 2: 1, 3: 1, 7: 1, 13: 1, 17: 1, 19: 1, 21: 1, 30: 1, 32: 2, 33: 2, 8: 2, 9: 2, 12: 2, 27: 2, 28: 2, 31: 3 }.toTable()), (2, { 2: 0, 32: 1, 3: 1, 7: 1, 8: 1, 9: 1, 13: 1, 27: 1, 28: 1, 33: 2, 12: 2, 30: 2, 31: 2 }.toTable()), (3, { 3: 0, 12: 1, 13: 1, 7: 1, 33: 2 }.toTable()), (4, { 4: 0, 10: 1, 6: 1, 16: 2 }.toTable()), (5, { 5: 0, 16: 1, 10: 1, 6: 1 }.toTable()), (6, { 6: 0, 16: 1 }.toTable()), (7, { 7: 0 }.toTable()), (8, { 8: 0, 32: 1, 33: 1, 30: 1 }.toTable()), (9, { 9: 0, 33: 1 }.toTable()), (10, { 10: 0 }.toTable()), (11, { 11: 0 }.toTable()), (12, { 12: 0 }.toTable()), (13, { 13: 0, 33: 1 }.toTable()), (14, { 14: 0, 32: 1, 33: 1 }.toTable()), (15, { 15: 0, 32: 1, 33: 1 }.toTable()), (16, { 16: 0 }.toTable()), (17, { 17: 0 }.toTable()), (18, { 18: 0, 32: 1, 33: 1 }.toTable()), (19, { 19: 0, 33: 1 }.toTable()), (20, { 20: 0, 32: 1, 33: 1 }.toTable()), (21, { 21: 0 }.toTable()), (22, { 22: 0, 32: 1, 33: 1 }.toTable()), (23, { 23: 0, 32: 1, 33: 1, 25: 1, 27: 1, 29: 1, 31: 2 }.toTable()), (24, { 24: 0, 25: 1, 27: 1, 31: 1, 32: 2, 33: 2 }.toTable()), (25, { 25: 0, 31: 1, 32: 2, 33: 2 }.toTable()), (26, { 26: 0, 33: 1, 29: 1, 32: 2 }.toTable()), (27, { 27: 0, 33: 1 }.toTable()), (28, { 28: 0, 33: 1, 31: 1, 32: 2 }.toTable()), (29, { 29: 0, 32: 1, 33: 1 }.toTable()), (30, { 30: 0, 32: 1, 33: 1 }.toTable()), (31, { 31: 0, 32: 1, 33: 1 }.toTable()), (32, { 32: 0, 33: 1 }.toTable()), (33, { 33: 0 }.toTable())]
+  for i in 0..<len(got):
+    check got[i] == expected[i]
+
+test "bidirectional shortest path on graph":
+  let karate = karateClubGraph()
+  check karate.bidirectionalShortestPath(0, 33) == @[0, 8, 33]
+
+test "bidirectional shortest path on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.bidirectionalShortestPath(0, 33) == @[0, 8, 33]
+
+test "single source shortest path on graph":
+  let karate = karateClubGraph()
+  let shortestPathLength = karate.singleSourceShortestPathLength(0)
+  let shortestPath = karate.singleSourceShortestPath(0)
+  for (target, path) in shortestPath.pairs():
+    check path[0] == 0
+    check path[^1] == target
+    check len(path) == shortestPathLength[target] + 1 # add source
+    for i in 0..<(len(path)-1):
+      check (path[i], path[i+1]) in karate
+
+test "single source shortest path on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let shortestPathLength = dkarate.singleSourceShortestPathLength(0)
+  let shortestPath = dkarate.singleSourceShortestPath(0)
+  for (target, path) in shortestPath.pairs():
+    check path[0] == 0
+    check path[^1] == target
+    check len(path) == shortestPathLength[target] + 1 # add source
+    for i in 0..<(len(path)-1):
+      check (path[i], path[i+1]) in dkarate
+
+test "single target shortest path on graph":
+  let karate = karateClubGraph()
+  for target in karate.nodes():
+    let shortestPathLength = karate.singleTargetShortestPathLength(target)
+    let shortestPath = karate.singleTargetShortestPath(target)
+    for (source, path) in shortestPath.pairs():
+      check path[0] == source
+      check path[^1] == target
+      check len(path) == shortestPathLength[source] + 1 # add source
+      for i in 0..<(len(path)-1):
+        check (path[i], path[i+1]) in karate
+
+test "single target shortest path on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  for target in dkarate.nodes():
+    let shortestPathLength = dkarate.singleTargetShortestPathLength(target)
+    let shortestPath = dkarate.singleTargetShortestPath(target)
+    for (source, path) in shortestPath.pairs():
+      check path[0] == source
+      check path[^1] == target
+      check len(path) == shortestPathLength[source] + 1 # add source
+      for i in 0..<(len(path)-1):
+        check (path[i], path[i+1]) in dkarate
+
+test "all pairs shortest path on graph":
+  let karate = karateClubGraph()
+  for (source, shortestPath) in karate.allPairsShortestPath():
+    let shortestPathLength = karate.singleSourceShortestPathLength(source)
+    for (target, path) in shortestPath.pairs():
+      check path[0] == source
+      check path[^1] == target
+      check len(path) == shortestPathLength[target] + 1 # add source
+      for i in 0..<(len(path)-1):
+        check (path[i], path[i+1]) in karate
+
+test "all pairs shortest path on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  for (source, shortestPath) in dkarate.allPairsShortestPath():
+    let shortestPathLength = dkarate.singleSourceShortestPathLength(source)
+    for (target, path) in shortestPath.pairs():
+      check path[0] == source
+      check path[^1] == target
+      check len(path) == shortestPathLength[target] + 1 # add source
+      for i in 0..<(len(path)-1):
+        check (path[i], path[i+1]) in dkarate
+
+test "predecessors on graph":
+  let karate = karateClubGraph()
+  check karate.predecessor(0) == {0: @[], 1: @[0], 2: @[0], 3: @[0], 4: @[0], 5: @[0], 6: @[0], 7: @[0], 8: @[0], 10: @[0], 11: @[0], 12: @[0], 13: @[0], 17: @[0], 19: @[0], 21: @[0], 31: @[0], 30: @[1, 8], 9: @[2], 27: @[2], 28: @[2, 31], 32: @[2, 8, 31], 16: @[5, 6], 33: @[8, 13, 19, 31], 24: @[31], 25: @[31], 23: @[27, 32, 33, 25], 14: @[32, 33], 15: @[32, 33], 18: @[32, 33], 20: @[32, 33], 22: @[32, 33], 29: @[32, 33], 26: @[33]}.toTable()
+
+test "predecessors on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.predecessor(0) == {0: @[], 1: @[0], 2: @[0], 3: @[0], 4: @[0], 5: @[0], 6: @[0], 7: @[0], 8: @[0], 10: @[0], 11: @[0], 12: @[0], 13: @[0], 17: @[0], 19: @[0], 21: @[0], 31: @[0], 30: @[1, 8], 9: @[2], 27: @[2], 28: @[2], 32: @[2, 8, 31], 16: @[5, 6], 33: @[8, 13, 19, 31]}.toTable()
+
+test "predecessors on graph":
+  let karate = karateClubGraph()
+  let (pred, seen) = karate.predecessorAndSeen(0)
+  check pred == {0: @[], 1: @[0], 2: @[0], 3: @[0], 4: @[0], 5: @[0], 6: @[0], 7: @[0], 8: @[0], 10: @[0], 11: @[0], 12: @[0], 13: @[0], 17: @[0], 19: @[0], 21: @[0], 31: @[0], 30: @[1, 8], 9: @[2], 27: @[2], 28: @[2, 31], 32: @[2, 8, 31], 16: @[5, 6], 33: @[8, 13, 19, 31], 24: @[31], 25: @[31], 23: @[27, 32, 33, 25], 14: @[32, 33], 15: @[32, 33], 18: @[32, 33], 20: @[32, 33], 22: @[32, 33], 29: @[32, 33], 26: @[33]}.toTable()
+  check seen == {0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 30: 2, 9: 2, 27: 2, 28: 2, 32: 2, 16: 2, 33: 2, 24: 2, 25: 2, 23: 3, 14: 3, 15: 3, 18: 3, 20: 3, 22: 3, 29: 3, 26: 3}.toTable()
+
+test "predecessors on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  let (pred, seen) = dkarate.predecessorAndSeen(0)
+  check pred == {0: @[], 1: @[0], 2: @[0], 3: @[0], 4: @[0], 5: @[0], 6: @[0], 7: @[0], 8: @[0], 10: @[0], 11: @[0], 12: @[0], 13: @[0], 17: @[0], 19: @[0], 21: @[0], 31: @[0], 30: @[1, 8], 9: @[2], 27: @[2], 28: @[2], 32: @[2, 8, 31], 16: @[5, 6], 33: @[8, 13, 19, 31]}.toTable()
+  check seen == {0: 0, 1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1, 10: 1, 11: 1, 12: 1, 13: 1, 17: 1, 19: 1, 21: 1, 31: 1, 30: 2, 9: 2, 27: 2, 28: 2, 32: 2, 16: 2, 33: 2}.toTable()
+
 # -------------------------------------------------------------------
 # Similarity Measures
 # -------------------------------------------------------------------

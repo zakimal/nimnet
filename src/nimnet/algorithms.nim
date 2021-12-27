@@ -1650,6 +1650,358 @@ proc power*(G: Graph, k: int): Graph =
 # Shortest Paths
 # -------------------------------------------------------------------
 
+iterator singleShortestPathLength(adj: Table[Node, HashSet[Node]], firstLevel: Table[Node, int], cutoff: float): tuple[node: Node, level: int] =
+  var seen = initTable[Node, int]()
+  var level = 0
+  var nextLevel = firstLevel.keys().toSeq().toHashSet()
+  let N = len(adj)
+  while len(nextLevel) != 0 and cutoff >= level.float:
+    var thisLevel = nextLevel
+    nextLevel = initHashSet[Node]()
+    var found: seq[Node] = @[]
+    for v in thisLevel:
+      if v notin seen:
+        seen[v] = level
+        found.add(v)
+        yield (v, level)
+    if len(seen) == N:
+      break
+    for v in found:
+      for adjNode in adj[v]:
+        nextLevel.incl(adjNode)
+    level += 1
+  seen.clear()
+
+proc singleSourceShortestPathLength*(G: Graph, source: Node, cutoff: int = -1): Table[Node, int] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel: Table[Node, int] = {source: 1}.toTable()
+  var ret = initTable[Node, int]()
+  for (target, length) in singleShortestPathLength(G.adj, nextLevel, cutoffUsing):
+    ret[target] = length
+  return ret
+proc singleSourceShortestPathLength*(DG: DiGraph, source: Node, cutoff: int = -1): Table[Node, int] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel: Table[Node, int] = {source: 1}.toTable()
+  var ret = initTable[Node, int]()
+  for (target, length) in singleShortestPathLength(DG.succ, nextLevel, cutoffUsing):
+    ret[target] = length
+  return ret
+
+proc singleTargetShortestPathLength*(G: Graph, target: Node, cutoff: int = -1): Table[Node, int] =
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {target: 1}.toTable()
+  var ret = initTable[Node, int]()
+  for (source, shortestPathLength) in singleShortestPathLength(G.adj, nextLevel, cutoffUsing):
+    ret[source] = shortestPathLength
+  return ret
+proc singleTargetShortestPathLength*(DG: DiGraph, target: Node, cutoff: int = -1): Table[Node, int] =
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {target: 1}.toTable()
+  var ret = initTable[Node, int]()
+  for (source, shortestPathLength) in singleShortestPathLength(DG.pred, nextLevel, cutoffUsing):
+    ret[source] = shortestPathLength
+  return ret
+
+iterator allPairsShortestPathLength*(G: Graph, cutoff: int = -1): tuple[source: Node, shortestPathLengthTable: Table[Node, int]] =
+  for n in G.nodes():
+    yield (n, singleSourceShortestPathLength(G, n, cutoff))
+iterator allPairsShortestPathLength*(DG: DiGraph, cutoff: int = -1): tuple[source: Node, shortestPathLengthTable: Table[Node, int]] =
+  for n in DG.nodes():
+    yield (n, singleSourceShortestPathLength(DG, n, cutoff))
+
+proc bidirectionalPredSucc(G: Graph, source: Node, target: Node): tuple[pred: Table[Node, Node], succ: Table[Node, Node], w: Node] =
+  if target == source:
+    return ({target: None}.toTable(), {source: None}.toTable(), source)
+  var pred = {source: None}.toTable()
+  var succ = {target: None}.toTable()
+  var forwardFringe = @[source]
+  var reverseFringe = @[target]
+  while len(forwardFringe) != 0 and len(reverseFringe) != 0:
+    if len(forwardFringe) <= len(reverseFringe):
+      var thisLevel = forwardFringe
+      forwardFringe = @[]
+      for v in thisLevel:
+        for w in G.neighbors(v):
+          if w notin pred:
+            forwardFringe.add(w)
+            pred[w] = v
+          if w in succ:
+            return (pred, succ, w)
+    else:
+      var thisLevel = reverseFringe
+      reverseFringe = @[]
+      for v in thisLevel:
+        for w in G.neighbors(v):
+          if w notin succ:
+            succ[w] = v
+            reverseFringe.add(w)
+          if w in pred:
+            return (pred, succ, w)
+  raise newNNNoPath(fmt"no paths between {source} and {target}")
+proc bidirectionalPredSucc(DG: DiGraph, source: Node, target: Node): tuple[pred: Table[Node, Node], succ: Table[Node, Node], w: Node] =
+  if target == source:
+    return ({target: None}.toTable(), {source: None}.toTable(), source)
+  var pred = {source: None}.toTable()
+  var succ = {target: None}.toTable()
+  var forwardFringe = @[source]
+  var reverseFringe = @[target]
+  while len(forwardFringe) != 0 and len(reverseFringe) != 0:
+    if len(forwardFringe) <= len(reverseFringe):
+      var thisLevel = forwardFringe
+      forwardFringe = @[]
+      for v in thisLevel:
+        for w in DG.successors(v):
+          if w notin pred:
+            forwardFringe.add(w)
+            pred[w] = v
+          if w in succ:
+            return (pred, succ, w)
+    else:
+      var thisLevel = reverseFringe
+      reverseFringe = @[]
+      for v in thisLevel:
+        for w in DG.predecessors(v):
+          if w notin succ:
+            succ[w] = v
+            reverseFringe.add(w)
+          if w in pred:
+            return (pred, succ, w)
+  raise newNNNoPath(fmt"no paths between {source} and {target}")
+
+proc bidirectionalShortestPath*(G: Graph, source: Node, target: Node): seq[Node] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
+  var (pred, succ, w) = bidirectionalPredSucc(G, source, target)
+  var path: seq[Node] = @[]
+  while w != None:
+    path.add(w)
+    w = pred[w]
+  path.reverse()
+  w = succ[path[^1]]
+  while w != None:
+    path.add(w)
+    w = succ[w]
+  return path
+proc bidirectionalShortestPath*(DG: DiGraph, source: Node, target: Node): seq[Node] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+  var (pred, succ, w) = bidirectionalPredSucc(DG, source, target)
+  var path: seq[Node] = @[]
+  while w != None:
+    path.add(w)
+    w = pred[w]
+  path.reverse()
+  w = succ[path[^1]]
+  while w != None:
+    path.add(w)
+    w = succ[w]
+  return path
+
+proc singleShortestPath(adj: Table[Node, HashSet[Node]], firstLevel: Table[Node, int], paths: var Table[Node, seq[Node]], cutoff: float, join: proc(p1: seq[Node], p2: seq[Node]): seq[Node]): Table[Node, seq[Node]] =
+  var level = 0
+  var nextLevel = firstLevel
+  while len(nextLevel) != 0 and cutoff > level.float:
+    var thisLevel = nextLevel
+    nextLevel = initTable[Node, int]()
+    for v in thisLevel.keys():
+      for w in sorted(adj[v].toSeq()):
+        if w notin paths:
+          paths[w] = join(paths[v], @[w])
+          nextLevel[w] = 1
+    level += 1
+  return paths
+proc singleSourceShortestPath*(G: Graph, source: Node, cutoff: int = -1): Table[Node, seq[Node]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  let join = proc(p1, p2: seq[Node]): seq[Node] = return p1 & p2
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {source: 1}.toTable()
+  var paths = {source: @[source]}.toTable()
+  return singleShortestPath(G.adj, nextLevel, paths, cutoffUsing, join)
+
+proc singleSourceShortestPath*(DG: DiGraph, source: Node, cutoff: int = -1): Table[Node, seq[Node]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  let join = proc(p1, p2: seq[Node]): seq[Node] = return p1 & p2
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {source: 1}.toTable()
+  var paths = {source: @[source]}.toTable()
+  return singleShortestPath(DG.succ, nextLevel, paths, cutoffUsing, join)
+proc singleTargetShortestPath*(G: Graph, target: Node, cutoff: int = -1): Table[Node, seq[Node]] =
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
+  let join = proc(p1, p2: seq[Node]): seq[Node] = return p2 & p1
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {target: 1}.toTable()
+  var paths = {target: @[target]}.toTable()
+  return singleShortestPath(G.adj, nextLevel, paths, cutoffUsing, join)
+
+proc singleTargetShortestPath*(DG: DiGraph, target: Node, cutoff: int = -1): Table[Node, seq[Node]] =
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+  let join = proc(p1, p2: seq[Node]): seq[Node] = return p2 & p1
+  var cutoffUsing: float = cutoff.float
+  if cutoff == -1:
+    cutoffUsing = Inf
+  let nextLevel = {target: 1}.toTable()
+  var paths = {target: @[target]}.toTable()
+  return singleShortestPath(DG.pred, nextLevel, paths, cutoffUsing, join)
+
+iterator allPairsShortestPath*(G: Graph, cutoff: int = -1): tuple[node: Node, shortestPaths: Table[Node, seq[Node]]] =
+  for n in G.nodes():
+    yield (n, singleSourceShortestPath(G, n, cutoff))
+iterator allPairsShortestPath*(DG: DiGraph, cutoff: int = -1): tuple[node: Node, shortestPaths: Table[Node, seq[Node]]] =
+  for n in DG.nodes():
+    yield (n, singleSourceShortestPath(DG, n, cutoff))
+
+proc predecessor*(G: Graph, source: Node, target: Node = None, cutoff: int = -1): Table[Node, seq[Node]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  var level = 0
+  var nextLevel = @[source]
+  var seen = {source: level}.toTable()
+  var pred = initTable[Node, seq[Node]]()
+  pred[source] = @[]
+  while len(nextLevel) != 0:
+    level += 1
+    var thisLevel = nextLevel
+    nextLevel = @[]
+    for v in thisLevel:
+      for w in G.neighbors(v):
+        if w notin seen:
+          pred[w] = @[v]
+          seen[w] = level
+          nextLevel.add(w)
+        elif seen[w] == level:
+          pred[w].add(v)
+    if cutoff != -1 and cutoff <= level:
+      break
+  if target != None:
+    if target notin pred:
+      var ret = initTable[Node, seq[Node]]()
+      ret[target] = @[]
+      return ret
+    return {target: pred[target]}.toTable()
+  return pred
+proc predecessor*(DG: DiGraph, source: Node, target: Node = None, cutoff: int = -1): Table[Node, seq[Node]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  var level = 0
+  var nextLevel = @[source]
+  var seen = {source: level}.toTable()
+  var pred = initTable[Node, seq[Node]]()
+  pred[source] = @[]
+  while len(nextLevel) != 0:
+    level += 1
+    var thisLevel = nextLevel
+    nextLevel = @[]
+    for v in thisLevel:
+      for w in DG.successors(v):
+        if w notin seen:
+          pred[w] = @[v]
+          seen[w] = level
+          nextLevel.add(w)
+        elif seen[w] == level:
+          pred[w].add(v)
+    if cutoff != -1 and cutoff <= level:
+      break
+  if target != None:
+    if target notin pred:
+      var ret = initTable[Node, seq[Node]]()
+      ret[target] = @[]
+      return ret
+    return {target: pred[target]}.toTable()
+  return pred
+
+proc predecessorAndSeen*(G: Graph, source: Node, target: Node = None, cutoff: int = -1): tuple[pred: Table[Node, seq[Node]], seen: Table[Node, int]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  var level = 0
+  var nextLevel = @[source]
+  var seen = {source: level}.toTable()
+  var pred = initTable[Node, seq[Node]]()
+  pred[source] = @[]
+  while len(nextLevel) != 0:
+    level += 1
+    var thisLevel = nextLevel
+    nextLevel = @[]
+    for v in thisLevel:
+      for w in G.neighbors(v):
+        if w notin seen:
+          pred[w] = @[v]
+          seen[w] = level
+          nextLevel.add(w)
+        elif seen[w] == level:
+          pred[w].add(v)
+    if cutoff != -1 and cutoff <= level:
+      break
+  if target != None:
+    if target notin pred:
+      var retPred = initTable[Node, seq[Node]]()
+      retPred[target] = @[]
+      var retSeen = initTable[Node, int]()
+      retSeen[target] = -1
+      return (retPred, retSeen)
+    return ({target: pred[target]}.toTable(), {target: seen[target]}.toTable())
+  return (pred, seen)
+proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff: int = -1): tuple[pred: Table[Node, seq[Node]], seen: Table[Node, int]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  var level = 0
+  var nextLevel = @[source]
+  var seen = {source: level}.toTable()
+  var pred = initTable[Node, seq[Node]]()
+  pred[source] = @[]
+  while len(nextLevel) != 0:
+    level += 1
+    var thisLevel = nextLevel
+    nextLevel = @[]
+    for v in thisLevel:
+      for w in DG.successors(v):
+        if w notin seen:
+          pred[w] = @[v]
+          seen[w] = level
+          nextLevel.add(w)
+        elif seen[w] == level:
+          pred[w].add(v)
+    if cutoff != -1 and cutoff <= level:
+      break
+  if target != None:
+    if target notin pred:
+      var retPred = initTable[Node, seq[Node]]()
+      retPred[target] = @[]
+      var retSeen = initTable[Node, int]()
+      retSeen[target] = -1
+      return (retPred, retSeen)
+    return ({target: pred[target]}.toTable(), {target: seen[target]}.toTable())
+  return (pred, seen)
+
 # -------------------------------------------------------------------
 # TODO:
 # Similarity Measures
