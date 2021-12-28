@@ -3025,19 +3025,19 @@ iterator buildPathsFromPredecessors(
   stack.addLast((target, 0))
   var top = 0
   while 0 <= top:
-    var (node, i) = stack.peekLast()
+    var (node, i) = stack.toSeq()[top]
     if node in sources:
       var ret: seq[Node] = @[]
       var revSubStack: seq[tuple[node: Node, i: int]] = @[]
-      for i in 0..top:
-        revSubStack.add(stack[i])
+      for j in 0..top:
+        revSubStack.add(stack[j])
       revSubStack.reverse()
       for (p, n) in revSubStack:
         ret.add(p)
       yield ret
     if len(pred[node]) > i:
       var tmp = stack.toSeq()
-      tmp[top] = (tmp[top].node, tmp[top].i + 1)
+      tmp[top].i = i + 1
       stack = tmp.toDeque()
       var nextNode = pred[node][i]
       if nextNode in seen:
@@ -4205,6 +4205,379 @@ proc astarPathLength*(
   for i in 0..<(len(path) - 1):
     ret += weight.getOrDefault((path[i], path[i + 1]), weight.getOrDefault((path[i + 1], path[i]), Inf))
   return ret
+
+proc shortestPath*(
+  G: Graph,
+  source: Node = None,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): Table[Node, Table[Node, seq[Node]]] =
+  var methodNameUsing = methodName
+  if methodNameUsing != "dijkstra" and methodNameUsing != "bellman-ford":
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  if weight == nil:
+    methodNameUsing = "unweighted"
+
+  var paths: Table[Node, Table[Node, seq[Node]]]
+  if source == None:
+    if target == None: # all pairs
+      if methodNameUsing == "unweighted":
+        for (source, path) in allPairsShortestPath(G):
+          paths[source] = path
+      elif methodNameUsing == "dijkstra":
+        for (source, path) in allPairsDijkstraPath(G, weight=weight):
+          paths[source] = path
+      elif methodNameUsing == "bellman-ford":
+        for (source, path) in allPairsBellmanFordPath(G, weight=weight):
+          paths[source] = path
+
+    else: # single target
+      if methodNameUsing == "unweighted":
+        paths[target] = singleSourceShortestPath(G, source=target)
+      elif methodNameUsing == "dijkstra":
+        paths[target] = singleSourceDijkstraPath(G, target, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[target] = singleSourceBellmanFordPath(G, target, weight=weight)
+      for v in paths[target].keys():
+        reverse(paths[target][v])
+
+  else:
+    if target == None: # single source
+      if methodNameUsing == "unweighted":
+        paths[source] = singleSourceShortestPath(G, source)
+      elif methodNameUsing == "dijkstra":
+        paths[source] = singleSourceDijkstraPath(G, source, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = singleSourceBellmanFordPath(G, source, weight=weight)
+
+    else: # single source and single target
+      if methodNameUsing == "unweighted":
+        paths[source] = {target: bidirectionalShortestPath(G, source, target)}.toTable()
+      elif methodNameUsing == "dijkstra":
+        paths[source] = {target: bidirectionalDijkstra(G, source, target, weight=weight).path}.toTable()
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = {target: bellmanFordPath(G, source, target, weight=weight)}.toTable()
+  return paths
+proc shortestPath*(
+  DG: DiGraph,
+  source: Node = None,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): Table[Node, Table[Node, seq[Node]]] =
+  var methodNameUsing = methodName
+  if methodNameUsing != "dijkstra" and methodNameUsing != "bellman-ford":
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  if weight == nil:
+    methodNameUsing = "unweighted"
+
+  var paths: Table[Node, Table[Node, seq[Node]]]
+  if source == None:
+    if target == None: # all pairs
+      if methodNameUsing == "unweighted":
+        for (source, path) in allPairsShortestPath(DG):
+          paths[source] = path
+      elif methodNameUsing == "dijkstra":
+        for (source, path) in allPairsDijkstraPath(DG, weight=weight):
+          paths[source] = path
+      elif methodNameUsing == "bellman-ford":
+        for (source, path) in allPairsBellmanFordPath(DG, weight=weight):
+          paths[source] = path
+
+    else: # single target
+      var RDG = DG.reverse()
+      if methodNameUsing == "unweighted":
+        paths[target] = singleSourceShortestPath(RDG, source=target)
+      elif methodNameUsing == "dijkstra":
+        paths[target] = singleSourceDijkstraPath(RDG, target, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[target] = singleSourceBellmanFordPath(RDG, target, weight=weight)
+      for v in paths[target].keys():
+        reverse(paths[target][v])
+
+  else:
+    if target == None: # single source
+      if methodNameUsing == "unweighted":
+        paths[source] = singleSourceShortestPath(DG, source)
+      elif methodNameUsing == "dijkstra":
+        paths[source] = singleSourceDijkstraPath(DG, source, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = singleSourceBellmanFordPath(DG, source, weight=weight)
+
+    else: # single source and single target
+      if methodNameUsing == "unweighted":
+        paths[source] = {target: bidirectionalShortestPath(DG, source, target)}.toTable()
+      elif methodNameUsing == "dijkstra":
+        paths[source] = {target: bidirectionalDijkstra(DG, source, target, weight=weight).path}.toTable()
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = {target: bellmanFordPath(DG, source, target, weight=weight)}.toTable()
+  return paths
+
+proc shortestPathLength*(
+  G: Graph,
+  source: Node = None,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): Table[Node, Table[Node, float]] =
+  var methodNameUsing = methodName
+  if methodNameUsing != "dijkstra" and methodNameUsing != "bellman-ford":
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  if weight == nil:
+    methodNameUsing = "unweighted"
+
+  var paths: Table[Node, Table[Node, float]]
+  if source == None:
+    if target == None: # all pairs
+      if methodNameUsing == "unweighted":
+        for (source, path) in allPairsShortestPathLength(G):
+          paths[source] = initTable[Node, float]()
+          for (k, v) in path.pairs():
+            paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        for (source, path) in allPairsDijkstraPathLength(G, weight=weight):
+          paths[source] = path
+      elif methodNameUsing == "bellman-ford":
+        for (source, path) in allPairsBellmanFordPathLength(G, weight=weight):
+          paths[source] = path
+
+    else: # single target
+      if methodNameUsing == "unweighted":
+        paths[source] = initTable[Node, float]()
+        for (k, v) in singleSourceShortestPathLength(G, source=target).pairs():
+          paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        paths[target] = singleSourceDijkstraPathLength(G, target, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[target] = singleSourceBellmanFordPathLength(G, target, weight=weight)
+
+  else:
+    if target == None: # single source
+      if methodNameUsing == "unweighted":
+        paths[source] = initTable[Node, float]()
+        for (k, v) in singleSourceShortestPathLength(G, source).pairs():
+          paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        paths[source] = singleSourceDijkstraPathLength(G, source, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = singleSourceBellmanFordPathLength(G, source, weight=weight)
+
+    else: # single source and single target
+      if methodNameUsing == "unweighted":
+        paths[source] = {target: (len(bidirectionalShortestPath(G, source, target)) - 1).float}.toTable()
+      elif methodNameUsing == "dijkstra":
+        paths[source] = {target: dijkstraPathLength(G, source, target, weight=weight)}.toTable()
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = {target: bellmanFordPathLength(G, source, target, weight=weight)}.toTable()
+  return paths
+proc shortestPathLength*(
+  DG: DiGraph,
+  source: Node = None,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): Table[Node, Table[Node, float]] =
+  var methodNameUsing = methodName
+  if methodNameUsing != "dijkstra" and methodNameUsing != "bellman-ford":
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  if weight == nil:
+    methodNameUsing = "unweighted"
+
+  var paths: Table[Node, Table[Node, float]]
+  if source == None:
+    if target == None: # all pairs
+      if methodNameUsing == "unweighted":
+        for (source, path) in allPairsShortestPathLength(DG):
+          paths[source] = initTable[Node, float]()
+          for (k, v) in path.pairs():
+            paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        for (source, path) in allPairsDijkstraPathLength(DG, weight=weight):
+          paths[source] = path
+      elif methodNameUsing == "bellman-ford":
+        for (source, path) in allPairsBellmanFordPathLength(DG, weight=weight):
+          paths[source] = path
+
+    else: # single target
+      var RDG = DG.reverse()
+      if methodNameUsing == "unweighted":
+        paths[source] = initTable[Node, float]()
+        for (k, v) in singleSourceShortestPathLength(RDG, source=target).pairs():
+          paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        paths[target] = singleSourceDijkstraPathLength(RDG, target, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[target] = singleSourceBellmanFordPathLength(RDG, target, weight=weight)
+
+  else:
+    if target == None: # single source
+      if methodNameUsing == "unweighted":
+        paths[source] = initTable[Node, float]()
+        for (k, v) in singleSourceShortestPathLength(DG, source).pairs():
+          paths[source][k] = v.float
+      elif methodNameUsing == "dijkstra":
+        paths[source] = singleSourceDijkstraPathLength(DG, source, weight=weight)
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = singleSourceBellmanFordPathLength(DG, source, weight=weight)
+
+    else: # single source and single target
+      if methodNameUsing == "unweighted":
+        paths[source] = {target: (len(bidirectionalShortestPath(DG, source, target)) - 1).float}.toTable()
+      elif methodNameUsing == "dijkstra":
+        paths[source] = {target: dijkstraPathLength(DG, source, target, weight=weight)}.toTable()
+      elif methodNameUsing == "bellman-ford":
+        paths[source] = {target: bellmanFordPathLength(DG, source, target, weight=weight)}.toTable()
+  return paths
+
+proc averageShortestPathLength*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = ""
+): float =
+  let singleSourceMethods = @["unweighted", "dijkstra", "bellman-ford"].toHashSet()
+  let allPairsMethods = @["floyd-warshall"].toHashSet()
+  let supportedMethods = singleSourceMethods + allPairsMethods
+  var methodNameUsing = methodName
+  if methodName == "":
+    if weight == nil:
+      methodNameUsing = "unweighted"
+    else:
+      methodNameUsing = "dijkstra"
+  if methodNameUsing notin supportedMethods:
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  let N = len(G)
+  if N == 0:
+    raise newNNPointlessConcept("null graph has no paths, thus no average shortest path length")
+  if N == 1:
+    return 0.0
+  let pathLength = proc(v: Node): Table[Node, float] =
+    if methodNameUsing == "unweighted":
+      var ret = initTable[Node, float]()
+      for (n, length) in singleSourceShortestPathLength(G, v).pairs():
+        ret[n] = length.float
+      return ret
+    elif methodNameUsing == "dijkstra":
+      return singleSourceDijkstraPathLength(G, v, weight=weight)
+    elif methodNameUsing == "bellman-ford":
+      return singleSourceBellmanFordPathLength(G, v, weight=weight)
+  var s = 0.0
+  if methodNameUsing in singleSourceMethods:
+    for u in G.nodes():
+      for l in pathLength(u).values():
+        s += l
+  else:
+    if methodNameUsing == "floyd-warshall":
+      var allPairs = floydWarshall(G, weight=weight)
+      for t in allPairs.values():
+        for v in t.values():
+          s += v
+  return s / (N * (N - 1)).float
+proc averageShortestPathLength*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = ""
+): float =
+  let singleSourceMethods = @["unweighted", "dijkstra", "bellman-ford"].toHashSet()
+  let allPairsMethods = @["floyd-warshall"].toHashSet()
+  let supportedMethods = singleSourceMethods + allPairsMethods
+  var methodNameUsing = methodName
+  if methodName == "":
+    if weight == nil:
+      methodNameUsing = "unweighted"
+    else:
+      methodNameUsing = "dijkstra"
+  if methodNameUsing notin supportedMethods:
+    raise newNNError(fmt"method not supported: {methodNameUsing}")
+  let N = len(DG)
+  if N == 0:
+    raise newNNPointlessConcept("null graph has no paths, thus no average shortest path length")
+  if N == 1:
+    return 0.0
+  let pathLength = proc(v: Node): Table[Node, float] =
+    if methodNameUsing == "unweighted":
+      var ret = initTable[Node, float]()
+      for (n, length) in singleSourceShortestPathLength(DG, v).pairs():
+        ret[n] = length.float
+      return ret
+    elif methodNameUsing == "dijkstra":
+      return singleSourceDijkstraPathLength(DG, v, weight=weight)
+    elif methodNameUsing == "bellman-ford":
+      return singleSourceBellmanFordPathLength(DG, v, weight=weight)
+  var s = 0.0
+  if methodNameUsing in singleSourceMethods:
+    for u in DG.nodes():
+      for l in pathLength(u).values():
+        s += l
+  else:
+    if methodNameUsing == "floyd-warshall":
+      var allPairs = floydWarshall(DG, weight=weight)
+      for t in allPairs.values():
+        for v in t.values():
+          s += v
+  return s / (N * (N - 1)).float
+
+iterator allShortestPaths*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): seq[Node] =
+  var methodNameUsing: string
+  if weight == nil:
+    methodNameUsing = "unweighted"
+  else:
+    methodNameUsing = methodName
+  var pred: Table[Node, seq[Node]]
+  var dist: Table[Node, float]
+  if methodNameUsing == "unweighted":
+    pred = predecessor(G, source)
+  elif methodNameUsing == "dijkstra":
+    (pred, dist) = dijkstraPredecessorAndDistance(G, source, weight=weight)
+  elif methodNameUsing == "bellman-ford":
+    (pred, dist) = bellmanFordPredecessorAndDistance(G, source, weight=weight)
+  else:
+    raise newNNError(fmt"method not suppoerted: {methodNameUsing}")
+  var predRef = newTable[Node, seq[Node]]()
+  for (k, v) in pred.pairs():
+    predRef[k] = v
+  for path in buildPathsFromPredecessors(@[source].toHashSet(), target, predRef):
+    yield path
+iterator allShortestPaths*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+  methodName: string = "dijkstra"
+): seq[Node] =
+  var methodNameUsing: string
+  if weight == nil:
+    methodNameUsing = "unweighted"
+  else:
+    methodNameUsing = methodName
+  var pred: Table[Node, seq[Node]]
+  var dist: Table[Node, float]
+  if methodNameUsing == "unweighted":
+    pred = predecessor(DG, source)
+  elif methodNameUsing == "dijkstra":
+    (pred, dist) = dijkstraPredecessorAndDistance(DG, source, weight=weight)
+  elif methodNameUsing == "bellman-ford":
+    (pred, dist) = bellmanFordPredecessorAndDistance(DG, source, weight=weight)
+  else:
+    raise newNNError(fmt"method not suppoerted: {methodNameUsing}")
+  var predRef = newTable[Node, seq[Node]]()
+  for (k, v) in pred.pairs():
+    predRef[k] = v
+  for path in buildPathsFromPredecessors(@[source].toHashSet(), target, predRef):
+    yield path
+
+proc hasPath*(G: Graph, source: Node, target: Node): bool =
+  try:
+    discard shortestPath(G, source, target)
+  except NNNoPath:
+    return false
+  return true
 
 # -------------------------------------------------------------------
 # TODO:

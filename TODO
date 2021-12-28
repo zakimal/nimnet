@@ -557,11 +557,11 @@ Rich Club
 
 Shortest Paths
 - generic
-    - shortest_path(G[, source, target, weight, …])
-    - all_shortest_paths(G, source, target[, …])
-    - shortest_path_length(G[, source, target, …])
-    - average_shortest_path_length(G[, weight, method])
-    - has_path(G, source, target)
+    - [x] shortest_path(G[, source, target, weight, …])
+    - [x] all_shortest_paths(G, source, target[, …])
+    - [x] shortest_path_length(G[, source, target, …])
+    - [x] average_shortest_path_length(G[, weight, method])
+    - [x] has_path(G, source, target)
 - [x] for unweighted
     - [x] single_source_shortest_path(G, source[, cutoff])
     - [x] single_source_shortest_path_length(G, source)
