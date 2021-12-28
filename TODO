@@ -599,10 +599,10 @@ Shortest Paths
     - [x] find_negative_cycle
     - [x] johnson(G[, weight])
 - for dense
-    - floyd_warshall(G[, weight])
-    - floyd_warshall_predecessor_and_distance(G[, …])
+    - [x] floyd_warshall(G[, weight])
+    - [x] floyd_warshall_predecessor_and_distance(G[, …])
     - floyd_warshall_numpy(G[, nodelist, weight])
-    - reconstruct_path(source, target, predecessors)
+    - [x] reconstruct_path(source, target, predecessors)
 - A*
     - astar_path(G, source, target[, heuristic, …])
     - astar_path_length(G, source, target[, …])
