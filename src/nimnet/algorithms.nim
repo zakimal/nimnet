@@ -3472,7 +3472,178 @@ proc bellmanFordPredecessorAndDistance*(
   dist = bellmanFord(DG, @[source], pred=pred, dist=dist, target=target, heuristic=heuristic)
   return (pred[], dist[])
 
-# goldbergRadzik
+proc goldbergRadzik*(
+  G: Graph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): tuple[pred: Table[Node, Node], dist: Table[Node, float]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  for (u, v) in G.selfloopEdges():
+    if weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf)) < 0:
+      raise newNNUnbounded(fmt"negative cycle detected")
+
+  var dist = newTable[Node, float]()
+  dist[source] = 0.0
+  var pred = newTable[Node, Node]()
+  pred[source] = None
+
+  if len(G) == 1:
+    return (pred[], dist[])
+
+  for u in G.nodes():
+    dist[u] = Inf
+  dist[source] = 0.0
+
+  let topoSort = proc(relabeled: HashSet[Node]): seq[Node] =
+    var toScan: seq[Node] = @[]
+    var negCount = initTable[Node, int]()
+    for u in relabeled:
+      if u in negCount:
+        continue
+      var dU = dist[u]
+      var tmp: seq[bool] = @[]
+      for v in G.neighbors(u):
+        tmp.add((dU + weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf))) >= dist[v])
+      if all(tmp, proc(b: bool): bool = return b):
+        continue
+      var stack = initDeque[tuple[u: Node, nbrs: seq[Node], idx: int]]()
+      stack.addFirst((u, G.neighbors(u), 0))
+      var inStack = @[u].toHashSet()
+      negCount[u] = 0
+      while len(stack) != 0:
+        var (u, nbrs, idx) = stack.peekLast()
+        var v: Node
+        if idx < len(nbrs):
+          var tmpEle = stack.popLast()
+          v = tmpEle.nbrs[idx]
+          stack.addLast((u, nbrs, idx + 1))
+        else:
+          toScan.add(u)
+          discard stack.popLast()
+          inStack.excl(u)
+          continue
+        var t = dist[u] + weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf))
+        var dV = dist[v]
+        if t <= dV:
+          var isNeg = t < dV
+          dist[v] = t
+          pred[v] = u
+          if v notin negCount:
+            negCount[v] = negCount[u] + isNeg.int
+            stack.addLast((v, G.neighbors(v), 0))
+            inStack.incl(v)
+          elif v in inStack and negCount[u] + isNeg.int > negCount[v]:
+            raise newNNUnbounded("negative cycle detected")
+    toScan.reverse()
+    return toScan
+  let relax = proc(toScan: seq[Node]): HashSet[Node] =
+    var relabeled = initHashSet[Node]()
+    for u in toScan:
+      var dU = dist[u]
+      for v in G.neighbors(u):
+        var wE = weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf))
+        if dU + wE < dist[v]:
+          dist[v] = dU + wE
+          pred[v] = u
+          relabeled.incl(v)
+    return relabeled
+
+  var relabeled = @[source].toHashSet()
+  while len(relabeled) != 0:
+    var toScan = topoSort(relabeled)
+    relabeled = relax(toScan)
+  var retD = newTable[Node, float]()
+  for u in pred.keys():
+    retD[u] = dist[u]
+  return (pred[], retD[])
+proc goldbergRadzik*(
+  DG: DiGraph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): tuple[pred: Table[Node, Node], dist: Table[Node, float]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  for (u, v) in DG.selfloopEdges():
+    if weight.getOrDefault((u, v), Inf) < 0:
+      raise newNNUnbounded(fmt"negative cycle detected")
+
+  var dist = newTable[Node, float]()
+  dist[source] = 0.0
+  var pred = newTable[Node, Node]()
+  pred[source] = None
+
+  if len(DG) == 1:
+    return (pred[], dist[])
+
+  for u in DG.nodes():
+    dist[u] = Inf
+  dist[source] = 0.0
+
+  let topoSort = proc(relabeled: HashSet[Node]): seq[Node] =
+    var toScan: seq[Node] = @[]
+    var negCount = initTable[Node, int]()
+    for u in relabeled:
+      if u in negCount:
+        continue
+      var dU = dist[u]
+      var tmp: seq[bool] = @[]
+      for v in DG.successors(u):
+        tmp.add((dU + weight.getOrDefault((u, v), Inf)) >= dist[v])
+      if all(tmp, proc(b: bool): bool = return b):
+        continue
+      var stack = initDeque[tuple[u: Node, nbrs: seq[Node], idx: int]]()
+      stack.addFirst((u, DG.successors(u), 0))
+      var inStack = @[u].toHashSet()
+      negCount[u] = 0
+      while len(stack) != 0:
+        var (u, nbrs, idx) = stack.peekLast()
+        var v: Node
+        if idx < len(nbrs):
+          var tmpEle = stack.popLast()
+          v = tmpEle.nbrs[idx]
+          stack.addLast((u, nbrs, idx + 1))
+        else:
+          toScan.add(u)
+          discard stack.popLast()
+          inStack.excl(u)
+          continue
+        var t = dist[u] + weight.getOrDefault((u, v), Inf)
+        var dV = dist[v]
+        if t <= dV:
+          var isNeg = t < dV
+          dist[v] = t
+          pred[v] = u
+          if v notin negCount:
+            negCount[v] = negCount[u] + isNeg.int
+            stack.addLast((v, DG.successors(v), 0))
+            inStack.incl(v)
+          elif v in inStack and negCount[u] + isNeg.int > negCount[v]:
+            raise newNNUnbounded("negative cycle detected")
+    toScan.reverse()
+    return toScan
+  let relax = proc(toScan: seq[Node]): HashSet[Node] =
+    var relabeled = initHashSet[Node]()
+    for u in toScan:
+      var dU = dist[u]
+      for v in DG.successors(u):
+        var wE = weight.getOrDefault((u, v), Inf)
+        if dU + wE < dist[v]:
+          dist[v] = dU + wE
+          pred[v] = u
+          relabeled.incl(v)
+    return relabeled
+
+  var relabeled = @[source].toHashSet()
+  while len(relabeled) != 0:
+    var toScan = topoSort(relabeled)
+    relabeled = relax(toScan)
+  var retD = newTable[Node, float]()
+  for u in pred.keys():
+    retD[u] = dist[u]
+  return (pred[], retD[])
+
+
 
 # negativeEdgeCycle
 

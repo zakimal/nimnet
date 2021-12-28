@@ -594,7 +594,7 @@ Shortest Paths
     - [x] all_pairs_bellman_ford_path_length(G[, weight])
     - [x] bellman_ford_predecessor_and_distance(G, source)
     - negative_edge_cycle(G[, weight, heuristic])
-    - goldberg_radzik(G, source[, weight])
+    - [x] goldberg_radzik(G, source[, weight])
     - johnson(G[, weight])
 - for dense
     - floyd_warshall(G[, weight])
