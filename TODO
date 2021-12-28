@@ -604,8 +604,8 @@ Shortest Paths
     - floyd_warshall_numpy(G[, nodelist, weight])
     - [x] reconstruct_path(source, target, predecessors)
 - A*
-    - astar_path(G, source, target[, heuristic, …])
-    - astar_path_length(G, source, target[, …])
+    - [x] astar_path(G, source, target[, heuristic, …])
+    - [x] astar_path_length(G, source, target[, …])
 
 Similarity Measures
 - networkx.algorithms.similarity.graph_edit_distance

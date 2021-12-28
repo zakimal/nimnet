@@ -2056,6 +2056,7 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
 # TODO:
 # FIXME: weightに存在しない重み付き辺のデフォルトの重みは何が適切か．networkxでは1.0にしてるけどそれは本当に適切？
 # FIXME: そもそもlen(weight.keys.toSeq()) != len(G.edges())が判明した時点で例外を投げれば良いのでは？
+# FIXME: weightを与えないと実行できないようにする
 # Traversal
 # -------------------------------------------------------------------
 
@@ -2648,7 +2649,7 @@ proc dijkstraMultiSource(
     for u in G.neighbors(v):
       var cost: float
       if weight != nil:
-        cost = weight.getOrDefault((v, u), weight.getOrDefault((u, v), Inf))
+        cost = weight.getOrDefault((v, u), weight.getOrDefault((u, v), 1.0))
       else:
         cost = 1.0
       var vuDist = dist[v] + cost
@@ -4026,6 +4027,160 @@ proc floydWarshall*(
   weight: TableRef[Edge, float] = nil
 ): Table[Node, Table[Node, float]] =
   return floydWarshallPredecessorAndDistance(DG, weight=weight).distance
+
+proc astarPath*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float],
+  heuristic: proc(n1, n2: Node): float = nil,
+): seq[Node] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("weight of all edges are needed")
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
+
+  var heuristicUsing = heuristic
+  if heuristic == nil:
+    heuristicUsing = proc(u, v: Node): float = return 0.0
+
+  var c = -1
+  var queue = initHeapQueue[tuple[priority: float, c: int, node: Node, cost: float, parent: Node]]()
+  c += 1
+  push(queue, (0.0, c, source, 0.0, None))
+
+  var enqueued = initTable[Node, tuple[cost: float, heur: float]]()
+  var explored = initTable[Node, Node]()
+
+  while len(queue) != 0:
+    var (_, _, curNode, dist, parent) = pop(queue)
+    if curNode == target:
+      var path = @[curNode]
+      var node = parent
+      while node != None:
+        path.add(node)
+        node = explored[node]
+      path.reverse()
+      return path
+    if curNode in explored:
+      if explored[curNode] == None:
+        continue
+      var (qCost, _) = enqueued[curNode]
+      if qCost < dist:
+        continue
+    explored[curNode] = parent
+    for neighbor in G.neighbors(curNode):
+      var w = weight.getOrDefault((curNode, neighbor), weight.getOrDefault((curNode, neighbor), Inf))
+      var nCost = dist + w
+      var h: float
+      var qCost: float
+      if neighbor in enqueued:
+        (qCost, h) = enqueued[neighbor]
+        if qCost <= nCost:
+          continue
+      else:
+        h = heuristicUsing(neighbor, target)
+      enqueued[neighbor] = (nCost, h)
+      c += 1
+      push(queue, (nCost + h, c, neighbor, nCost, curNode))
+  raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+proc astarPath*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float],
+  heuristic: proc(n1, n2: Node): float = nil,
+): seq[Node] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("weight of all edges are needed")
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+
+  var heuristicUsing = heuristic
+  if heuristic == nil:
+    heuristicUsing = proc(u, v: Node): float = return 0.0
+
+  var c = -1
+  var queue = initHeapQueue[tuple[priority: float, c: int, node: Node, cost: float, parent: Node]]()
+  c += 1
+  push(queue, (0.0, c, source, 0.0, None))
+
+  var enqueued = initTable[Node, tuple[cost: float, heur: float]]()
+  var explored = initTable[Node, Node]()
+
+  while len(queue) != 0:
+    var (_, _, curNode, dist, parent) = pop(queue)
+    if curNode == target:
+      var path = @[curNode]
+      var node = parent
+      while node != None:
+        path.add(node)
+        node = explored[node]
+      path.reverse()
+      return path
+    if curNode in explored:
+      if explored[curNode] == None:
+        continue
+      var (qCost, _) = enqueued[curNode]
+      if qCost < dist:
+        continue
+    explored[curNode] = parent
+    for neighbor in DG.successors(curNode):
+      var w = weight.getOrDefault((curNode, neighbor), Inf)
+      var nCost = dist + w
+      var h: float
+      var qCost: float
+      if neighbor in enqueued:
+        (qCost, h) = enqueued[neighbor]
+        if qCost <= nCost:
+          continue
+      else:
+        h = heuristicUsing(neighbor, target)
+      enqueued[neighbor] = (nCost, h)
+      c += 1
+      push(queue, (nCost + h, c, neighbor, nCost, curNode))
+  raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+
+proc astarPathLength*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float],
+  heuristic: proc(n1, n2: Node): float = nil,
+): float =
+  if len(G.edges()) != len(weight):
+    raise newNNError("weight of all edges are needed")
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
+  var path = astarPath(G, source, target, weight, heuristic)
+  var ret = 0.0
+  for i in 0..<(len(path) - 1):
+    ret += weight.getOrDefault((path[i], path[i + 1]), weight.getOrDefault((path[i + 1], path[i]), Inf))
+  return ret
+proc astarPathLength*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float],
+  heuristic: proc(n1, n2: Node): float = nil,
+): float =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("weight of all edges are needed")
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+  var path = astarPath(DG, source, target, weight, heuristic)
+  var ret = 0.0
+  for i in 0..<(len(path) - 1):
+    ret += weight.getOrDefault((path[i], path[i + 1]), weight.getOrDefault((path[i + 1], path[i]), Inf))
+  return ret
 
 # -------------------------------------------------------------------
 # TODO:
