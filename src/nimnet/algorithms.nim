@@ -3643,15 +3643,287 @@ proc goldbergRadzik*(
     retD[u] = dist[u]
   return (pred[], retD[])
 
+proc negativeEdgeCycle*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+  heuristic: bool = true
+): bool =
+  var newNode = -1
+  while newNode in G.nodesSet():
+    newNode -= 1
+  for n in G.nodes():
+    G.addEdge(newNode, n)
+  try:
+    discard bellmanFordPredecessorAndDistance(G, newNode, weight=weight, heuristic=heuristic)
+  except NNUnbounded:
+    G.removeNode(newNode)
+    return true
+  G.removeNode(newNode)
+  return true
+proc negativeEdgeCycle*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+  heuristic: bool = true
+): bool =
+  var newNode = -2
+  while newNode in DG.nodesSet():
+    newNode -= 1
+  for n in DG.nodes():
+    DG.addEdge(newNode, n)
+  try:
+    discard bellmanFordPredecessorAndDistance(DG, newNode, weight=weight, heuristic=heuristic)
+  except NNUnbounded:
+    DG.removeNode(newNode)
+    return true
+  DG.removeNode(newNode)
+  return true
 
+proc findNegativeCycle*(
+  G: Graph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil
+): seq[Node] =
+  var pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+  var v = innerBellmanFord(G, @[source], weight=weight, pred=pred)
+  if v == None:
+    raise newNNError(fmt"no negative cycles detected")
+  var negCycle: seq[Node] = @[]
+  var stack = initDeque[tuple[v: Node, pred: seq[Node]]]()
+  stack.addLast((v, pred[v]))
+  var seen = @[v].toHashSet()
+  while len(stack) != 0:
+    var (node, preds) = stack.peekLast()
+    if v in preds:
+      negCycle.add(node)
+      negCycle.add(v)
+      negCycle.reverse()
+      return negCycle
+    if len(preds) != 0:
+      var nbr = preds.pop()
+      if nbr notin seen:
+        stack.addLast((nbr, pred[nbr]))
+        negCycle.add(node)
+        seen.incl(nbr)
+    else:
+      discard stack.popLast()
+      if len(negCycle) != 0:
+        discard negCycle.pop()
+      else:
+        if v in G.neighborsSet(v) and weight.getOrDefault((v, v), Inf) < 0:
+          return @[v, v]
+        raise newNNError("negative cycle is detected but not found")
+  raise newNNUnbounded("negative cycle detected but not identified")
+proc findNegativeCycle*(
+  DG: DiGraph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil
+): seq[Node] =
+  var pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+  var v = innerBellmanFord(DG, @[source], weight=weight, pred=pred)
+  if v == None:
+    raise newNNError(fmt"no negative cycles detected")
+  var negCycle: seq[Node] = @[]
+  var stack = initDeque[tuple[v: Node, pred: seq[Node]]]()
+  stack.addLast((v, pred[v]))
+  var seen = @[v].toHashSet()
+  while len(stack) != 0:
+    var (node, preds) = stack.peekLast()
+    if v in preds:
+      negCycle.add(node)
+      negCycle.add(v)
+      negCycle.reverse()
+      return negCycle
+    if len(preds) != 0:
+      var nbr = preds.pop()
+      if nbr notin seen:
+        stack.addLast((nbr, pred[nbr]))
+        negCycle.add(node)
+        seen.incl(nbr)
+    else:
+      discard stack.popLast()
+      if len(negCycle) != 0:
+        discard negCycle.pop()
+      else:
+        if v in DG.neighborsSet(v) and weight.getOrDefault((v, v), Inf) < 0:
+          return @[v, v]
+        raise newNNError("negative cycle is detected but not found")
+  raise newNNUnbounded("negative cycle detected but not identified")
 
-# negativeEdgeCycle
+proc bidirectionalDijkstra*(
+  G :Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): tuple[length: float, path: seq[Node]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin G.nodesSet():
+    raise newNNNodeNotFound(target)
 
-# findNegativeCycle
+  if source == target:
+    return (0.0, @[source])
 
-# bidirectionalDijkstra
+  var dists: seq[Table[Node, float]] = @[initTable[Node, float](), initTable[Node, float]()]
+  var paths: seq[Table[Node, seq[Node]]] = @[{source: @[source]}.toTable(), {target: @[target]}.toTable()]
+  var fringe: seq[HeapQueue[tuple[distance: float, cnt: int, node: Node]]] = @[initHeapQueue[tuple[distance: float, cnt: int, node: Node]](), initHeapQueue[tuple[distance: float, cnt: int, node: Node]]()]
+  var seen: seq[Table[Node, float]] = @[{source: 0.0}.toTable(), {target: 0.0}.toTable()]
+  var c = -1
 
-# johnson
+  push(fringe[0], (0.0, c, source))
+  c += 1
+  push(fringe[1], (0.0, c, target))
+  c += 1
+  var neighs = @[G.adj, G.adj]
+
+  var dir = 1
+  var finalDist = Inf
+  var finalPath: seq[Node] = @[]
+  while len(fringe[0]) != 0 and len(fringe[1]) != 0:
+    dir = 1 - dir
+    var (dist, _, v) = pop(fringe[dir])
+    if v in dists[dir]:
+      continue
+    dists[dir][v] = dist
+    if v in dists[1 - dir]:
+      return (finalDist, finalPath)
+    for w in sorted(neighs[dir][v].toSeq()):
+      var cost = weight.getOrDefault((v, w), weight.getOrDefault((w, v), Inf))
+      if cost == NaN:
+        continue
+      var vwLength = dists[dir][v] + cost
+      if w in dists[dir]:
+        if vwLength < dists[dir][w]:
+          raise newNNError("condtradictory paths found: negative weights?")
+      elif w notin seen[dir] or vwLength < seen[dir][w]:
+        seen[dir][w] = vwLength
+        push(fringe[dir], (vwLength, c, w))
+        c += 1
+        paths[dir][w] = paths[dir][v] & @[w]
+        if w in seen[0] and w in seen[1]:
+          var totalDist = seen[0][w] + seen[1][w]
+          if len(finalPath) == 0 or finalDist > totalDist:
+            finalDist = totalDist
+            var revPath = reversed(paths[1][w])
+            finalPath = paths[0][w]
+            for i in 1..<len(revPath):
+              finalPath = finalPath & revPath[i]
+  raise newNNNoPath(fmt"no path between source {source} and target {target}")
+proc bidirectionalDijkstra*(
+  DG :DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil
+): tuple[length: float, path: seq[Node]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  if target notin DG.nodesSet():
+    raise newNNNodeNotFound(target)
+
+  if source == target:
+    return (0.0, @[source])
+
+  var dists: seq[Table[Node, float]] = @[initTable[Node, float](), initTable[Node, float]()]
+  var paths: seq[Table[Node, seq[Node]]] = @[{source: @[source]}.toTable(), {target: @[target]}.toTable()]
+  var fringe: seq[HeapQueue[tuple[distance: float, cnt: int, node: Node]]] = @[initHeapQueue[tuple[distance: float, cnt: int, node: Node]](), initHeapQueue[tuple[distance: float, cnt: int, node: Node]]()]
+  var seen: seq[Table[Node, float]] = @[{source: 0.0}.toTable(), {target: 0.0}.toTable()]
+  var c = -1
+
+  push(fringe[0], (0.0, c, source))
+  c += 1
+  push(fringe[1], (0.0, c, target))
+  c += 1
+  var neighs = @[DG.succ, DG.pred]
+
+  var dir = 1
+  var finalDist = Inf
+  var finalPath: seq[Node] = @[]
+  while len(fringe[0]) != 0 and len(fringe[1]) != 0:
+    dir = 1 - dir
+    var (dist, _, v) = pop(fringe[dir])
+    if v in dists[dir]:
+      continue
+    dists[dir][v] = dist
+    if v in dists[1 - dir]:
+      return (finalDist, finalPath)
+    for w in sorted(neighs[dir][v].toSeq()):
+      var cost: float
+      if dir == 0:
+        cost = weight.getOrDefault((v, w), Inf)
+      else:
+        cost = weight.getOrDefault((w, v), Inf)
+      if cost == NaN:
+        continue
+      var vwLength = dists[dir][v] + cost
+      if w in dists[dir]:
+        if vwLength < dists[dir][w]:
+          raise newNNError("condtradictory paths found: negative weights?")
+      elif w notin seen[dir] or vwLength < seen[dir][w]:
+        seen[dir][w] = vwLength
+        push(fringe[dir], (vwLength, c, w))
+        c += 1
+        paths[dir][w] = paths[dir][v] & @[w]
+        if w in seen[0] and w in seen[1]:
+          var totalDist = seen[0][w] + seen[1][w]
+          if len(finalPath) == 0 or finalDist > totalDist:
+            finalDist = totalDist
+            var revPath = reversed(paths[1][w])
+            finalPath = paths[0][w]
+            for i in 1..<len(revPath):
+              finalPath = finalPath & revPath[i]
+  raise newNNNoPath(fmt"no path between source {source} and target {target}")
+
+proc johnson*(
+  G: Graph,
+  weight: TableRef[Edge, float]
+): Table[Node, Table[Node, seq[Node]]] =
+  var dist = newTable[Node, float]()
+  for v in G.nodes():
+    dist[v] = 0.0
+  var pred = newTable[Node, seq[Node]]()
+  for v in G.nodes():
+    pred[v] = @[]
+  var distBellman = bellmanFord(G, G.nodes(), weight=weight, pred=pred, dist=dist)
+
+  var newWeight = newTable[Edge, float]()
+  for (u, v) in weight.keys():
+    newWeight[(u, v)] = weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf)) + distBellman[u] - distBellman[v]
+  let distPath = proc(v: Node): TableRef[Node, seq[Node]] =
+    var paths = newTable[Node, seq[Node]]()
+    paths[v] = @[v]
+    discard dijkstra(G, v, weight=newWeight, paths=paths)
+    return paths
+
+  var ret = initTable[Node, Table[Node, seq[Node]]]()
+  for v in G.nodes():
+    ret[v] = distPath(v)[]
+  return ret
+proc johnson*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float]
+): Table[Node, Table[Node, seq[Node]]] =
+  var dist = newTable[Node, float]()
+  for v in DG.nodes():
+    dist[v] = 0.0
+  var pred = newTable[Node, seq[Node]]()
+  for v in DG.nodes():
+    pred[v] = @[]
+  var distBellman = bellmanFord(DG, DG.nodes(), weight=weight, pred=pred, dist=dist)
+
+  var newWeight = newTable[Edge, float]()
+  for (u, v) in weight.keys():
+    newWeight[(u, v)] = weight.getOrDefault((u, v), Inf) + distBellman[u] - distBellman[v]
+  let distPath = proc(v: Node): TableRef[Node, seq[Node]] =
+    var paths = newTable[Node, seq[Node]]()
+    paths[v] = @[v]
+    discard dijkstra(DG, v, weight=newWeight, paths=paths)
+    return paths
+
+  var ret = initTable[Node, Table[Node, seq[Node]]]()
+  for v in DG.nodes():
+    ret[v] = distPath(v)[]
+  return ret
 
 # -------------------------------------------------------------------
 # TODO:
