@@ -3010,6 +3010,478 @@ proc dijkstraPrdecessorAndDistance*(
   let dist = dijkstra(DG, source, weight=weight, pred=pred, cutoff=cutoff)
   return (pred[], dist)
 
+iterator buildPathsFromPredecessors(
+  sources: HashSet[Node],
+  target: Node,
+  pred: TableRef[Node, seq[Node]]
+): seq[Node] =
+  if target notin pred:
+    raise newNNNoPath(fmt"target {target} not reachable from give source nodes")
+  var seen = @[target].toHashSet()
+  var stack: Deque[tuple[node: Node, i: int]] = initDeque[tuple[node: Node, i: int]]()
+  stack.addLast((target, 0))
+  var top = 0
+  while 0 <= top:
+    var (node, i) = stack.peekLast()
+    if node in sources:
+      var ret: seq[Node] = @[]
+      var revSubStack: seq[tuple[node: Node, i: int]] = @[]
+      for i in 0..top:
+        revSubStack.add(stack[i])
+      revSubStack.reverse()
+      for (p, n) in revSubStack:
+        ret.add(p)
+      yield ret
+    if len(pred[node]) > i:
+      var tmp = stack.toSeq()
+      tmp[top] = (tmp[top].node, tmp[top].i + 1)
+      stack = tmp.toDeque()
+      var nextNode = pred[node][i]
+      if nextNode in seen:
+        continue
+      else:
+        seen.incl(nextNode)
+      top += 1
+      if top == len(stack):
+        stack.addLast((nextNode, 0))
+      else:
+        tmp = stack.toSeq()
+        tmp[top] = (nextNode, 0)
+        stack = tmp.toDeque()
+    else:
+      seen.excl(node)
+      top -= 1
+
+proc innerBellmanFord(
+  G: Graph,
+  sources: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  dist: TableRef[Node, float] = nil,
+  heuristic: bool = true
+): Node =
+  for s in sources:
+    if s notin G.nodesSet():
+      raise newNNNodeNotFound(s)
+  var predUsing = newTable[Node, seq[Node]]()
+  if pred == nil:
+    for v in sources:
+      predUsing[v] = @[]
+  else:
+    predUsing = pred
+  var distUsing = newTable[Node, float]()
+  if dist == nil:
+    for v in sources:
+      distUsing[v] = 0.0
+  else:
+    distUsing = dist
+  var nonExistentEdge = (None, None)
+  var predEdge = initTable[Node, Node]()
+  for v in sources:
+    predEdge[v] = None
+  var recentUpdate = initTable[Node, Edge]()
+  for v in sources:
+    recentUpdate[v] = nonExistentEdge
+  let N = len(G)
+  var count = initTable[Node, int]()
+  var q = sources.toDeque()
+  var inQ = sources.toHashSet()
+  while len(q) != 0:
+    var u = q.popFirst()
+    inQ.excl(u)
+    var t: seq[bool] = @[]
+    for predU in predUsing[u]:
+      t.add(predU notin inQ)
+    if all(t, proc(b: bool): bool = return b):
+      var distU = distUsing[u]
+      for v in G.neighbors(u):
+        var distV: float
+        if weight != nil:
+          distV = distU + weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf))
+        else:
+          distV = distU + 1.0
+        if distV < distUsing.getOrDefault(v, Inf):
+          if heuristic:
+            if v == recentUpdate[u].u or v == recentUpdate[u].v:
+              predUsing[v].add(u)
+              return v
+            if v in predEdge and predEdge[v] == u:
+              recentUpdate[v] = recentUpdate[u]
+            else:
+              recentUpdate[v] = (u, v)
+          if v notin inQ:
+            q.addLast(v)
+            inQ.incl(v)
+            var countV = count.getOrDefault(v, 0) + 1
+            if countV == N:
+              return v
+            count[v] = countV
+          distUsing[v] = distV
+          predUsing[v] = @[u]
+          predEdge[v] = u
+        elif distUsing[v] != 0.0 and distV == distUsing[v]:
+          predUsing[v].add(u)
+  return None
+proc innerBellmanFord(
+  DG: DiGraph,
+  sources: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  dist: TableRef[Node, float] = nil,
+  heuristic: bool = true
+): Node =
+  for s in sources:
+    if s notin DG.nodesSet():
+      raise newNNNodeNotFound(s)
+  var predUsing = newTable[Node, seq[Node]]()
+  if pred == nil:
+    for v in sources:
+      predUsing[v] = @[]
+  else:
+    predUsing = pred
+  var distUsing = newTable[Node, float]()
+  if dist == nil:
+    for v in sources:
+      distUsing[v] = 0.0
+  else:
+    distUsing = dist
+  var nonExistentEdge = (None, None)
+  var predEdge = initTable[Node, Node]()
+  for v in sources:
+    predEdge[v] = None
+  var recentUpdate = initTable[Node, Edge]()
+  for v in sources:
+    recentUpdate[v] = nonExistentEdge
+  let N = len(DG)
+  var count = initTable[Node, int]()
+  var q = sources.toDeque()
+  var inQ = sources.toHashSet()
+  while len(q) != 0:
+    var u = q.popFirst()
+    inQ.excl(u)
+    var t: seq[bool] = @[]
+    for predU in predUsing[u]:
+      t.add(predU notin inQ)
+    if all(t, proc(b: bool): bool = return b):
+      var distU = distUsing[u]
+      for v in DG.successors(u):
+        var distV: float
+        if weight != nil:
+          distV = distU + weight.getOrDefault((u, v), Inf)
+        else:
+          distV = distU + 1.0
+        if distV < distUsing.getOrDefault(v, Inf):
+          if heuristic:
+            if v == recentUpdate[u].u or v == recentUpdate[u].v:
+              predUsing[v].add(u)
+              return v
+            if v in predEdge and predEdge[v] == u:
+              recentUpdate[v] = recentUpdate[u]
+            else:
+              recentUpdate[v] = (u, v)
+          if v notin inQ:
+            q.addLast(v)
+            inQ.incl(v)
+            var countV = count.getOrDefault(v, 0) + 1
+            if countV == N:
+              return v
+            count[v] = countV
+          distUsing[v] = distV
+          predUsing[v] = @[u]
+          predEdge[v] = u
+        elif distUsing[v] != 0.0 and distV == distUsing[v]:
+          predUsing[v].add(u)
+  return None
+
+proc bellmanFord(
+  G: Graph,
+  source: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  dist: TableRef[Node, float] = nil,
+  target: Node = None,
+  heuristic: bool = true
+): TableRef[Node, float] =
+  var predUsing = newTable[Node, seq[Node]]()
+  if pred == nil:
+    for v in source:
+      predUsing[v] = @[]
+  else:
+    predUsing = pred
+  var distUsing = newTable[Node, float]()
+  if dist == nil:
+    for v in source:
+      distUsing[v] = 0.0
+  else:
+    distUsing = dist
+  let negativeCycleFound = innerBellmanFord(G, source, weight, predUsing, distUsing, heuristic)
+  if negativeCycleFound != None:
+    raise newNNUnbounded("negative cycle detected")
+  if paths != nil:
+    var dsts = newTable[Node, seq[Node]]()
+    if target != None:
+      dsts[target] = @[target]
+    else:
+      dsts = predUsing
+    for dst in dsts.keys():
+      for x in  buildPathsFromPredecessors(source.toHashSet(), dst, predUsing):
+        paths[dst] = x
+        break
+  return distUsing
+proc bellmanFord(
+  DG: DiGraph,
+  source: seq[Node],
+  weight: TableRef[Edge, float] = nil,
+  pred: TableRef[Node, seq[Node]] = nil,
+  paths: TableRef[Node, seq[Node]] = nil,
+  dist: TableRef[Node, float] = nil,
+  target: Node = None,
+  heuristic: bool = true
+): TableRef[Node, float] =
+  var predUsing= newTable[Node, seq[Node]]()
+  if pred == nil:
+    for v in source:
+      predUsing[v] = @[]
+  else:
+    predUsing = pred
+  var distUsing = newTable[Node, float]()
+  if dist == nil:
+    for v in source:
+      distUsing[v] = 0.0
+  else:
+    distUsing = dist
+  let negativeCycleFound = innerBellmanFord(DG, source, weight, predUsing, distUsing, heuristic)
+  if negativeCycleFound != None:
+    raise newNNUnbounded("negative cycle detected")
+  if paths != nil:
+    var dsts = newTable[Node, seq[Node]]()
+    if target != None:
+      dsts[target] = @[target]
+    else:
+      dsts = predUsing
+    for dst in dsts.keys():
+      for x in  buildPathsFromPredecessors(source.toHashSet(), dst, predUsing):
+        paths[dst] = x
+        break
+  return distUsing
+
+proc singleSourceBellmanFord*(
+  G: Graph,
+  source: Node,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+): tuple[distance: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  if source == target:
+    if source notin G.nodesSet():
+      raise newNNNodeNotFound(source)
+    var dist = initTable[Node, float]()
+    dist[target] = 0
+    var paths = initTable[Node, seq[Node]]()
+    paths[target] = @[source]
+    return (dist, paths)
+  var paths = newTable[Node, seq[Node]]()
+  var dist = bellmanFord(G, @[source], weight=weight, paths=paths, target=target)
+  if target == None:
+    return (dist[], paths[])
+  try:
+    var retDist = initTable[Node, float]()
+    retDist[target] = dist[target]
+    var retPaths = initTable[Node, seq[Node]]()
+    retPaths[target] = paths[target]
+    return (retDist, retPaths)
+  except KeyError:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+proc singleSourceBellmanFord*(
+  DG: DiGraph,
+  source: Node,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+): tuple[distance: Table[Node, float], paths: Table[Node, seq[Node]]] =
+  if source == target:
+    if source notin DG.nodesSet():
+      raise newNNNodeNotFound(source)
+    var dist = initTable[Node, float]()
+    dist[target] = 0
+    var paths = initTable[Node, seq[Node]]()
+    paths[target] = @[source]
+    return (dist, paths)
+  var paths = newTable[Node, seq[Node]]()
+  var dist = bellmanFord(DG, @[source], weight=weight, paths=paths, target=target)
+  if target == None:
+    return (dist[], paths[])
+  try:
+    var retDist = initTable[Node, float]()
+    retDist[target] = dist[target]
+    var retPaths = initTable[Node, seq[Node]]()
+    retPaths[target] = paths[target]
+    return (retDist, retPaths)
+  except KeyError:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+
+proc singleSourceBellmanFordPathLength*(
+  G: Graph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  return bellmanFord(G, @[source], weight=weight)[]
+proc singleSourceBellmanFordPathLength*(
+  DG: DiGraph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  return bellmanFord(DG, @[source], weight=weight)[]
+
+proc singleSourceBellmanFordPath*(
+  G: Graph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return singleSourceBellmanFord(G, source, weight=weight).paths
+proc singleSourceBellmanFordPath*(
+  DG: DiGraph,
+  source: Node,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, seq[Node]] =
+  return singleSourceBellmanFord(DG, source, weight=weight).paths
+
+proc bellmanFordPathLength*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+): float =
+  if source == target:
+    if source notin G.nodesSet():
+      raise newNNNodeNotFound(source)
+    return 0.0
+  let length = bellmanFord(G, @[source], weight=weight, target=target)
+  try:
+    return length[target]
+  except KeyError:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+proc bellmanFordPathLength*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+): float =
+  if source == target:
+    if source notin DG.nodesSet():
+      raise newNNNodeNotFound(source)
+    return 0.0
+  let length = bellmanFord(DG, @[source], weight=weight, target=target)
+  try:
+    return length[target]
+  except KeyError:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+
+proc bellmanFordPath*(
+  G: Graph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+): seq[Node] =
+  try:
+    return singleSourceBellmanFord(G, source, target=target, weight=weight).paths[target]
+  except NNNoPath:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+proc bellmanFordPath*(
+  DG: DiGraph,
+  source: Node,
+  target: Node,
+  weight: TableRef[Edge, float] = nil,
+): seq[Node] =
+  try:
+    return singleSourceBellmanFord(DG, source, target=target, weight=weight).paths[target]
+  except NNNoPath:
+    raise newNNNoPath(fmt"target {target} not reachable from source {source}")
+
+iterator allPairsBellmanFordPathLength*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[node: Node, dist: Table[Node, float]] =
+  for n in G.nodes():
+    yield (n, singleSourceBellmanFordPathLength(G, n, weight=weight))
+iterator allPairsBellmanFordPathLength*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[node: Node, dist: Table[Node, float]] =
+  for n in DG.nodes():
+    yield (n, singleSourceBellmanFordPathLength(DG, n, weight=weight))
+
+iterator allPairsBellmanFordPath*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[node: Node, paths: Table[Node, seq[Node]]] =
+  for n in G.nodes():
+    yield (n, singleSourceBellmanFordPath(G, n, weight=weight))
+iterator allPairsBellmanFordPath*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[node: Node, paths: Table[Node, seq[Node]]] =
+  for n in DG.nodes():
+    yield (n, singleSourceBellmanFordPath(DG, n, weight=weight))
+
+proc bellmanFordPredecessorAndDistance*(
+  G: Graph,
+  source: Node,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  heuristic: bool = false
+): tuple[pred: Table[Node, seq[Node]], dist: Table[Node, float]] =
+  if source notin G.nodesSet():
+    raise newNNNodeNotFound(source)
+  for (u, v) in G.selfloopEdges():
+    if weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf)) < 0:
+      raise newNNUnbounded(fmt"negative cycle detected")
+
+  var dist = newTable[Node, float]()
+  dist[source] = 0.0
+
+  var pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+
+  if len(G) == 1:
+    return (pred[], dist[])
+
+  dist = bellmanFord(G, @[source], pred=pred, dist=dist, target=target, heuristic=heuristic)
+  return (pred[], dist[])
+proc bellmanFordPredecessorAndDistance*(
+  DG: DiGraph,
+  source: Node,
+  target: Node = None,
+  weight: TableRef[Edge, float] = nil,
+  heuristic: bool = false
+): tuple[pred: Table[Node, seq[Node]], dist: Table[Node, float]] =
+  if source notin DG.nodesSet():
+    raise newNNNodeNotFound(source)
+  for (u, v) in DG.selfloopEdges():
+    if weight.getOrDefault((u, v), Inf) < 0:
+      raise newNNUnbounded(fmt"negative cycle detected")
+
+  var dist = newTable[Node, float]()
+  dist[source] = 0.0
+
+  var pred = newTable[Node, seq[Node]]()
+  pred[source] = @[]
+
+  if len(DG) == 1:
+    return (pred[], dist[])
+
+  dist = bellmanFord(DG, @[source], pred=pred, dist=dist, target=target, heuristic=heuristic)
+  return (pred[], dist[])
+
+# goldbergRadzik
+
+# negativeEdgeCycle
+
+# findNegativeCycle
+
+# bidirectionalDijkstra
+
+# johnson
+
 # -------------------------------------------------------------------
 # TODO:
 # Tree
