@@ -2054,6 +2054,8 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
 
 # -------------------------------------------------------------------
 # TODO:
+# FIXME: weightに存在しない重み付き辺のデフォルトの重みは何が適切か．networkxでは1.0にしてるけどそれは本当に適切？
+# FIXME: そもそもlen(weight.keys.toSeq()) != len(G.edges())が判明した時点で例外を投げれば良いのでは？
 # Traversal
 # -------------------------------------------------------------------
 
@@ -2985,7 +2987,7 @@ iterator allPairsDijkstraPath*(
     let paths = singleSourceDijkstraPath(DG, n, cutoff=cutoff, weight=weight)
     yield (n, paths)
 
-proc dijkstraPrdecessorAndDistance*(
+proc dijkstraPredecessorAndDistance*(
   G: Graph,
   source: Node,
   cutoff: float = NaN,
@@ -2997,7 +2999,7 @@ proc dijkstraPrdecessorAndDistance*(
   pred[source] = @[]
   let dist = dijkstra(G, source, weight=weight, pred=pred, cutoff=cutoff)
   return (pred[], dist)
-proc dijkstraPrdecessorAndDistance*(
+proc dijkstraPredecessorAndDistance*(
   DG: DiGraph,
   source: Node,
   cutoff: float = NaN,
@@ -3924,6 +3926,106 @@ proc johnson*(
   for v in DG.nodes():
     ret[v] = distPath(v)[]
   return ret
+
+proc floydWarshallPredecessorAndDistance*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil
+): tuple[predecessor: Table[Node, Table[Node, Node]], distance: Table[Node, Table[Node, float]]] =
+  var dist = initTable[Node, Table[Node, float]]()
+  for u in G.nodes():
+    dist[u] = initTable[Node, float]()
+    for v in G.nodes():
+      dist[u][v] = Inf
+  for u in G.nodes():
+    dist[u][u] = 0.0
+
+  var pred = initTable[Node, Table[Node, Node]]()
+  for n in G.nodes():
+    pred[n] = initTable[Node, Node]()
+  for (u, v) in G.edges():
+    var eWeight = weight.getOrDefault((u, v), weight.getOrDefault((v, u), Inf))
+    dist[u][v] = min(eWeight, dist[u][v])
+    pred[u][v] = u
+    dist[v][u] = min(eWeight, dist[v][u])
+    pred[v][u] = v
+  for w in G.nodes():
+    for u in G.nodes():
+      for v in G.nodes():
+        var d = dist[u][w] + dist[w][v]
+        if dist[u][v] > d:
+          dist[u][v] = d
+          pred[u][v] = pred[w][v]
+  var retPred = initTable[Node, Table[Node, Node]]()
+  var retDist = initTable[Node, Table[Node, float]]()
+  for k1 in pred.keys():
+    if len(pred[k1].keys().toSeq()) != 0:
+      retPred[k1] = pred[k1]
+  for k1 in dist.keys():
+    if len(dist[k1].keys().toSeq()) != 0:
+      retDist[k1] = dist[k1]
+  return (retPred, retDist)
+proc floydWarshallPredecessorAndDistance*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil
+): tuple[predecessor: Table[Node, Table[Node, Node]], distance: Table[Node, Table[Node, float]]] =
+  var dist = initTable[Node, Table[Node, float]]()
+  for u in DG.nodes():
+    dist[u] = initTable[Node, float]()
+    for v in DG.nodes():
+      dist[u][v] = Inf
+  for u in DG.nodes():
+    dist[u][u] = 0.0
+
+  var pred = initTable[Node, Table[Node, Node]]()
+  for n in DG.nodes():
+    pred[n] = initTable[Node, Node]()
+  for (u, v) in DG.edges():
+    var eWeight = weight.getOrDefault((u, v), Inf)
+    dist[u][v] = min(eWeight, dist[u][v])
+    pred[u][v] = u
+  for w in DG.nodes():
+    for u in DG.nodes():
+      for v in DG.nodes():
+        var d = dist[u][w] + dist[w][v]
+        if dist[u][v] > d:
+          dist[u][v] = d
+          pred[u][v] = pred[w][v]
+  var retPred = initTable[Node, Table[Node, Node]]()
+  var retDist = initTable[Node, Table[Node, float]]()
+  for k1 in pred.keys():
+    if len(pred[k1].keys().toSeq()) != 0:
+      retPred[k1] = pred[k1]
+  for k1 in dist.keys():
+    if len(dist[k1].keys().toSeq()) != 0:
+      retDist[k1] = dist[k1]
+  return (retPred, retDist)
+
+proc reconstructPath*(
+  source: Node,
+  target: Node,
+  predecessors: Table[Node, Table[Node, Node]]
+): seq[Node] =
+  var path: seq[Node] = @[]
+  if source == target:
+    return path
+  var prev = predecessors[source]
+  var curr = prev[target]
+  path = @[target, curr]
+  while curr != source:
+    curr = prev[curr]
+    path.add(curr)
+  return reversed(path)
+
+proc floydWarshall*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil
+): Table[Node, Table[Node, float]] =
+  return floydWarshallPredecessorAndDistance(G, weight=weight).distance
+proc floydWarshall*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil
+): Table[Node, Table[Node, float]] =
+  return floydWarshallPredecessorAndDistance(DG, weight=weight).distance
 
 # -------------------------------------------------------------------
 # TODO:
