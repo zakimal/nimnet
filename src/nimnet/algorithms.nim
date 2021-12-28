@@ -2053,10 +2053,6 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
-# FIXME: weightに存在しない重み付き辺のデフォルトの重みは何が適切か．networkxでは1.0にしてるけどそれは本当に適切？
-# FIXME: そもそもlen(weight.keys.toSeq()) != len(G.edges())が判明した時点で例外を投げれば良いのでは？
-# FIXME: weightを与えないと実行できないようにする
 # Traversal
 # -------------------------------------------------------------------
 
@@ -2625,12 +2621,14 @@ iterator bfsBeamEdges*(
 proc dijkstraMultiSource(
   G: Graph,
   sources: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   cutoff: float = NaN,
   target: Node = None
 ): Table[Node, float] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = initTable[Node, float]()
   var seen = initTable[Node, float]()
   var c = -1
@@ -2677,12 +2675,14 @@ proc dijkstraMultiSource(
 proc dijkstraMultiSource(
   DG: DiGraph,
   sources: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   cutoff: float = NaN,
   target: Node = None
 ): Table[Node, float] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = initTable[Node, float]()
   var seen = initTable[Node, float]()
   var c = -1
@@ -2729,7 +2729,7 @@ proc dijkstraMultiSource(
 proc dijkstra(
   G: Graph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   cutoff: float = NaN,
@@ -2739,7 +2739,7 @@ proc dijkstra(
 proc dijkstra(
   DG: DiGraph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   cutoff: float = NaN,
@@ -2752,7 +2752,7 @@ proc multiSourceDijkstra*(
   sources: seq[Node],
   target: Node = None,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
   if len(sources) == 0:
     raise newNNError("sources must not be empty")
@@ -2777,7 +2777,7 @@ proc multiSourceDijkstra*(
   sources: seq[Node],
   target: Node = None,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
   if len(sources) == 0:
     raise newNNError("sources must not be empty")
@@ -2802,7 +2802,7 @@ proc multiSourceDijkstraPathLength*(
   G: Graph,
   sources: seq[Node],
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   if len(sources) == 0:
     raise newNNError("sources must not be empty")
@@ -2814,7 +2814,7 @@ proc multiSourceDijkstraPathLength*(
   DG: DiGraph,
   sources: seq[Node],
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   if len(sources) == 0:
     raise newNNError("sources must not be empty")
@@ -2827,14 +2827,14 @@ proc multiSourceDijkstraPath*(
   G: Graph,
   sources: seq[Node],
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return multiSourceDijkstra(G, sources, cutoff=cutoff, weight=weight).paths
 proc multiSourceDijkstraPath*(
   DG: DiGraph,
   sources: seq[Node],
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return multiSourceDijkstra(DG, sources, cutoff=cutoff, weight=weight).paths
 
@@ -2843,7 +2843,7 @@ proc singleSourceDijkstra*(
   source: Node,
   target: Node = None,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
   return multiSourceDijkstra(G, @[source], cutoff=cutoff, target=target, weight=weight)
 proc singleSourceDijkstra*(
@@ -2851,7 +2851,7 @@ proc singleSourceDijkstra*(
   source: Node,
   target: Node = None,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]] =
   return multiSourceDijkstra(DG, @[source], cutoff=cutoff, target=target, weight=weight)
 
@@ -2859,14 +2859,14 @@ proc singleSourceDijkstraPathLength*(
   G: Graph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   return multiSourceDijkstraPathLength(G, @[source], cutoff=cutoff, weight=weight)
 proc singleSourceDijkstraPathLength*(
   DG: DiGraph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   return multiSourceDijkstraPathLength(DG, @[source], cutoff=cutoff, weight=weight)
 
@@ -2874,14 +2874,14 @@ proc singleSourceDijkstraPath*(
   G: Graph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return multiSourceDijkstraPath(G, @[source], cutoff=cutoff, weight=weight)
 proc singleSourceDijkstraPath*(
   DG: DiGraph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return multiSourceDijkstraPath(DG, @[source], cutoff=cutoff, weight=weight)
 
@@ -2889,7 +2889,7 @@ proc dijkstraPathLength*(
   G: Graph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): float =
   if source notin G.nodesSet():
     raise newNNNodeNotFound(source)
@@ -2904,7 +2904,7 @@ proc dijkstraPathLength*(
   DG: DiGraph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): float =
   if source notin DG.nodesSet():
     raise newNNNodeNotFound(source)
@@ -2920,7 +2920,7 @@ proc dijkstraPath*(
   G: Graph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): seq[Node] =
   try:
     return singleSourceDijkstra(G, source, target=target, weight=weight).paths[target]
@@ -2930,7 +2930,7 @@ proc dijkstraPath*(
   DG: DiGraph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): seq[Node] =
   try:
     return singleSourceDijkstra(DG, source, target=target, weight=weight).paths[target]
@@ -2940,7 +2940,7 @@ proc dijkstraPath*(
 iterator allPairsDijkstra*(
   G: Graph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, result: tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]]] =
   for n in G.nodes():
     var (dist, paths) = singleSourceDijkstra(G, n, cutoff=cutoff, weight=weight)
@@ -2948,7 +2948,7 @@ iterator allPairsDijkstra*(
 iterator allPairsDijkstra*(
   DG: DiGraph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, result: tuple[dist: Table[Node, float], paths: Table[Node, seq[Node]]]] =
   for n in DG.nodes():
     var (dist, paths) = singleSourceDijkstra(DG, n, cutoff=cutoff, weight=weight)
@@ -2957,7 +2957,7 @@ iterator allPairsDijkstra*(
 iterator allPairsDijkstraPathLength*(
   G: Graph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, dist: Table[Node, float]] =
   for n in G.nodes():
     let dist = singleSourceDijkstraPathLength(G, n, cutoff=cutoff, weight=weight)
@@ -2965,7 +2965,7 @@ iterator allPairsDijkstraPathLength*(
 iterator allPairsDijkstraPathLength*(
   DG: DiGraph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, dist: Table[Node, float]] =
   for n in DG.nodes():
     let dist = singleSourceDijkstraPathLength(DG, n, cutoff=cutoff, weight=weight)
@@ -2974,7 +2974,7 @@ iterator allPairsDijkstraPathLength*(
 iterator allPairsDijkstraPath*(
   G: Graph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, paths: Table[Node, seq[Node]]] =
   for n in G.nodes():
     let paths = singleSourceDijkstraPath(G, n, cutoff=cutoff, weight=weight)
@@ -2982,7 +2982,7 @@ iterator allPairsDijkstraPath*(
 iterator allPairsDijkstraPath*(
   DG: DiGraph,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[node: Node, paths: Table[Node, seq[Node]]] =
   for n in DG.nodes():
     let paths = singleSourceDijkstraPath(DG, n, cutoff=cutoff, weight=weight)
@@ -2992,7 +2992,7 @@ proc dijkstraPredecessorAndDistance*(
   G: Graph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[pred: Table[Node, seq[Node]], distance: Table[Node, float]] =
   if source notin G.nodesSet():
     raise newNNNodeNotFound(source)
@@ -3004,7 +3004,7 @@ proc dijkstraPredecessorAndDistance*(
   DG: DiGraph,
   source: Node,
   cutoff: float = NaN,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[pred: Table[Node, seq[Node]], distance: Table[Node, float]] =
   if source notin DG.nodesSet():
     raise newNNNodeNotFound(source)
@@ -3058,11 +3058,13 @@ iterator buildPathsFromPredecessors(
 proc innerBellmanFord(
   G: Graph,
   sources: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   dist: TableRef[Node, float] = nil,
   heuristic: bool = true
 ): Node =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   for s in sources:
     if s notin G.nodesSet():
       raise newNNNodeNotFound(s)
@@ -3128,11 +3130,13 @@ proc innerBellmanFord(
 proc innerBellmanFord(
   DG: DiGraph,
   sources: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   dist: TableRef[Node, float] = nil,
   heuristic: bool = true
 ): Node =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   for s in sources:
     if s notin DG.nodesSet():
       raise newNNNodeNotFound(s)
@@ -3199,7 +3203,7 @@ proc innerBellmanFord(
 proc bellmanFord(
   G: Graph,
   source: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   dist: TableRef[Node, float] = nil,
@@ -3235,7 +3239,7 @@ proc bellmanFord(
 proc bellmanFord(
   DG: DiGraph,
   source: seq[Node],
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   pred: TableRef[Node, seq[Node]] = nil,
   paths: TableRef[Node, seq[Node]] = nil,
   dist: TableRef[Node, float] = nil,
@@ -3273,7 +3277,7 @@ proc singleSourceBellmanFord*(
   G: Graph,
   source: Node,
   target: Node = None,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[distance: Table[Node, float], paths: Table[Node, seq[Node]]] =
   if source == target:
     if source notin G.nodesSet():
@@ -3299,7 +3303,7 @@ proc singleSourceBellmanFord*(
   DG: DiGraph,
   source: Node,
   target: Node = None,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[distance: Table[Node, float], paths: Table[Node, seq[Node]]] =
   if source == target:
     if source notin DG.nodesSet():
@@ -3325,26 +3329,26 @@ proc singleSourceBellmanFord*(
 proc singleSourceBellmanFordPathLength*(
   G: Graph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   return bellmanFord(G, @[source], weight=weight)[]
 proc singleSourceBellmanFordPathLength*(
   DG: DiGraph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, float] =
   return bellmanFord(DG, @[source], weight=weight)[]
 
 proc singleSourceBellmanFordPath*(
   G: Graph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return singleSourceBellmanFord(G, source, weight=weight).paths
 proc singleSourceBellmanFordPath*(
   DG: DiGraph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): Table[Node, seq[Node]] =
   return singleSourceBellmanFord(DG, source, weight=weight).paths
 
@@ -3352,7 +3356,7 @@ proc bellmanFordPathLength*(
   G: Graph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): float =
   if source == target:
     if source notin G.nodesSet():
@@ -3367,7 +3371,7 @@ proc bellmanFordPathLength*(
   DG: DiGraph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): float =
   if source == target:
     if source notin DG.nodesSet():
@@ -3383,7 +3387,7 @@ proc bellmanFordPath*(
   G: Graph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): seq[Node] =
   try:
     return singleSourceBellmanFord(G, source, target=target, weight=weight).paths[target]
@@ -3393,7 +3397,7 @@ proc bellmanFordPath*(
   DG: DiGraph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): seq[Node] =
   try:
     return singleSourceBellmanFord(DG, source, target=target, weight=weight).paths[target]
@@ -3402,26 +3406,26 @@ proc bellmanFordPath*(
 
 iterator allPairsBellmanFordPathLength*(
   G: Graph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[node: Node, dist: Table[Node, float]] =
   for n in G.nodes():
     yield (n, singleSourceBellmanFordPathLength(G, n, weight=weight))
 iterator allPairsBellmanFordPathLength*(
   DG: DiGraph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[node: Node, dist: Table[Node, float]] =
   for n in DG.nodes():
     yield (n, singleSourceBellmanFordPathLength(DG, n, weight=weight))
 
 iterator allPairsBellmanFordPath*(
   G: Graph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[node: Node, paths: Table[Node, seq[Node]]] =
   for n in G.nodes():
     yield (n, singleSourceBellmanFordPath(G, n, weight=weight))
 iterator allPairsBellmanFordPath*(
   DG: DiGraph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[node: Node, paths: Table[Node, seq[Node]]] =
   for n in DG.nodes():
     yield (n, singleSourceBellmanFordPath(DG, n, weight=weight))
@@ -3430,7 +3434,7 @@ proc bellmanFordPredecessorAndDistance*(
   G: Graph,
   source: Node,
   target: Node = None,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   heuristic: bool = false
 ): tuple[pred: Table[Node, seq[Node]], dist: Table[Node, float]] =
   if source notin G.nodesSet():
@@ -3448,13 +3452,13 @@ proc bellmanFordPredecessorAndDistance*(
   if len(G) == 1:
     return (pred[], dist[])
 
-  dist = bellmanFord(G, @[source], pred=pred, dist=dist, target=target, heuristic=heuristic)
+  dist = bellmanFord(G, @[source], weight=weight, pred=pred, dist=dist, target=target, heuristic=heuristic)
   return (pred[], dist[])
 proc bellmanFordPredecessorAndDistance*(
   DG: DiGraph,
   source: Node,
   target: Node = None,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   heuristic: bool = false
 ): tuple[pred: Table[Node, seq[Node]], dist: Table[Node, float]] =
   if source notin DG.nodesSet():
@@ -3472,14 +3476,16 @@ proc bellmanFordPredecessorAndDistance*(
   if len(DG) == 1:
     return (pred[], dist[])
 
-  dist = bellmanFord(DG, @[source], pred=pred, dist=dist, target=target, heuristic=heuristic)
+  dist = bellmanFord(DG, @[source], weight=weight, pred=pred, dist=dist, target=target, heuristic=heuristic)
   return (pred[], dist[])
 
 proc goldbergRadzik*(
   G: Graph,
   source: Node,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
 ): tuple[pred: Table[Node, Node], dist: Table[Node, float]] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   if source notin G.nodesSet():
     raise newNNNodeNotFound(source)
   for (u, v) in G.selfloopEdges():
@@ -3565,6 +3571,8 @@ proc goldbergRadzik*(
   source: Node,
   weight: TableRef[Edge, float] = nil,
 ): tuple[pred: Table[Node, Node], dist: Table[Node, float]] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   if source notin DG.nodesSet():
     raise newNNNodeNotFound(source)
   for (u, v) in DG.selfloopEdges():
@@ -3648,16 +3656,18 @@ proc goldbergRadzik*(
 
 proc negativeEdgeCycle*(
   G: Graph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   heuristic: bool = true
 ): bool =
   var newNode = -1
+  var weightUsing = weight
   while newNode in G.nodesSet():
     newNode -= 1
   for n in G.nodes():
     G.addEdge(newNode, n)
+    weightUsing[(newNode, n)] = 1.0
   try:
-    discard bellmanFordPredecessorAndDistance(G, newNode, weight=weight, heuristic=heuristic)
+    discard bellmanFordPredecessorAndDistance(G, newNode, weight=weightUsing, heuristic=heuristic)
   except NNUnbounded:
     G.removeNode(newNode)
     return true
@@ -3665,16 +3675,18 @@ proc negativeEdgeCycle*(
   return true
 proc negativeEdgeCycle*(
   DG: DiGraph,
-  weight: TableRef[Edge, float] = nil,
+  weight: TableRef[Edge, float],
   heuristic: bool = true
 ): bool =
   var newNode = -2
+  var weightUsing = weight
   while newNode in DG.nodesSet():
     newNode -= 1
   for n in DG.nodes():
     DG.addEdge(newNode, n)
+    weightUsing[(newNode, n)] = 1.0
   try:
-    discard bellmanFordPredecessorAndDistance(DG, newNode, weight=weight, heuristic=heuristic)
+    discard bellmanFordPredecessorAndDistance(DG, newNode, weight=weightUsing, heuristic=heuristic)
   except NNUnbounded:
     DG.removeNode(newNode)
     return true
@@ -3684,7 +3696,7 @@ proc negativeEdgeCycle*(
 proc findNegativeCycle*(
   G: Graph,
   source: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): seq[Node] =
   var pred = newTable[Node, seq[Node]]()
   pred[source] = @[]
@@ -3720,7 +3732,7 @@ proc findNegativeCycle*(
 proc findNegativeCycle*(
   DG: DiGraph,
   source: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): seq[Node] =
   var pred = newTable[Node, seq[Node]]()
   pred[source] = @[]
@@ -3758,8 +3770,10 @@ proc bidirectionalDijkstra*(
   G :Graph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[length: float, path: seq[Node]] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   if source notin G.nodesSet():
     raise newNNNodeNotFound(source)
   if target notin G.nodesSet():
@@ -3817,8 +3831,10 @@ proc bidirectionalDijkstra*(
   DG :DiGraph,
   source: Node,
   target: Node,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[length: float, path: seq[Node]] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   if source notin DG.nodesSet():
     raise newNNNodeNotFound(source)
   if target notin DG.nodesSet():
@@ -3881,6 +3897,8 @@ proc johnson*(
   G: Graph,
   weight: TableRef[Edge, float]
 ): Table[Node, Table[Node, seq[Node]]] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = newTable[Node, float]()
   for v in G.nodes():
     dist[v] = 0.0
@@ -3906,6 +3924,8 @@ proc johnson*(
   DG: DiGraph,
   weight: TableRef[Edge, float]
 ): Table[Node, Table[Node, seq[Node]]] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = newTable[Node, float]()
   for v in DG.nodes():
     dist[v] = 0.0
@@ -3930,8 +3950,10 @@ proc johnson*(
 
 proc floydWarshallPredecessorAndDistance*(
   G: Graph,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[predecessor: Table[Node, Table[Node, Node]], distance: Table[Node, Table[Node, float]]] =
+  if len(G.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = initTable[Node, Table[Node, float]]()
   for u in G.nodes():
     dist[u] = initTable[Node, float]()
@@ -3967,8 +3989,10 @@ proc floydWarshallPredecessorAndDistance*(
   return (retPred, retDist)
 proc floydWarshallPredecessorAndDistance*(
   DG: DiGraph,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): tuple[predecessor: Table[Node, Table[Node, Node]], distance: Table[Node, Table[Node, float]]] =
+  if len(DG.edges()) != len(weight):
+    raise newNNError("all edge weights are needed")
   var dist = initTable[Node, Table[Node, float]]()
   for u in DG.nodes():
     dist[u] = initTable[Node, float]()
@@ -4019,12 +4043,12 @@ proc reconstructPath*(
 
 proc floydWarshall*(
   G: Graph,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): Table[Node, Table[Node, float]] =
   return floydWarshallPredecessorAndDistance(G, weight=weight).distance
 proc floydWarshall*(
   DG: DiGraph,
-  weight: TableRef[Edge, float] = nil
+  weight: TableRef[Edge, float]
 ): Table[Node, Table[Node, float]] =
   return floydWarshallPredecessorAndDistance(DG, weight=weight).distance
 
