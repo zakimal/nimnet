@@ -10,6 +10,74 @@ import deques
 import ../nimnet
 
 # -------------------------------------------------------------------
+# Utils
+# -------------------------------------------------------------------
+
+proc groups(manyToOne: Table[Node, int]): Table[int, HashSet[Node]] =
+  # {1: 1, 2: 1, 3: 2, 4: 3, 5: 3} -> {1: {1, 2}, 2: {3}, 3: {4, 5}}
+  var oneToMany = initTable[int, HashSet[Node]]()
+  for (k, v) in manyToOne.pairs():
+    if v notin oneToMany:
+      oneToMany[v] = initHashSet[Node]()
+    oneToMany[v].incl(k)
+  return oneToMany
+
+type UnionFind = ref object of RootObj
+  elements: HashSet[Node]
+  parents: Table[Node, Node]
+  weights: Table[Node, int]
+proc newUnionFind(): UnionFind =
+  var uf = UnionFind()
+  uf.elements = initHashSet[Node]()
+  uf.parents = initTable[Node, Node]()
+  uf.weights = initTable[Node, int]()
+  return uf
+proc newUnionFind(elements: HashSet[Node]): UnionFind =
+  var uf = UnionFind()
+  uf.elements = elements
+  uf.parents = initTable[Node, Node]()
+  uf.weights = initTable[Node, int]()
+  for x in elements:
+    uf.weights[x] = 1
+    uf.parents[x] = x
+  return uf
+proc `[]`(uf: UnionFind, node: Node): Node =
+  if node notin uf.parents:
+    uf.parents[node] = node
+    uf.weights[node] = 1
+    return node
+  var path = @[node]
+  var root = uf.parents[node]
+  while root != path[^1]:
+    path.add(root)
+    root = uf.parents[root]
+  for ancestor in path:
+    uf.parents[ancestor] = root
+  return root
+iterator toSets(uf: UnionFind): HashSet[Node] =
+  for x in uf.parents.keys():
+    discard uf[x]
+  for g in groups(uf.parents).values():
+    yield g
+proc union(uf: UnionFind, nodes: HashSet[Node]) =
+  var rootsWithWeight: seq[tuple[node: Node, weight: int]] = @[]
+  for x in nodes:
+    rootsWithWeight.add((-uf.weights[uf[x]], uf[x]))
+  rootsWithWeight = rootsWithWeight.toHashSet.toSeq()
+  rootsWithWeight.sort()
+
+  var roots: seq[Node] = @[]
+  for (_, root) in rootsWithWeight:
+    roots.add(root)
+
+  if len(roots) == 0:
+    return
+  var head = roots[0]
+  for r in roots:
+    uf.weights[head] += uf.weights[r]
+    uf.parents[r] = head
+
+# -------------------------------------------------------------------
 # TODO:
 # Approximations and Heuristics
 # -------------------------------------------------------------------
@@ -420,102 +488,6 @@ proc onionLayers*(g: Graph): Table[Node, int] =
 # TODO:
 # D-Separation
 # -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# DAG
-# -------------------------------------------------------------------
-
-iterator topologicalGenerations*(DG: DiGraph): seq[Node] =
-  var indegreeMap = initTable[Node, int]()
-  for (v, ind) in DG.inDegree().pairs():
-    if ind > 0:
-      indegreeMap[v] = ind
-  var zeroIndegree: seq[Node] = @[]
-  for (v, ind) in DG.inDegree().pairs():
-    if ind == 0:
-      zeroIndegree.add(v)
-  zeroIndegree.sort()
-
-  while len(zeroIndegree) != 0:
-    var thisGeneration = zeroIndegree
-    zeroIndegree = @[]
-    for node in thisGeneration:
-      for child in DG.successors(node):
-        indegreeMap[child] -= 1
-        if indegreeMap[child] == 0:
-          zeroIndegree.add(child)
-          indegreeMap.del(child)
-    yield thisGeneration
-  if len(indegreeMap.keys().toSeq()) != 0:
-    raise newNNUnfeasible("graph contains a cycle")
-
-iterator topologicalSort*(DG: DiGraph): Node =
-  for generation in DG.topologicalGenerations():
-    for node in generation:
-      yield node
-
-iterator lexicographicalTopologicalSort*(DG: DiGraph, key: proc(node: Node): int = nil): Node =
-  var keyUsing = key
-  if key == nil:
-    keyUsing = proc(node: Node): int = return node
-  var nodeidMap = initTable[Node, int]()
-  for i, n in DG.nodesSeq():
-    nodeidMap[n] = i
-  var indegreeMap = initTable[Node, int]()
-  for (v, d) in DG.inDegree().pairs():
-    if d > 0:
-      indegreeMap[v] = d
-  var zeroIndegree = initHeapQueue[tuple[key: int, id: int, node: Node]]()
-  for (v, d) in DG.inDegree().pairs():
-    if d == 0:
-      zeroIndegree.push((keyUsing(v), nodeidMap[v], v))
-  while len(zeroIndegree) != 0:
-    var (_, _, node) = zeroIndegree.pop()
-    for (_, child) in DG.edges(node):
-      indegreeMap[child] -= 1
-      if indegreeMap[child] == 0:
-        zeroIndegree.push((keyUsing(child), nodeidMap[child], child))
-        indegreeMap.del(child)
-    yield node
-  if len(indegreeMap.keys().toSeq()) != 0:
-    raise newNNUnfeasible("graph contains a cycle")
-
-iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
-  var count = DG.inDegree()
-  var D = initDeque[Node]()
-  for v, d in DG.inDegree().pairs():
-    if d == 0:
-      D.addLast(v)
-  var bases: seq[Node] = @[]
-  var currentSort: seq[Node] = @[]
-  while true:
-    if len(currentSort) == len(DG):
-      yield currentSort
-      while len(currentSort) > 0:
-        var q = currentSort.pop()
-        for _, j in DG.successorsSeq(q):
-          count[j] += 1
-        while len(D) > 0 and count[D.peekLast()] > 0:
-          D.popLast()
-        D.addFirst(q)
-        if D.peekLast() == bases[^1]:
-          bases.pop()
-        else:
-          break
-    else:
-      if len(D) == 0:
-        raise newNNUnfeasible("graph contains a cycle")
-      var q = D.popLast()
-      for _, j in DG.successorsSeq(q):
-        count[j] -= 1
-        if count[j] == 0:
-          D.addLast(j)
-      currentSort.add(q)
-      if len(bases) < len(currentSort):
-        bases.add(q)
-    if len(bases) == 0:
-      break
 
 # -------------------------------------------------------------------
 # TODO:
@@ -4306,13 +4278,14 @@ proc shortestPathLength*(
 
     else: # single target
       if methodNameUsing == "unweighted":
-        paths[source] = initTable[Node, float]()
         for (k, v) in singleSourceShortestPathLength(G, source=target).pairs():
-          paths[source][k] = v.float
+          paths[k] = {target: v.float}.toTable()
       elif methodNameUsing == "dijkstra":
-        paths[target] = singleSourceDijkstraPathLength(G, target, weight=weight)
+        for (k, v) in singleSourceDijkstraPathLength(G, target, weight=weight).pairs():
+          paths[k] = {target: v.float}.toTable()
       elif methodNameUsing == "bellman-ford":
-        paths[target] = singleSourceBellmanFordPathLength(G, target, weight=weight)
+        for (k, v) in singleSourceBellmanFordPathLength(G, target, weight=weight).pairs():
+          paths[k] = {target: v.float}.toTable()
 
   else:
     if target == None: # single source
@@ -4364,13 +4337,14 @@ proc shortestPathLength*(
     else: # single target
       var RDG = DG.reverse()
       if methodNameUsing == "unweighted":
-        paths[source] = initTable[Node, float]()
         for (k, v) in singleSourceShortestPathLength(RDG, source=target).pairs():
-          paths[source][k] = v.float
+          paths[k] = {target: v.float}.toTable()
       elif methodNameUsing == "dijkstra":
-        paths[target] = singleSourceDijkstraPathLength(RDG, target, weight=weight)
+        for (k, v) in singleSourceDijkstraPathLength(RDG, target, weight=weight).pairs():
+          paths[k] = {target: v.float}.toTable()
       elif methodNameUsing == "bellman-ford":
-        paths[target] = singleSourceBellmanFordPathLength(RDG, target, weight=weight)
+        for (k, v) in singleSourceBellmanFordPathLength(RDG, target, weight=weight).pairs():
+          paths[k] = {target: v.float}.toTable()
 
   else:
     if target == None: # single source
@@ -5331,3 +5305,151 @@ proc incrementalClosenessCentrality*(
   else:
     G.addEdge(u, v)
   return cc
+
+# -------------------------------------------------------------------
+# TODO:
+# DAG
+# -------------------------------------------------------------------
+
+proc descendants*(DG: DiGraph, source: Node): HashSet[Node] =
+  if not DG.hasNode(source):
+    raise newNNNodeNotFound(source)
+  var des = initHashSet[Node]()
+  for n in shortestPathLength(DG, source)[source].keys():
+    des.incl(n)
+  des.excl(source)
+  return des
+
+proc ancestors*(DG: DiGraph, source: Node): HashSet[Node] =
+  if not DG.hasNode(source):
+    raise newNNNodeNotFound(source)
+  var anc = initHashSet[Node]()
+  for n in shortestPathLength(DG, target=source).keys():
+    anc.incl(n)
+  anc.excl(source)
+  return anc
+
+iterator topologicalGenerations*(DG: DiGraph): seq[Node] =
+  var indegreeMap = initTable[Node, int]()
+  for (v, ind) in DG.inDegree().pairs():
+    if ind > 0:
+      indegreeMap[v] = ind
+  var zeroIndegree: seq[Node] = @[]
+  for (v, ind) in DG.inDegree().pairs():
+    if ind == 0:
+      zeroIndegree.add(v)
+  zeroIndegree.sort()
+
+  while len(zeroIndegree) != 0:
+    var thisGeneration = zeroIndegree
+    zeroIndegree = @[]
+    for node in thisGeneration:
+      for child in DG.successors(node):
+        indegreeMap[child] -= 1
+        if indegreeMap[child] == 0:
+          zeroIndegree.add(child)
+          indegreeMap.del(child)
+    yield thisGeneration
+  if len(indegreeMap.keys().toSeq()) != 0:
+    raise newNNUnfeasible("graph contains a cycle")
+
+iterator topologicalSort*(DG: DiGraph): Node =
+  for generation in DG.topologicalGenerations():
+    for node in generation:
+      yield node
+
+proc hasCycle*(DG: DiGraph): bool =
+  try:
+    discard topologicalSort(DG).toSeq()
+  except NNUnfeasible:
+    return true
+  return false
+
+proc isDirectedAcyclicGraph*(DG: DiGraph): bool =
+  return not DG.hasCycle()
+
+proc isAperiodic*(DG: DiGraph): bool =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("cannnot check null graph is aperiodic")
+  var s = DG.nodes()[0]
+  var levels = {s: 0}.toTable()
+  var thisLevel = @[s]
+  var g = 0
+  var lev = 1
+  while len(thisLevel) != 0:
+    var nextLevel: seq[Node] = @[]
+    for u in thisLevel:
+      for v in DG.successors(u):
+        if v in levels:
+          g = gcd(g, levels[u] - levels[v] + 1)
+        else:
+          nextLevel.add(v)
+          levels[v] = lev
+    thisLevel = nextLevel
+    lev += 1
+  if len(levels) == len(DG):
+    return g == 1
+  else:
+    return g == 1 and isAperiodic(DG.subgraph(DG.nodesSet() - levels.keys().toSeq().toHashSet()))
+
+iterator lexicographicalTopologicalSort*(DG: DiGraph, key: proc(node: Node): int = nil): Node =
+  var keyUsing = key
+  if key == nil:
+    keyUsing = proc(node: Node): int = return node
+  var nodeidMap = initTable[Node, int]()
+  for i, n in DG.nodesSeq():
+    nodeidMap[n] = i
+  var indegreeMap = initTable[Node, int]()
+  for (v, d) in DG.inDegree().pairs():
+    if d > 0:
+      indegreeMap[v] = d
+  var zeroIndegree = initHeapQueue[tuple[key: int, id: int, node: Node]]()
+  for (v, d) in DG.inDegree().pairs():
+    if d == 0:
+      zeroIndegree.push((keyUsing(v), nodeidMap[v], v))
+  while len(zeroIndegree) != 0:
+    var (_, _, node) = zeroIndegree.pop()
+    for (_, child) in DG.edges(node):
+      indegreeMap[child] -= 1
+      if indegreeMap[child] == 0:
+        zeroIndegree.push((keyUsing(child), nodeidMap[child], child))
+        indegreeMap.del(child)
+    yield node
+  if len(indegreeMap.keys().toSeq()) != 0:
+    raise newNNUnfeasible("graph contains a cycle")
+
+iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
+  var count = DG.inDegree()
+  var D = initDeque[Node]()
+  for v, d in DG.inDegree().pairs():
+    if d == 0:
+      D.addLast(v)
+  var bases: seq[Node] = @[]
+  var currentSort: seq[Node] = @[]
+  while true:
+    if len(currentSort) == len(DG):
+      yield currentSort
+      while len(currentSort) > 0:
+        var q = currentSort.pop()
+        for _, j in DG.successorsSeq(q):
+          count[j] += 1
+        while len(D) > 0 and count[D.peekLast()] > 0:
+          D.popLast()
+        D.addFirst(q)
+        if D.peekLast() == bases[^1]:
+          bases.pop()
+        else:
+          break
+    else:
+      if len(D) == 0:
+        raise newNNUnfeasible("graph contains a cycle")
+      var q = D.popLast()
+      for _, j in DG.successorsSeq(q):
+        count[j] -= 1
+        if count[j] == 0:
+          D.addLast(j)
+      currentSort.add(q)
+      if len(bases) < len(currentSort):
+        bases.add(q)
+    if len(bases) == 0:
+      break

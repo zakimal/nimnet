@@ -174,26 +174,6 @@ test "onion layers of graph":
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# DAG
-# -------------------------------------------------------------------
-
-test "topological generations in directed graph":
-  let dkarate = newDiGraph(karateClubGraph().edges())
-  check dkarate.topologicalGenerations().toSeq() == @[@[0, 14, 15, 18, 20, 22, 23, 24, 26], @[1, 4, 5, 11, 25, 29], @[2, 17, 19, 21, 6, 10], @[3, 8, 9, 27, 28, 16], @[7, 12, 13, 30, 31], @[32], @[33]]
-
-test "topological sort in directed graph":
-  let dkarate = newDiGraph(karateClubGraph().edges())
-  check dkarate.topologicalSort().toSeq() == @[0, 14, 15, 18, 20, 22, 23, 24, 26, 1, 4, 5, 11, 25, 29, 2, 17, 19, 21, 6, 10, 3, 8, 9, 27, 28, 16, 7, 12, 13, 30, 31, 32, 33]
-
-test "lexicographical sort in directed graph":
-  let dkarate = newDiGraph(karateClubGraph().edges())
-  check dkarate.lexicographicalTopologicalSort().toSeq() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
-
-test "all topological sorts on directed graph":
-  let DG = newDiGraph(@[(1, 2), (2, 3), (2, 4)])
-  check DG.allTopologicalSorts().toSeq() == @[@[1, 2, 4, 3], @[1, 2, 3, 4]]
-
-# -------------------------------------------------------------------
 # Distance Measures
 # -------------------------------------------------------------------
 
@@ -5444,8 +5424,6 @@ test "katz centrality for directed graph":
   for (node, val) in wgot.pairs():
     check equal(val, wexpected[node])
 
-
-
 test "closeness centrality for graph":
   let karate = karateClubGraph()
   let got = closenessCentrality(karate)
@@ -5487,3 +5465,55 @@ test "incremental closeness centrality for graph":
   let addedExpected = {0: 0.5892857142857143, 1: 0.4925373134328358, 2: 0.559322033898305, 3: 0.4714285714285714, 4: 0.38823529411764707, 5: 0.39285714285714285, 6: 0.39285714285714285, 7: 0.44594594594594594, 8: 0.515625, 9: 0.4342105263157895, 10: 0.38823529411764707, 11: 0.375, 12: 0.3793103448275862, 13: 0.515625, 14: 0.3707865168539326, 15: 0.3707865168539326, 16: 0.2894736842105263, 17: 0.38372093023255816, 18: 0.3707865168539326, 19: 0.5, 20: 0.5, 21: 0.38372093023255816, 22: 0.3707865168539326, 23: 0.39285714285714285, 24: 0.375, 25: 0.375, 26: 0.3626373626373626, 27: 0.4583333333333333, 28: 0.4520547945205479, 29: 0.38372093023255816, 30: 0.4583333333333333, 31: 0.5409836065573771, 32: 0.515625, 33: 0.55}.toTable()
   for (node, val) in added.pairs():
     check equal(val, addedExpected[node]) == true
+
+# -------------------------------------------------------------------
+# DAG
+# -------------------------------------------------------------------
+
+test "descendants on directed graph":
+  let DAG = newDiGraph()
+  DAG.addEdgesFrom(@[(0, 1), (1, 2), (1, 3), (1, 4), (2, 4), (3, 4), (4, 5), (6, 3)])
+  check DAG.descendants(0) == @[1, 2, 3, 4, 5].toHashSet()
+  check DAG.descendants(6) == @[3, 4, 5].toHashSet()
+
+test "ancestors on directed graph":
+  let DAG = newDiGraph()
+  DAG.addEdgesFrom(@[(0, 1), (1, 2), (1, 3), (1, 4), (2, 4), (3, 4), (4, 5), (6, 3)])
+  check DAG.ancestors(5) == @[0, 1, 2, 3, 4, 6].toHashSet()
+  check DAG.ancestors(2) == @[0, 1].toHashSet()
+
+test "topological generations in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.topologicalGenerations().toSeq() == @[@[0, 14, 15, 18, 20, 22, 23, 24, 26], @[1, 4, 5, 11, 25, 29], @[2, 17, 19, 21, 6, 10], @[3, 8, 9, 27, 28, 16], @[7, 12, 13, 30, 31], @[32], @[33]]
+
+test "topological sort in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.topologicalSort().toSeq() == @[0, 14, 15, 18, 20, 22, 23, 24, 26, 1, 4, 5, 11, 25, 29, 2, 17, 19, 21, 6, 10, 3, 8, 9, 27, 28, 16, 7, 12, 13, 30, 31, 32, 33]
+
+test "check whether directed graph has cycle":
+  let DAG = newDiGraph()
+  DAG.addEdgesFrom(@[(0, 1), (1, 2), (1, 3), (1, 4), (2, 4), (3, 4), (4, 5), (6, 3)])
+  check DAG.hasCycle() == false
+  check cycleDiGraph(5).hasCycle() == true
+
+test "check whether directed graph is acyclic":
+  let DAG = newDiGraph()
+  DAG.addEdgesFrom(@[(0, 1), (1, 2), (1, 3), (1, 4), (2, 4), (3, 4), (4, 5), (6, 3)])
+  check DAG.isDirectedAcyclicGraph() == true
+  check cycleDiGraph(5).isDirectedAcyclicGraph() == false
+
+test "check whether directed graph is aperiodic":
+  let yes = newDiGraph()
+  yes.addEdgesFrom(@[(1, 2), (2, 3), (3, 4), (4, 1), (1, 5), (5, 6), (6, 1)])
+  check yes.isAperiodic() == true
+  let no = newDiGraph()
+  no.addEdgesFrom(@[(0, 1), (1, 2), (1, 3), (1, 4), (2, 4), (3, 4), (4, 5), (6, 3)])
+  check no.isAperiodic() == false
+
+test "lexicographical sort in directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.lexicographicalTopologicalSort().toSeq() == @[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33]
+
+test "all topological sorts on directed graph":
+  let DG = newDiGraph(@[(1, 2), (2, 3), (2, 4)])
+  check DG.allTopologicalSorts().toSeq() == @[@[1, 2, 4, 3], @[1, 2, 3, 4]]
