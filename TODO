@@ -480,7 +480,7 @@ Link Prediction
 - [x] networkx.algorithms.link_prediction.cn_soundarajan_hopcroft
 - [x] networkx.algorithms.link_prediction.ra_index_soundarajan_hopcroft
 - [x] networkx.algorithms.link_prediction.within_inter_cluster
-- networkx.algorithms.link_prediction.common_neighbor_centrality
+- [x] networkx.algorithms.link_prediction.common_neighbor_centrality
 
 Lowest Common Ancestor
 - networkx.algorithms.lowest_common_ancestors.all_pairs_lowest_common_ancestor
