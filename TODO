@@ -620,7 +620,7 @@ Similarity Measures
 Simple Paths
 - networkx.algorithms.simple_paths.all_simple_paths
 - networkx.algorithms.simple_paths.all_simple_edge_paths
-- networkx.algorithms.simple_paths.is_simple_path
+- [x] networkx.algorithms.simple_paths.is_simple_path
 - networkx.algorithms.simple_paths.shortest_simple_paths
 
 Small-world
