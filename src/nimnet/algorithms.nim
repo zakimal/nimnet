@@ -36,44 +36,6 @@ import ../nimnet
 
 # -------------------------------------------------------------------
 # TODO:
-# Centrality
-# -------------------------------------------------------------------
-
-proc degreeCentrality*(G: Graph): Table[Node, float] =
-  var ret = initTable[Node, float]()
-  if len(G) <= 1:
-    for node in G.nodes():
-      ret[node] = 1.0
-    return ret
-  let s = 1.0 / (len(G) - 1).float
-  for node in G.nodes():
-    ret[node] = G.degree(node).float * s
-  return ret
-
-proc inDegreeCentrality*(DG: DiGraph): Table[Node, float] =
-  var ret = initTable[Node, float]()
-  if len(DG) <= 1:
-    for node in DG.nodes():
-      ret[node] = 1.0
-    return ret
-  let s = 1.0 / (len(DG) - 1).float
-  for node in DG.nodes():
-    ret[node] = DG.inDegree(node).float * s
-  return ret
-
-proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
-  var ret = initTable[Node, float]()
-  if len(DG) <= 1:
-    for node in DG.nodes():
-      ret[node] = 1.0
-    return ret
-  let s = 1.0 / (len(DG) - 1).float
-  for node in DG.nodes():
-    ret[node] = DG.outDegree(node).float * s
-  return ret
-
-# -------------------------------------------------------------------
-# TODO:
 # Chordal
 # -------------------------------------------------------------------
 
@@ -4991,3 +4953,381 @@ proc isEulerian*(DG: DiGraph): bool =
   for node in DG.nodes():
     d.add(DG.inDegree(node) == DG.outDegree(node))
   return all(d, proc(b: bool): bool = return b) and DG.isStronglyConnected()
+
+# -------------------------------------------------------------------
+# TODO:
+# Centrality
+# -------------------------------------------------------------------
+
+proc degreeCentrality*(G: Graph): Table[Node, float] =
+  var ret = initTable[Node, float]()
+  if len(G) <= 1:
+    for node in G.nodes():
+      ret[node] = 1.0
+    return ret
+  let s = 1.0 / (len(G) - 1).float
+  for node in G.nodes():
+    ret[node] = G.degree(node).float * s
+  return ret
+
+proc inDegreeCentrality*(DG: DiGraph): Table[Node, float] =
+  var ret = initTable[Node, float]()
+  if len(DG) <= 1:
+    for node in DG.nodes():
+      ret[node] = 1.0
+    return ret
+  let s = 1.0 / (len(DG) - 1).float
+  for node in DG.nodes():
+    ret[node] = DG.inDegree(node).float * s
+  return ret
+
+proc outDegreeCentrality*(DG: DiGraph): Table[Node, float] =
+  var ret = initTable[Node, float]()
+  if len(DG) <= 1:
+    for node in DG.nodes():
+      ret[node] = 1.0
+    return ret
+  let s = 1.0 / (len(DG) - 1).float
+  for node in DG.nodes():
+    ret[node] = DG.outDegree(node).float * s
+  return ret
+
+proc eigenvectorCentrality*(
+  G: Graph,
+  maxIter: int = 100,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  if len(G) == 0:
+    raise newNNPointlessConcept("cannot compute centrality for null graph")
+  var nstartUsing: Table[Node, float]
+  if nstart == nil:
+    for v in G.nodes():
+      nstartUsing[v] = 1.0
+  else:
+    nstartUsing = nstart[]
+  var tmp: seq[bool] = @[]
+  for v in nstartUsing.values():
+    tmp.add(v == 0.0)
+  if all(tmp, proc(b: bool): bool = return b):
+    raise newNNError("initial vector must not be all zeros")
+  var nstartSum = 0.0
+  for v in nstartUsing.values():
+    nstartSum += v
+  var x = initTable[Node, float]()
+  for (k, v) in nstartUsing.pairs():
+    x[k] = v / nstartSum
+  var N = G.numberOfNodes()
+  for i in 0..<maxIter:
+    var xlast = x
+    x = xlast
+    for n in x.keys():
+      for nbr in G.neighbors(n):
+        var w = 1.0
+        if weight != nil:
+          w = weight.getOrDefault((n, nbr), weight.getOrDefault((nbr, n), 1.0))
+        x[nbr] += xlast[n] * w
+    var norm = 0.0
+    for v in x.values():
+      norm += v * v
+    norm = sqrt(norm)
+    if norm == 0.0:
+      norm = 1.0
+    for (k, v) in x.pairs():
+      x[k] = v / norm
+    var s = 0.0
+    for n in x.keys():
+      s += abs(x[n] - xlast[n])
+    if s < N.float * tol:
+      return x
+  raise newNNPowerIterationFailedConvergence(maxIter)
+proc eigenvectorCentrality*(
+  DG: DiGraph,
+  maxIter: int = 100,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("cannot compute centrality for null graph")
+  var nstartUsing: Table[Node, float]
+  if nstart == nil:
+    for v in DG.nodes():
+      nstartUsing[v] = 1.0
+  else:
+    nstartUsing = nstart[]
+  var tmp: seq[bool] = @[]
+  for v in nstartUsing.values():
+    tmp.add(v == 0.0)
+  if all(tmp, proc(b: bool): bool = return b):
+    raise newNNError("initial vector must not be all zeros")
+  var nstartSum = 0.0
+  for v in nstartUsing.values():
+    nstartSum += v
+  var x = initTable[Node, float]()
+  for (k, v) in nstartUsing.pairs():
+    x[k] = v / nstartSum
+  var N = DG.numberOfNodes()
+  for i in 0..<maxIter:
+    var xlast = x
+    x = xlast
+    for n in x.keys():
+      for succ in DG.successors(n):
+        var w = 1.0
+        if weight != nil:
+          w = weight.getOrDefault((n, succ), 1.0)
+        x[succ] += xlast[n] * w
+    var norm = 0.0
+    for v in x.values():
+      norm += v * v
+    norm = sqrt(norm)
+    if norm == 0.0:
+      norm = 1.0
+    for (k, v) in x.pairs():
+      x[k] = v / norm
+    var s = 0.0
+    for n in x.keys():
+      s += abs(x[n] - xlast[n])
+    if s < N.float * tol:
+      return x
+  raise newNNPowerIterationFailedConvergence(maxIter)
+
+proc katzCentrality*(
+  G: Graph,
+  alpha: float = 0.1,
+  beta: float = 1.0,
+  maxIter: int = 1000,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  normalized: bool = true,
+  weight: TableRef[Edge, float] = nil
+): Table[Node, float] =
+  if len(G) == 0:
+    raise newNNPointlessConcept("cannot compute centrality for null graph")
+  var N = G.numberOfNodes()
+  var x = initTable[Node, float]()
+  if nstart == nil:
+    for n in G.nodes():
+      x[n] = 0.0
+  else:
+    x = nstart[]
+
+  # TODO: beta table
+  var b = initTable[Node, float]()
+  for n in G.nodes():
+    b[n] = beta
+
+  for i in 0..<maxIter:
+    var xlast = x
+    for k in x.keys():
+      x[k] = 0.0
+    var w: float
+    for n in x.keys():
+      for nbr in G.neighbors(n):
+        w = 1.0
+        if weight != nil:
+          w = weight.getOrDefault((n, nbr), weight.getOrDefault((nbr, n), 1.0))
+        x[nbr] += xlast[n] * w
+    for n in x.keys():
+      x[n] = alpha * x[n] + b[n]
+    var err = 0.0
+    for n in x.keys():
+      err += abs(x[n] - xlast[n])
+    if err < N.float * tol:
+      if normalized:
+        var norm = 0.0
+        for v in x.values():
+          norm += v * v
+        norm = sqrt(norm)
+        if norm == 0.0:
+          norm = 1.0
+        for n in x.keys():
+          x[n] /= norm
+        return x
+  raise newNNPowerIterationFailedConvergence(maxIter)
+proc katzCentrality*(
+  DG: DiGraph,
+  alpha: float = 0.1,
+  beta: float = 1.0,
+  maxIter: int = 1000,
+  tol: float = 1.0e-6,
+  nstart: TableRef[Node, float] = nil,
+  normalized: bool = true,
+  weight: TableRef[Edge, float] = nil
+): Table[Node, float] =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("cannot compute centrality for null graph")
+  var N = DG.numberOfNodes()
+  var x = initTable[Node, float]()
+  if nstart == nil:
+    for n in DG.nodes():
+      x[n] = 0.0
+  else:
+    x = nstart[]
+
+  # TODO: beta table
+  var b = initTable[Node, float]()
+  for n in DG.nodes():
+    b[n] = beta
+
+  for i in 0..<maxIter:
+    var xlast = x
+    for k in x.keys():
+      x[k] = 0.0
+    var w: float
+    for n in x.keys():
+      for succ in DG.successors(n):
+        w = 1.0
+        if weight != nil:
+          w = weight.getOrDefault((n, succ), 1.0)
+        x[succ] += xlast[n] * w
+    for n in x.keys():
+      x[n] = alpha * x[n] + b[n]
+    var err = 0.0
+    for n in x.keys():
+      err += abs(x[n] - xlast[n])
+    if err < N.float * tol:
+      if normalized:
+        var norm = 0.0
+        for v in x.values():
+          norm += v * v
+        norm = sqrt(norm)
+        if norm == 0.0:
+          norm = 1.0
+        for n in x.keys():
+          x[n] /= norm
+        return x
+  raise newNNPowerIterationFailedConvergence(maxIter)
+
+proc closenessCentrality*(
+  G: Graph,
+  u: Node = None,
+  distance: TableRef[Edge, float] = nil,
+  wfImprove: bool = true
+): Table[Node, float] =
+  var cc = initTable[Node, float]()
+  var nodes: seq[Node]
+  if u != None:
+    nodes = @[u]
+  else:
+    nodes = G.nodes()
+  if distance == nil: # unweighted
+    for n in nodes:
+      var sp = singleSourceShortestPathLength(G, n)
+      var totsp = sum(sp.values().toSeq()).float
+      var lenG = len(G)
+      var tmpcc = 0.0
+      if totsp > 0.0 and lenG > 1:
+        tmpcc = (len(sp.keys().toSeq()).float - 1.0) / totsp
+        if wfImprove:
+          var s = (len(sp.keys().toSeq()).float - 1.0) / (lenG.float - 1.0)
+          tmpcc *= s
+      cc[n] = tmpcc
+  else: # weighted
+    for n in nodes:
+      var sp = singleSourceDijkstraPathLength(G, n, weight=distance)
+      var totsp = sum(sp.values().toSeq())
+      var lenG = len(G)
+      var tmpcc = 0.0
+      if totsp > 0.0 and lenG > 1:
+        tmpcc = (len(sp.keys().toSeq()).float - 1.0) / totsp
+        if wfImprove:
+          var s = (len(sp.keys().toSeq()).float - 1.0) / (lenG.float - 1.0)
+          tmpcc *= s
+      cc[n] = tmpcc
+  if u != None:
+    return {u: cc[u]}.toTable()
+  else:
+    return cc
+proc closenessCentrality*(
+  DG: DiGraph,
+  u: Node = None,
+  distance: TableRef[Edge, float] = nil,
+  wfImprove: bool = true
+): Table[Node, float] =
+  var RDG = DG.reverse()
+  var cc = initTable[Node, float]()
+  var nodes: seq[Node]
+  if u != None:
+    nodes = @[u]
+  else:
+    nodes = RDG.nodes()
+  if distance == nil: # unweighted
+    for n in nodes:
+      var sp = singleSourceShortestPathLength(RDG, n)
+      var totsp = sum(sp.values().toSeq()).float
+      var lenG = len(RDG)
+      var tmpcc = 0.0
+      if totsp > 0.0 and lenG > 1:
+        tmpcc = (len(sp.keys().toSeq()).float - 1.0) / totsp
+        if wfImprove:
+          var s = (len(sp.keys().toSeq()).float - 1.0) / (lenG.float - 1.0)
+          tmpcc *= s
+      cc[n] = tmpcc
+  else: # weighted
+    for n in nodes:
+      var reversedDistance = newTable[Edge, float]()
+      for (edge, dist) in distance.pairs():
+        reversedDistance[edge.reversed()] = dist
+      var sp = singleSourceDijkstraPathLength(RDG, n, weight=reversedDistance)
+      var totsp = sum(sp.values().toSeq())
+      var lenG = len(RDG)
+      var tmpcc = 0.0
+      if totsp > 0.0 and lenG > 1:
+        tmpcc = (len(sp.keys().toSeq()).float - 1.0) / totsp
+        if wfImprove:
+          var s = (len(sp.keys().toSeq()).float - 1.0) / (lenG.float - 1.0)
+          tmpcc *= s
+      cc[n] = tmpcc
+  if u != None:
+    return {u: cc[u]}.toTable()
+  else:
+    return cc
+
+proc incrementalClosenessCentrality*(
+  G: Graph,
+  edge: Edge,
+  prevCC: Table[Node, float], # TODO: should be TableRef?
+  isInsertion: bool = true,
+  wfImproved: bool = true
+): Table[Node, float] =
+  if len(prevCC) != 0 and prevCC.keys().toSeq().toHashSet() != G.nodesSet():
+    raise newNNError("prevCC and G do not have same nodes")
+
+  var (u, v) = edge
+  var du: Table[Node, int]
+  var dv: Table[Node, int]
+  if isInsertion:
+    du = singleSourceShortestPathLength(G, u)
+    dv = singleSourceShortestPathLength(G, v)
+    G.addEdge(u, v)
+  else:
+    G.removeEdge(u, v)
+    du = singleSourceShortestPathLength(G, u)
+    dv = singleSourceShortestPathLength(G, v)
+
+  if len(prevCC) == 0:
+    return closenessCentrality(G)
+
+  var nodes = G.nodes()
+  var cc = initTable[Node, float]()
+  for n in nodes:
+    if n in du and n in dv and abs(du[n] - dv[n]) <= 1:
+      cc[n] = prevCC[n]
+    else:
+      var sp = singleSourceShortestPathLength(G, n)
+      var totsp = sum(sp.values().toSeq()).float
+      var lenG = len(G).float
+      var tmpcc = 0.0
+      if totsp > 0.0 and lenG > 1.0:
+        tmpcc = (len(sp) - 1).float / totsp
+        if wfImproved:
+          var s = (len(sp) - 1).float / (lenG - 1.0)
+          tmpcc *= s
+      cc[n] = tmpcc
+  if isInsertion:
+    G.removeEdge(u, v)
+  else:
+    G.addEdge(u, v)
+  return cc

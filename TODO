@@ -244,8 +244,8 @@ Bridges
 
 Centrality
 - [x] Degree
-- Eigenvector
-- Closeness
+- [x] Eigenvector
+- [x] Closeness
 - Current Flow Closeness
 - (Shortest Path) Betweenness
 - Current Flow Betweenness
