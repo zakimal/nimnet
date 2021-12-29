@@ -630,7 +630,7 @@ Small-world
 - networkx.algorithms.smallworld.omega
 
 s metric
-- networkx.algorithms.smetric.s_metric
+- [x] networkx.algorithms.smetric.s_metric
 
 Sparsifiers
 - networkx.algorithms.sparsifiers.spanner

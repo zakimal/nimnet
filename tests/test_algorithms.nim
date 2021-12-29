@@ -1406,6 +1406,14 @@ test "all shortest paths on directed graph":
 # s-metric
 # -------------------------------------------------------------------
 
+test "compute s-metric for graph":
+  let karate = karateClubGraph()
+  check karate.sMetric() == 3640.0
+
+test "compute s-metric for directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.sMetric() == 3640.0
+
 # -------------------------------------------------------------------
 # Sparsifiers
 # -------------------------------------------------------------------

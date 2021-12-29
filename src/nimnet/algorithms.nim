@@ -1813,6 +1813,21 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
 # s-metric
 # -------------------------------------------------------------------
 
+proc sMetric*(G: Graph, normalized: bool = false): float =
+  if normalized:
+    raise newNNError("normalization is not implemented yet")
+  var s = 0.0
+  for (u, v) in G.edges():
+    s += (G.degree(u) * G.degree(v)).float
+  return s
+proc sMetric*(DG: DiGraph, normalized: bool = false): float =
+  if normalized:
+    raise newNNError("normalization is not implemented yet")
+  var s = 0.0
+  for (u, v) in DG.edges():
+    s += (DG.degree(u) * DG.degree(v)).float
+  return s
+
 # -------------------------------------------------------------------
 # TODO:
 # Sparsifiers
