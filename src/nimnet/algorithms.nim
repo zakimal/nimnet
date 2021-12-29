@@ -77,6 +77,16 @@ proc union(uf: UnionFind, nodes: HashSet[Node]) =
     uf.weights[head] += uf.weights[r]
     uf.parents[r] = head
 
+iterator pairwise(nodes: seq[Node], cyclic: bool = false): tuple[u, v: Node] =
+  if cyclic:
+    var i = 0
+    let N = len(nodes)
+    while true:
+      yield (nodes[i mod N], nodes[(i+1) mod N])
+  else:
+    for i in 0..<(len(nodes) - 1):
+      yield (nodes[i], nodes[i+1])
+
 # -------------------------------------------------------------------
 # TODO:
 # Approximations and Heuristics
@@ -1797,6 +1807,25 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
 # TODO:
 # Simple Paths
 # -------------------------------------------------------------------
+
+proc isSimplePath*(G: Graph, nodes: seq[Node]): bool =
+  if len(nodes) == 0:
+    return false
+  if len(nodes) == 1:
+    return nodes[0] in G
+  var checks: seq[bool] = @[]
+  for (u, v) in pairwise(nodes):
+    checks.add(v in G.neighborsSet(u))
+  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
+proc isSimplePath*(DG: DiGraph, nodes: seq[Node]): bool =
+  if len(nodes) == 0:
+    return false
+  if len(nodes) == 1:
+    return nodes[0] in DG
+  var checks: seq[bool] = @[]
+  for (u, v) in pairwise(nodes):
+    checks.add(v in DG.successorsSet(u))
+  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
 
 # -------------------------------------------------------------------
 # TODO:

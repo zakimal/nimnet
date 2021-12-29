@@ -1394,6 +1394,16 @@ test "all shortest paths on directed graph":
 # Simple Paths
 # -------------------------------------------------------------------
 
+test "simple path on graph":
+  let G = cycleGraph(4)
+  check G.isSimplePath(@[2, 3, 0]) == true
+  check G.isSimplePath(@[0, 2]) == false
+
+test "simple path on directed graph":
+  let DG = cycleDiGraph(4)
+  check DG.isSimplePath(@[2, 3, 0]) == true
+  check DG.isSimplePath(@[0, 2]) == false
+
 # -------------------------------------------------------------------
 # Small World
 # -------------------------------------------------------------------
