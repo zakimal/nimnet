@@ -668,7 +668,7 @@ Traversal
 - Breadth First Search on Edges
 
 Tree
-- Recognition
+- [x] Recognition
 - Branchings and Spanning Arborescences
 - Encoding and decoding
 - Operations

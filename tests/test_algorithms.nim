@@ -1670,10 +1670,6 @@ test "bfs beam edges on directed graph":
   check edges == @[(0, 2), (0, 1), (0, 8), (0, 13), (0, 3), (2, 32), (2, 7), (1, 30), (8, 33), (3, 12)]
 
 # -------------------------------------------------------------------
-# Tree
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Triads
 # -------------------------------------------------------------------
 
@@ -5537,3 +5533,61 @@ test "d-separation":
   let DG = newDiGraph()
   DG.addEdgesFrom(@[(1, 2), (2, 3), (3, 4), (4, 5), (1, 6), (2, 7), (3, 8), (4, 9), (5, 10)])
   check DG.dSeparated(@[1, 2, 6, 7].toHashSet(), @[4, 5, 9, 10].toHashSet(), @[3].toHashSet()) == true
+
+# -------------------------------------------------------------------
+# Tree
+# -------------------------------------------------------------------
+
+test "check whether graph is a tree":
+  let tree = newGraph()
+  tree.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+  check tree.isTree() == true
+  let nonTree = newGraph()
+  nonTree.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6), (4, 5)])
+  check nonTree.isTree() == false
+
+test "check whether directed graph is a tree":
+  let tree = newDiGraph()
+  tree.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+  check tree.isTree() == true
+  let nonTree = newDiGraph()
+  nonTree.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6), (4, 5)])
+  check nonTree.isTree() == false
+
+test "check whether graph is a forest":
+  let forest = newGraph()
+  forest.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+  forest.addEdgesFrom(@[(10, 11), (10, 12), (11, 13), (11, 14), (12, 15), (12, 16)])
+  check forest.isForest() == true
+  let nonForest = newGraph()
+  nonForest.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6), (4, 5)])
+  nonForest.addEdgesFrom(@[(10, 11), (10, 12), (11, 13), (11, 14), (12, 15), (12, 16)])
+  check nonForest.isForest() == false
+
+test "check whether directed graph is a forest":
+  let forest = newDiGraph()
+  forest.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6)])
+  forest.addEdgesFrom(@[(10, 11), (10, 12), (11, 13), (11, 14), (12, 15), (12, 16)])
+  check forest.isForest() == true
+  let nonForest = newDiGraph()
+  nonForest.addEdgesFrom(@[(0, 1), (0, 2), (1, 3), (1, 4), (2, 5), (2, 6), (4, 5)])
+  nonForest.addEdgesFrom(@[(10, 11), (10, 12), (11, 13), (11, 14), (12, 15), (12, 16)])
+  check nonForest.isForest() == false
+
+test "check whether directed graph is a branching":
+  let branching = newDiGraph()
+  branching.addEdgesFrom(@[(1, 2), (2, 3), (3, 4), (1, 5), (2, 6), (3, 7), (4, 8), (7, 9)])
+  branching.addEdgesFrom(@[(10, 11), (10, 12), (11, 13), (11, 14), (12, 15), (12, 16)])
+  check branching.isBranching() == true
+  let nonBranching = newDiGraph()
+  nonBranching.addEdgesFrom(@[(2, 1), (3, 1)])
+  check nonBranching.isBranching() == false
+
+test "check whether directed graph is an arborescence":
+  let arborescence = newDiGraph()
+  arborescence.addEdgesFrom(@[(1, 2), (2, 3), (3, 4), (1, 5), (2, 6), (3, 7), (4, 8), (7, 9)])
+  check arborescence.isArborescence() == true
+  let nonArborescence = newDiGraph()
+  nonArborescence.addEdgesFrom(@[(2, 1), (3, 1)])
+  check nonArborescence.isArborescence() == false
+

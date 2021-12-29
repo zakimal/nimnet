@@ -4383,11 +4383,6 @@ proc hasPath*(G: Graph, source: Node, target: Node): bool =
 
 # -------------------------------------------------------------------
 # TODO:
-# Tree
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Triads
 # -------------------------------------------------------------------
 
@@ -5516,3 +5511,45 @@ proc dSeparated*(
   if len(x) != 0 and len(y) != 0 and disjointSet[x.toSeq()[0]] == disjointSet[y.toSeq()[0]]:
     return false
   return true
+
+# -------------------------------------------------------------------
+# TODO:
+# Tree
+# -------------------------------------------------------------------
+
+proc isTree*(G: Graph): bool =
+  if len(G) == 0:
+    raise newNNPointlessConcept("graph has no nodes")
+  return len(G) - 1 == G.numberOfEdges() and G.isConnected()
+proc isTree*(DG: DiGraph): bool =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("graph has no nodes")
+  return len(DG) - 1 == DG.numberOfEdges() and DG.isWeaklyConnected()
+
+proc isForest*(G: Graph): bool =
+  if len(G) == 0:
+    raise newNNPointlessConcept("graph has no nodes")
+  var components: seq[Graph] = @[]
+  for c in G.connectedComponents():
+    components.add(G.subgraph(c))
+  return all(components, proc(c: Graph): bool = return len(c) - 1 == c.numberOfEdges())
+proc isForest*(DG: DiGraph): bool =
+  if len(DG) == 0:
+    raise newNNPointlessConcept("graph has no nodes")
+  var components: seq[DiGraph] = @[]
+  for c in DG.weaklyConnectedComponents():
+    components.add(DG.subgraph(c))
+  return all(components, proc(c: DiGraph): bool = return len(c) - 1 == c.numberOfEdges())
+
+proc isBranching*(DG: DiGraph): bool =
+  var maxInDegree = 0
+  for d in DG.inDegree().values():
+    maxInDegree = max(maxInDegree, d)
+  return DG.isForest() and maxInDegree <= 1
+
+proc isArborescence*(DG: DiGraph): bool =
+  var maxInDegree = 0
+  for d in DG.inDegree().values():
+    maxInDegree = max(maxInDegree, d)
+  return DG.isTree() and maxInDegree <= 1
+
