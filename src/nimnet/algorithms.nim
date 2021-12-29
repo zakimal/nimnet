@@ -486,11 +486,6 @@ proc onionLayers*(g: Graph): Table[Node, int] =
 
 # -------------------------------------------------------------------
 # TODO:
-# D-Separation
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Distance Measures
 # -------------------------------------------------------------------
 
@@ -5471,3 +5466,53 @@ proc withinInterCluster*(
       var inter = comnbrs - within
       return len(within).float / (len(inter).float + delta)
   return applyPrediction(G, f, ebunch)
+
+# -------------------------------------------------------------------
+# D-Separation
+# -------------------------------------------------------------------
+
+proc dSeparated*(
+  DG: DiGraph,
+  x: HashSet[Node],
+  y: HashSet[Node],
+  z: HashSet[Node]
+): bool =
+  if not DG.isDirectedAcyclicGraph():
+    raise newNNError("d-separation is not for non DAG")
+
+  var xyz = x + y + z
+
+  for n in xyz:
+    if n notin DG.nodesSet():
+      raise newNNNodeNotFound(n)
+
+  let DGCopy = DG.copyAsDiGraph()
+
+  var leaves = initDeque[Node]()
+  for n in DGCopy.nodes():
+    if DGCopy.outDegree(n) == 0:
+      leaves.addLast(n)
+
+  while len(leaves) > 0:
+    var leaf = leaves.popFirst()
+    if leaf notin xyz:
+      for p in DGCopy.predecessors(leaf):
+        if DGCopy.outDegree(p) == 1:
+          leaves.addLast(p)
+      DGCopy.removeNode(leaf)
+
+  var edgesToRemove: seq[Edge] = @[]
+  for v in z:
+    for edge in DGCopy.edges(v):
+      edgesToRemove.add(edge)
+  DGCopy.removeEdgesFrom(edgesToRemove)
+
+  var disjointSet = newUnionFind(DGCopy.nodesSet())
+  for component in DGCopy.weaklyConnectedComponents():
+    disjointSet.union(component)
+  disjointSet.union(x)
+  disjointSet.union(y)
+
+  if len(x) != 0 and len(y) != 0 and disjointSet[x.toSeq()[0]] == disjointSet[y.toSeq()[0]]:
+    return false
+  return true
