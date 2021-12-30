@@ -685,7 +685,7 @@ Triads
 - networkx.algorithms.triads.all_triplets
 
 Vitality
-- networkx.algorithms.vitality.closeness_vitality
+- [x] networkx.algorithms.vitality.closeness_vitality
 
 Voronoi cells
 - networkx.algorithms.voronoi.voronoi_cells
