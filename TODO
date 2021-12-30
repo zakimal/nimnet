@@ -690,6 +690,6 @@ Vitality
 Voronoi cells
 - networkx.algorithms.voronoi.voronoi_cells
 
-Wiener index
-- networkx.algorithms.wiener.wiener_index
+[x] Wiener index
+- [x] networkx.algorithms.wiener.wiener_index
 ```

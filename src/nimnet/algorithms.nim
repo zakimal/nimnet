@@ -4417,11 +4417,6 @@ proc hasPath*(G: Graph, source: Node, target: Node): bool =
 
 # -------------------------------------------------------------------
 # TODO:
-# Vitality
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Voronoi cells
 # -------------------------------------------------------------------
 
@@ -5603,3 +5598,74 @@ proc wienerIndex*(
     for v in p.values():
       total += v
   return total
+
+# -------------------------------------------------------------------
+# Vitality
+# -------------------------------------------------------------------
+
+proc closenessVitality*(
+  G: Graph,
+  node: Node = None,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  let wiener = wienerIndex(G, weight=weight)
+  if node != None:
+    var newW = newTable[Edge, float]()
+    if weight == nil:
+      for edge in G.subgraph(G.nodesSet() - @[node].toHashSet()).edges():
+        newW[edge] = 1.0
+    else:
+      for edge in weight.keys():
+        if node == edge.u or node == edge.v:
+          continue
+        discard newW.hasKeyOrPut(edge, weight.getOrDefault(edge, 1.0))
+    let after = wienerIndex(G.subgraph(G.nodesSet() - @[node].toHashSet()), weight=newW)
+    return {node: wiener - after}.toTable()
+  var ret = initTable[Node, float]()
+  for v in G.nodes():
+    var newW = newTable[Edge, float]()
+    if weight == nil:
+      for edge in G.subgraph(G.nodesSet() - @[v].toHashSet()).edges():
+        newW[edge] = 1.0
+    else:
+      for edge in weight.keys():
+        if v == edge.u or v == edge.v:
+          continue
+        discard newW.hasKeyOrPut(edge, weight.getOrDefault(edge, 1.0))
+    let w = wienerIndex(G, weight=weight)
+    let aft = wienerIndex(G.subgraph(G.nodesSet() - @[v].toHashSet()), weight=newW)
+    ret[v] = w - aft
+  return ret
+proc closenessVitality*(
+  DG: DiGraph,
+  node: Node = None,
+  weight: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  let wiener = wienerIndex(DG, weight=weight)
+  if node != None:
+    var newW = newTable[Edge, float]()
+    if weight == nil:
+      for edge in DG.subgraph(DG.nodesSet() - @[node].toHashSet()).edges():
+        newW[edge] = 1.0
+    else:
+      for edge in weight.keys():
+        if node == edge.u or node == edge.v:
+          continue
+        discard newW.hasKeyOrPut(edge, weight.getOrDefault(edge, 1.0))
+    let after = wienerIndex(DG.subgraph(DG.nodesSet() - @[node].toHashSet()), weight=newW)
+    return {node: wiener - after}.toTable()
+  var ret = initTable[Node, float]()
+  for v in DG.nodes():
+    var newW = newTable[Edge, float]()
+    if weight == nil:
+      for edge in DG.subgraph(DG.nodesSet() - @[v].toHashSet()).edges():
+        newW[edge] = 1.0
+    else:
+      for edge in weight.keys():
+        if v == edge.u or v == edge.v:
+          continue
+        discard newW.hasKeyOrPut(edge, weight.getOrDefault(edge, 1.0))
+    let w = wienerIndex(DG, weight=weight)
+    let aft = wienerIndex(DG.subgraph(DG.nodesSet() - @[v].toHashSet()), weight=newW)
+    ret[v] = w - aft
+  return ret
