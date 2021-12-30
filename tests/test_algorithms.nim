@@ -1692,10 +1692,6 @@ test "bfs beam edges on directed graph":
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# Wiener Index
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Chains
 # -------------------------------------------------------------------
 
@@ -5601,3 +5597,14 @@ test "check whether directed graph is an arborescence":
   nonArborescence.addEdgesFrom(@[(2, 1), (3, 1)])
   check nonArborescence.isArborescence() == false
 
+# -------------------------------------------------------------------
+# Wiener Index
+# -------------------------------------------------------------------
+
+test "wiener index for graph":
+  let karate = karateClubGraph()
+  check karate.wienerIndex() == 1351.0
+
+test "wiener index for directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.wienerIndex() == Inf

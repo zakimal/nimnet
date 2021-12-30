@@ -4426,11 +4426,6 @@ proc hasPath*(G: Graph, source: Node, target: Node): bool =
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# TODO:
-# Wiener Index
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Chains
 # -------------------------------------------------------------------
 
@@ -5582,3 +5577,29 @@ proc isArborescence*(DG: DiGraph): bool =
     maxInDegree = max(maxInDegree, d)
   return DG.isTree() and maxInDegree <= 1
 
+# -------------------------------------------------------------------
+# Wiener Index
+# -------------------------------------------------------------------
+
+proc wienerIndex*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+): float =
+  if not G.isConnected():
+    return Inf
+  var total = 0.0
+  for p in G.shortestPathLength(weight=weight).values():
+    for v in p.values():
+      total += v
+  return total / 2.0
+proc wienerIndex*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+): float =
+  if not DG.isStronglyConnected():
+    return Inf
+  var total = 0.0
+  for p in DG.shortestPathLength(weight=weight).values():
+    for v in p.values():
+      total += v
+  return total
