@@ -1121,6 +1121,22 @@ proc hits*(
 # Matching
 # -------------------------------------------------------------------
 
+proc maximalMatching*(G: Graph): HashSet[tuple[u: Node, v: Node]] =
+  var matching = initHashSet[tuple[u: Node, v: Node]]()
+  var nodes = initHashSet[Node]()
+  for (u, v) in G.edges():
+    if u notin nodes and v notin nodes and u != v:
+      matching.incl((u, v))
+      nodes.incl(u)
+      nodes.incl(v)
+  return matching
+
+proc matchingTableToSet(matching: Table[Node, Node]): HashSet[tuple[u: Node, v: Node]] =
+  var ret = initHashSet[tuple[u: Node, v: Node]]()
+  for (k, v) in matching.pairs():
+    ret.incl((k, v))
+  return ret
+
 # -------------------------------------------------------------------
 # TODO:
 # Minors
@@ -1414,7 +1430,6 @@ proc power*(G: Graph, k: int): Graph =
     for nbr in seen.keys():
       H.addEdge((n, nbr))
   return H
-
 
 # -------------------------------------------------------------------
 # TODO:
