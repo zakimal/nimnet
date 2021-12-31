@@ -1436,6 +1436,34 @@ proc power*(G: Graph, k: int): Graph =
 # Regular
 # -------------------------------------------------------------------
 
+proc isRegular*(G: Graph): bool =
+  let n1 = G.nodes()[0]
+  let d1 = G.degree(n1)
+  var tmp: seq[bool] = @[]
+  for d in G.degree().values():
+    tmp.add(d1 == d)
+  return all(tmp, proc(b: bool): bool = return b)
+proc isRegular*(DG: DiGraph): bool =
+  let n1 = DG.nodes()[0]
+  let dIn = DG.inDegree(n1)
+  var tmp: seq[bool] = @[]
+  for d in DG.inDegree().values():
+    tmp.add(dIn == d)
+  let inRegular = all(tmp, proc(b: bool): bool = return b)
+
+  let dOut = DG.outDegree(n1)
+  tmp = @[]
+  for d in DG.outDegree().values():
+    tmp.add(dOut == d)
+  let outRegular = all(tmp, proc(b: bool): bool = return b)
+  return inRegular and outRegular
+
+proc isKRegular*(G: Graph, k: int): bool =
+  var tmp: seq[bool] = @[]
+  for d in G.degree().values():
+    tmp.add(d == k)
+  return all(tmp, proc(b: bool): bool = return b)
+
 # -------------------------------------------------------------------
 # TODO:
 # Rich Club

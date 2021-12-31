@@ -678,6 +678,22 @@ test "power product of graph":
 # Regular
 # -------------------------------------------------------------------
 
+test "check whether graph is regular":
+  let karate = karateClubGraph()
+  check karate.isRegular() == false
+  let G = completeGraph(4)
+  check G.isRegular() == true
+
+test "check whether directed graph is regular":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  check dkarate.isRegular() == false
+  let DG = completeDiGraph(4)
+  check DG.isRegular() == true
+
+test "check whether graph is regular":
+  let G = completeGraph(4)
+  check G.isKRegular(3) == true
+
 # -------------------------------------------------------------------
 # Rich Club
 # -------------------------------------------------------------------

@@ -261,7 +261,7 @@ Centrality
 - Trophic
 - VoteRank
 
-Chains
+[x] Chains
 - [x] networkx.algorithms.chains.chain_decomposition
 
 Chordal
@@ -337,7 +337,7 @@ Connectivity
 - Stoer-Wagner minimum cut
 - Utils for flow-based connectivity
 
-Cores
+[x] Cores
 - [x] networkx.algorithms.core.core_number
 - [x] networkx.algorithms.core.k_core
 - [x] networkx.algorithms.core.k_shell
@@ -408,7 +408,7 @@ Dominance
 - networkx.algorithms.dominance.immediate_dominators
 - networkx.algorithms.dominance.dominance_frontiers
 
-Dominating Sets
+[x] Dominating Sets
 - [x] networkx.algorithms.dominating.dominating_set
 - [x] networkx.algorithms.dominating.is_dominating_set
 
@@ -440,7 +440,7 @@ Flows
 Graph Hashing
 - networkx.algorithms.graph_hashing.weisfeiler_lehman_graph_hash
 
-Graphical degree sequence
+[x] Graphical degree sequence
 - [x] networkx.algorithms.graphical.is_graphical
 - [x] networkx.algorithms.graphical.is_digraphical
 - [x] networkx.algorithms.graphical.is_multigraphical
@@ -455,7 +455,7 @@ Hybrid
 - networkx.algorithms.hybrid.kl_connected_subgraph
 - networkx.algorithms.hybrid.is_kl_connected
 
-Isolates
+[x] Isolates
 - [x] etworkx.algorithms.isolate.is_isolate
 - [x] networkx.algorithms.isolate.isolates
 - [x] networkx.algorithms.isolate.number_of_isolates
@@ -468,11 +468,11 @@ Isomorphism
 - Tree Isomorphism
 - Advanced Interfaces
 
-Link Analysis
+[x] Link Analysis
 - [x] PageRank
 - [x] Hits
 
-Link Prediction
+[x] Link Prediction
 - [x] networkx.algorithms.link_prediction.resource_allocation_index
 - [x] networkx.algorithms.link_prediction.jaccard_coefficient
 - [x] networkx.algorithms.link_prediction.adamic_adar_index
@@ -548,15 +548,15 @@ Reciprocity
 - networkx.algorithms.reciprocity.overall_reciprocity
 
 Regular
-- networkx.algorithms.regular.is_regular
-- networkx.algorithms.regular.is_k_regular
+- [x] networkx.algorithms.regular.is_regular
+- [x] networkx.algorithms.regular.is_k_regular
 - networkx.algorithms.regular.k_factor
 
 Rich Club
 - networkx.algorithms.richclub.rich_club_coefficient
 
-Shortest Paths
-- generic
+[x] Shortest Paths
+- [x] generic
     - [x] shortest_path(G[, source, target, weight, …])
     - [x] all_shortest_paths(G, source, target[, …])
     - [x] shortest_path_length(G[, source, target, …])
@@ -571,7 +571,7 @@ Shortest Paths
     - [x] all_pairs_shortest_path(G[, cutoff])
     - [x] all_pairs_shortest_path_length(G[, cutoff])
     - [x] predecessor(G, source[, target, cutoff, …])
-- for weighted
+- [x] for weighted
     - [x] dijkstra_predecessor_and_distance(G, source)
     - [x] dijkstra_path(G, source, target[, weight])
     - [x] dijkstra_path_length(G, source, target[, weight])
@@ -598,12 +598,12 @@ Shortest Paths
     - [x] bidirectional_dijkstra
     - [x] find_negative_cycle
     - [x] johnson(G[, weight])
-- for dense
+- [x] for dense
     - [x] floyd_warshall(G[, weight])
     - [x] floyd_warshall_predecessor_and_distance(G[, …])
     - floyd_warshall_numpy(G[, nodelist, weight])
     - [x] reconstruct_path(source, target, predecessors)
-- A*
+- [x] A*
     - [x] astar_path(G, source, target[, heuristic, …])
     - [x] astar_path_length(G, source, target[, …])
 
@@ -629,7 +629,7 @@ Small-world
 - networkx.algorithms.smallworld.sigma
 - networkx.algorithms.smallworld.omega
 
-s metric
+[x] s metric
 - [x] networkx.algorithms.smetric.s_metric
 
 Sparsifiers
