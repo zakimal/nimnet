@@ -1560,6 +1560,10 @@ test "dfs pre order nodes on directed graph":
   let dkarate = newDiGraph(karateClubGraph().edges())
   check dkarate.dfsPreOrderNodes() == @[0, 1, 2, 3, 7, 12, 13, 33, 8, 30, 32, 9, 27, 28, 31, 17, 19, 21, 4, 6, 16, 10, 5, 11, 14, 15, 18, 20, 22, 23, 25, 29, 24, 26]
 
+test "edge dfs on graph":
+  let karate = karateClubGraph()
+  echo karate.edgeDfs().toSeq()
+
 test "bfs edges on graph":
   let karate = karateClubGraph()
   var bfsOrderedEdges: seq[Edge] = @[]
@@ -1699,6 +1703,8 @@ test "bfs beam edges on directed graph":
   for edge in dkarate.bfsBeamEdges(0, centrality, 5):
     edges.add(edge)
   check edges == @[(0, 2), (0, 1), (0, 8), (0, 13), (0, 3), (2, 32), (2, 7), (1, 30), (8, 33), (3, 12)]
+
+
 
 # -------------------------------------------------------------------
 # Triads
