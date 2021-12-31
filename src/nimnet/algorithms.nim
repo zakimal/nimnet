@@ -1841,655 +1841,6 @@ proc predecessorAndSeen*(DG: DiGraph, source: Node, target: Node = None, cutoff:
     return ({target: pred[target]}.toTable(), {target: seen[target]}.toTable())
   return (pred, seen)
 
-# -------------------------------------------------------------------
-# TODO:
-# Similarity Measures
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Simple Paths
-# -------------------------------------------------------------------
-
-proc isSimplePath*(G: Graph, nodes: seq[Node]): bool =
-  if len(nodes) == 0:
-    return false
-  if len(nodes) == 1:
-    return nodes[0] in G
-  var checks: seq[bool] = @[]
-  for (u, v) in pairwise(nodes):
-    checks.add(v in G.neighborsSet(u))
-  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
-proc isSimplePath*(DG: DiGraph, nodes: seq[Node]): bool =
-  if len(nodes) == 0:
-    return false
-  if len(nodes) == 1:
-    return nodes[0] in DG
-  var checks: seq[bool] = @[]
-  for (u, v) in pairwise(nodes):
-    checks.add(v in DG.successorsSet(u))
-  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
-
-# -------------------------------------------------------------------
-# TODO:
-# Small World
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# s-metric
-# -------------------------------------------------------------------
-
-proc sMetric*(G: Graph, normalized: bool = false): float =
-  if normalized:
-    raise newNNError("normalization is not implemented yet")
-  var s = 0.0
-  for (u, v) in G.edges():
-    s += (G.degree(u) * G.degree(v)).float
-  return s
-proc sMetric*(DG: DiGraph, normalized: bool = false): float =
-  if normalized:
-    raise newNNError("normalization is not implemented yet")
-  var s = 0.0
-  for (u, v) in DG.edges():
-    s += (DG.degree(u) * DG.degree(v)).float
-  return s
-
-# -------------------------------------------------------------------
-# TODO:
-# Sparsifiers
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Structual Holes
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Summarization
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Swap
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Threshold Graphs
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
-# Tournament
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# Traversal
-# -------------------------------------------------------------------
-
-iterator dfsEdges*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1,
-): Edge =
-  var nodes: seq[Node]
-  if source == None:
-    nodes = G.nodes()
-  else:
-    nodes = @[source]
-  var visited = initHashSet[Node]()
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(G)
-
-  for start in nodes:
-    if start in visited:
-      continue
-    visited.incl(start)
-    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
-    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
-    while len(stack) != 0:
-      var (parent, depthNow, children, idx) = stack.peekLast()
-      if idx < len(children):
-        discard stack.popLast()
-        stack.addLast((parent, depthNow, children, idx+1))
-        var child = children[idx]
-        if child notin visited:
-          yield (parent, child)
-          visited.incl(child)
-          if 1 < depthNow:
-            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
-      else:
-        discard stack.popLast()
-iterator dfsEdges*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1,
-): Edge =
-  var nodes: seq[Node]
-  if source == None:
-    nodes = DG.nodes()
-  else:
-    nodes = @[source]
-  var visited = initHashSet[Node]()
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(DG)
-
-  for start in nodes:
-    if start in visited:
-      continue
-    visited.incl(start)
-    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
-    stack.addFirst((start, depthLimitUsing, DG.neighbors(start), 0))
-    while len(stack) != 0:
-      var (parent, depthNow, children, idx) = stack.peekLast()
-      if idx < len(children):
-        discard stack.popLast()
-        stack.addLast((parent, depthNow, children, idx+1))
-        var child = children[idx]
-        if child notin visited:
-          yield (parent, child)
-          visited.incl(child)
-          if 1 < depthNow:
-            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
-      else:
-        discard stack.popLast()
-
-proc dfsTree*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): DiGraph =
-  let T = newDiGraph()
-  if source == None:
-    T.addNodesFrom(G.nodes())
-  else:
-    T.addNode(source)
-  for edge in G.dfsEdges(source, depthLimit):
-    T.addEdge(edge)
-  return T
-proc dfsTree*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): DiGraph =
-  let T = newDiGraph()
-  if source == None:
-    T.addNodesFrom(DG.nodes())
-  else:
-    T.addNode(source)
-  for edge in DG.dfsEdges(source, depthLimit):
-    T.addEdge(edge)
-  return T
-
-proc dfsPredecessors*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): Table[Node, Node] =
-  var ret = initTable[Node, Node]()
-  for (s, t) in dfsEdges(G, source, depthLimit):
-    ret[t] = s
-  return ret
-proc dfsPredecessors*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): Table[Node, Node] =
-  var ret = initTable[Node, Node]()
-  for (s, t) in dfsEdges(DG, source, depthLimit):
-    ret[t] = s
-  return ret
-
-proc dfsSuccessors*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): Table[Node, seq[Node]] =
-  var ret = initTable[Node, seq[Node]]()
-  for (s, t) in dfsEdges(G, source, depthLimit):
-    if s notin ret:
-      ret[s] = @[]
-    ret[s].add(t)
-  return ret
-proc dfsSuccessors*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): Table[Node, seq[Node]] =
-  var ret = initTable[Node, seq[Node]]()
-  for (s, t) in dfsEdges(DG, source, depthLimit):
-    if s notin ret:
-      ret[s] = @[]
-    ret[s].add(t)
-  return ret
-
-iterator dfsLabeledEdges*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): tuple[u, v: Node, direction: string] =
-  var nodes: seq[Node]
-  if source == None:
-    nodes = G.nodes()
-  else:
-    nodes = @[source]
-  var visited = initHashSet[Node]()
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(G)
-
-  for start in nodes:
-    if start in visited:
-      continue
-    yield (start, start, "forward")
-    visited.incl(start)
-    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
-    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
-    while len(stack) != 0:
-      var (parent, depthNow, children, idx) = stack.peekLast()
-      if idx < len(children):
-        discard stack.popLast()
-        stack.addLast((parent, depthNow, children, idx+1))
-        var child = children[idx]
-        if child in visited:
-          yield (parent, child, "nontree")
-        else:
-          yield (parent, child, "forward")
-          visited.incl(child)
-          if 1 < depthNow:
-            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
-      else:
-        discard stack.popLast()
-        if len(stack) != 0:
-          yield (stack.peekLast().parent, parent, "reverse")
-    yield (start, start, "reverse")
-iterator dfsLabeledEdges*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): tuple[u, v: Node, direction: string] =
-  var nodes: seq[Node]
-  if source == None:
-    nodes = DG.nodes()
-  else:
-    nodes = @[source]
-  var visited = initHashSet[Node]()
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(DG)
-
-  for start in nodes:
-    if start in visited:
-      continue
-    yield (start, start, "forward")
-    visited.incl(start)
-    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
-    stack.addFirst((start, depthLimitUsing, DG.successors(start), 0))
-    while len(stack) != 0:
-      var (parent, depthNow, children, idx) = stack.peekLast()
-      if idx < len(children):
-        discard stack.popLast()
-        stack.addLast((parent, depthNow, children, idx+1))
-        var child = children[idx]
-        if child in visited:
-          yield (parent, child, "nontree")
-        else:
-          yield (parent, child, "forward")
-          visited.incl(child)
-          if 1 < depthNow:
-            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
-      else:
-        discard stack.popLast()
-        if len(stack) != 0:
-          yield (stack.peekLast().parent, parent, "reverse")
-    yield (start, start, "reverse")
-
-proc dfsPostOrderNodes*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): seq[Node] =
-  var ret: seq[Node] = @[]
-  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
-    if d == "reverse":
-      ret.add(v)
-  return ret
-proc dfsPostOrderNodes*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): seq[Node] =
-  var ret: seq[Node] = @[]
-  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
-    if d == "reverse":
-      ret.add(v)
-  return ret
-
-proc dfsPreOrderNodes*(
-  G: Graph,
-  source: Node = None,
-  depthLimit: int = -1
-): seq[Node] =
-  var ret: seq[Node] = @[]
-  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
-    if d == "forward":
-      ret.add(v)
-  return ret
-proc dfsPreOrderNodes*(
-  DG: DiGraph,
-  source: Node = None,
-  depthLimit: int = -1
-): seq[Node] =
-  var ret: seq[Node] = @[]
-  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
-    if d == "forward":
-      ret.add(v)
-  return ret
-
-iterator genericBfsEdges(
-  G: Graph,
-  source: Node,
-  neighbors: proc(node: Node): iterator: Node = nil,
-  depthLimit: int = -1,
-  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
-): Edge =
-  var neighborsUsing: proc(node: Node): iterator: Node = neighbors
-
-  if neighbors == nil:
-    neighborsUsing = proc(node: Node): iterator: Node =
-      return G.neighborsIterator(node)
-
-  if sortNeighbors != nil:
-    neighborsUsing =
-      proc(node: Node): iterator: Node =
-        return iterator: Node =
-          for neighbor in sortNeighbors(neighbors(node).toSeq()):
-            yield neighbor
-
-  var visited = initHashSet[Node]()
-  visited.incl(source)
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(G)
-
-  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
-  queue.addLast(
-    (source, depthLimitUsing, neighborsUsing(source))
-  )
-
-  while len(queue) != 0:
-    let (parent, depthNow, children) = queue.popFirst()
-    for child in children:
-      if child notin visited:
-        yield (parent, child)
-        visited.incl(child)
-        if 1 < depthNow:
-          queue.addLast((child, depthNow - 1, neighborsUsing(child)))
-iterator genericBfsEdges(
-  DG: DiGraph,
-  source: Node,
-  successors: proc(node: Node): iterator: Node = nil,
-  depthLimit: int = -1,
-  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
-): Edge =
-  var successorsUsing: proc(node: Node): iterator: Node = successors
-
-  if successors == nil:
-    successorsUsing = proc(node: Node): iterator: Node =
-      return DG.successorsIterator(node)
-
-  if sortSuccessors != nil:
-    successorsUsing =
-      proc(node: Node): iterator: Node =
-        return iterator: Node =
-          for neighbor in sortSuccessors(successors(node).toSeq()):
-            yield neighbor
-
-  var visited = initHashSet[Node]()
-  visited.incl(source)
-
-  var depthLimitUsing = depthLimit
-  if depthLimit == -1:
-    depthLimitUsing = len(DG)
-
-  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
-  queue.addLast(
-    (source, depthLimitUsing, successorsUsing(source))
-  )
-
-  while len(queue) != 0:
-    let (parent, depthNow, children) = queue.popFirst()
-    for child in children:
-      if child notin visited:
-        yield (parent, child)
-        visited.incl(child)
-        if 1 < depthNow:
-          queue.addLast((child, depthNow - 1, successorsUsing(child)))
-
-iterator bfsEdges*(
-  G: Graph,
-  source: Node,
-  reverse: bool = false,
-  depthLimit: int = -1,
-  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
-): Edge =
-  var successors = proc(node: Node): iterator: Node =
-    return G.neighborsIterator(node)
-  for edge in genericBfsEdges(G, source, successors, depthLimit, sortNeighbors):
-    yield edge
-iterator bfsEdges*(
-  DG: DiGraph,
-  source: Node,
-  reverse: bool = false,
-  depthLimit: int = -1,
-  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
-): Edge =
-  var successors: proc(node: Node): iterator: Node
-  if reverse:
-    successors = proc(node: Node): iterator: Node =
-      return DG.predecessorsIterator(node)
-  else:
-    successors = proc(node: Node): iterator: Node =
-      return DG.successorsIterator(node)
-  for edge in genericBfsEdges(DG, source, successors, depthLimit, sortSuccessors):
-    yield edge
-
-proc bfsTree*(
-  G: Graph,
-  source: Node,
-  reverse: bool = false,
-  depthLimit: int = -1,
-  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
-): DiGraph =
-  let T = newDiGraph()
-  T.addNode(source)
-  T.addEdgesFrom(
-    bfsEdges(G, source, reverse=reverse, depthLimit=depthLimit, sortNeighbors=sortNeighbors).toSeq()
-  )
-  return T
-proc bfsTree*(
-  DG: DiGraph,
-  source: Node,
-  reverse: bool = false,
-  depthLimit: int = -1,
-  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
-): DiGraph =
-  let T = newDiGraph()
-  T.addNode(source)
-  T.addEdgesFrom(
-    bfsEdges(DG, source, reverse=reverse, depthLimit=depthLimit, sortSuccessors=sortSuccessors).toSeq()
-  )
-  return T
-
-iterator bfsPredecessors*(
-  G: Graph,
-  source: Node,
-  depthLimit: int = -1,
-  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
-): tuple[node: Node, predecessor: Node] =
-  for (s, t) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
-    yield (t, s)
-iterator bfsPredecessors*(
-  DG: DiGraph,
-  source: Node,
-  depthLimit: int = -1,
-  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
-): tuple[node: Node, predecessor: Node] =
-  for (s, t) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
-    yield (t, s)
-
-iterator bfsSuccessors*(
-  G: Graph,
-  source: Node,
-  depthLimit: int = -1,
-  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
-): tuple[node: Node, successors: seq[Node]] =
-  var parent = source
-  var children: seq[Node] = @[]
-  for (p, c) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
-    if p == parent:
-      children.add(c)
-      continue
-    yield (parent, children)
-    children = @[c]
-    parent = p
-  yield (parent, children)
-iterator bfsSuccessors*(
-  DG: DiGraph,
-  source: Node,
-  depthLimit: int = -1,
-  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
-): tuple[node: Node, successors: seq[Node]] =
-  var parent = source
-  var children: seq[Node] = @[]
-  for (p, c) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
-    if p == parent:
-      children.add(c)
-      continue
-    yield (parent, children)
-    children = @[c]
-    parent = p
-  yield (parent, children)
-
-proc descendantsAtDistance*(
-  G: Graph,
-  source: Node,
-  distance: int
-): HashSet[Node] =
-  if not G.hasNode(source):
-    raise newNNError(fmt"node {source} not in graph")
-
-  var currentDistance = 0
-
-  var currentLayer = initHashSet[Node]()
-  currentLayer.incl(source)
-
-  var visited = initHashSet[Node]()
-  visited.incl(source)
-
-  while currentDistance < distance:
-    var nextLayer = initHashSet[Node]()
-    for node in currentLayer:
-      for child in G.neighbors(node):
-        if child notin visited:
-          visited.incl(child)
-          nextLayer.incl(child)
-    currentLayer = nextLayer
-    currentDistance += 1
-
-  return currentLayer
-
-proc descendantsAtDistance*(
-  DG: DiGraph,
-  source: Node,
-  distance: int
-): HashSet[Node] =
-  if not DG.hasNode(source):
-    raise newNNError(fmt"node {source} not in graph")
-
-  var currentDistance = 0
-
-  var currentLayer = initHashSet[Node]()
-  currentLayer.incl(source)
-
-  var visited = initHashSet[Node]()
-  visited.incl(source)
-
-  while currentDistance < distance:
-    var nextLayer = initHashSet[Node]()
-    for node in currentLayer:
-      for child in DG.successors(node):
-        if child notin visited:
-          visited.incl(child)
-          nextLayer.incl(child)
-    currentLayer = nextLayer
-    currentDistance += 1
-
-  return currentLayer
-
-iterator bfsBeamEdges*(
-  G: Graph,
-  source: Node,
-  value: proc(node: Node): float,
-  width: int = -1
-): Edge =
-  var widthUsing = width
-  if width == -1:
-    widthUsing = len(G)
-
-  let successors = proc(v: Node): iterator: Node =
-    var nodes = G.neighbors(v)
-    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
-    for node in nodes:
-      nodeWithValue.add((-value(node), node))
-    nodeWithValue.sort()
-    for i in 0..<len(nodeWithValue):
-      nodes[i] = nodeWithValue[i].node
-    var sortedClippedNodes: seq[Node] = @[]
-    for i in 0..<min(width, len(nodes)):
-      sortedClippedNodes.add(nodes[i])
-    return iterator: Node =
-      for node in sortedClippedNodes:
-        yield node
-
-  for edge in genericBfsEdges(G, source, neighbors=successors):
-    yield edge
-iterator bfsBeamEdges*(
-  DG: DiGraph,
-  source: Node,
-  value: proc(node: Node): float,
-  width: int = -1
-): Edge =
-  var widthUsing = width
-  if width == -1:
-    widthUsing = len(DG)
-
-  let successors = proc(v: Node): iterator: Node =
-    var nodes = DG.successors(v)
-    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
-    for node in nodes:
-      nodeWithValue.add((-value(node), node))
-    nodeWithValue.sort()
-    for i in 0..<len(nodeWithValue):
-      nodes[i] = nodeWithValue[i].node
-    var sortedClippedNodes: seq[Node] = @[]
-    for i in 0..<min(width, len(nodes)):
-      sortedClippedNodes.add(nodes[i])
-    return iterator: Node =
-      for node in sortedClippedNodes:
-        yield node
-
-  for edge in genericBfsEdges(DG, source, successors=successors):
-    yield edge
-
 proc dijkstraMultiSource(
   G: Graph,
   sources: seq[Node],
@@ -4452,6 +3803,655 @@ proc hasPath*(G: Graph, source: Node, target: Node): bool =
   except NNNoPath:
     return false
   return true
+
+# -------------------------------------------------------------------
+# TODO:
+# Similarity Measures
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Simple Paths
+# -------------------------------------------------------------------
+
+proc isSimplePath*(G: Graph, nodes: seq[Node]): bool =
+  if len(nodes) == 0:
+    return false
+  if len(nodes) == 1:
+    return nodes[0] in G
+  var checks: seq[bool] = @[]
+  for (u, v) in pairwise(nodes):
+    checks.add(v in G.neighborsSet(u))
+  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
+proc isSimplePath*(DG: DiGraph, nodes: seq[Node]): bool =
+  if len(nodes) == 0:
+    return false
+  if len(nodes) == 1:
+    return nodes[0] in DG
+  var checks: seq[bool] = @[]
+  for (u, v) in pairwise(nodes):
+    checks.add(v in DG.successorsSet(u))
+  return len(nodes.toHashSet()) == len(nodes) and all(checks, proc(b: bool): bool = return b)
+
+# -------------------------------------------------------------------
+# TODO:
+# Small World
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# s-metric
+# -------------------------------------------------------------------
+
+proc sMetric*(G: Graph, normalized: bool = false): float =
+  if normalized:
+    raise newNNError("normalization is not implemented yet")
+  var s = 0.0
+  for (u, v) in G.edges():
+    s += (G.degree(u) * G.degree(v)).float
+  return s
+proc sMetric*(DG: DiGraph, normalized: bool = false): float =
+  if normalized:
+    raise newNNError("normalization is not implemented yet")
+  var s = 0.0
+  for (u, v) in DG.edges():
+    s += (DG.degree(u) * DG.degree(v)).float
+  return s
+
+# -------------------------------------------------------------------
+# TODO:
+# Sparsifiers
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Structual Holes
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Summarization
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Swap
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Threshold Graphs
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Tournament
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# Traversal
+# -------------------------------------------------------------------
+
+iterator dfsEdges*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1,
+): Edge =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = G.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child notin visited:
+          yield (parent, child)
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
+      else:
+        discard stack.popLast()
+iterator dfsEdges*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1,
+): Edge =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = DG.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, DG.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child notin visited:
+          yield (parent, child)
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
+      else:
+        discard stack.popLast()
+
+proc dfsTree*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): DiGraph =
+  let T = newDiGraph()
+  if source == None:
+    T.addNodesFrom(G.nodes())
+  else:
+    T.addNode(source)
+  for edge in G.dfsEdges(source, depthLimit):
+    T.addEdge(edge)
+  return T
+proc dfsTree*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): DiGraph =
+  let T = newDiGraph()
+  if source == None:
+    T.addNodesFrom(DG.nodes())
+  else:
+    T.addNode(source)
+  for edge in DG.dfsEdges(source, depthLimit):
+    T.addEdge(edge)
+  return T
+
+proc dfsPredecessors*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, Node] =
+  var ret = initTable[Node, Node]()
+  for (s, t) in dfsEdges(G, source, depthLimit):
+    ret[t] = s
+  return ret
+proc dfsPredecessors*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, Node] =
+  var ret = initTable[Node, Node]()
+  for (s, t) in dfsEdges(DG, source, depthLimit):
+    ret[t] = s
+  return ret
+
+proc dfsSuccessors*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, seq[Node]] =
+  var ret = initTable[Node, seq[Node]]()
+  for (s, t) in dfsEdges(G, source, depthLimit):
+    if s notin ret:
+      ret[s] = @[]
+    ret[s].add(t)
+  return ret
+proc dfsSuccessors*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): Table[Node, seq[Node]] =
+  var ret = initTable[Node, seq[Node]]()
+  for (s, t) in dfsEdges(DG, source, depthLimit):
+    if s notin ret:
+      ret[s] = @[]
+    ret[s].add(t)
+  return ret
+
+iterator dfsLabeledEdges*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): tuple[u, v: Node, direction: string] =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = G.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    yield (start, start, "forward")
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, G.neighbors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child in visited:
+          yield (parent, child, "nontree")
+        else:
+          yield (parent, child, "forward")
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, G.neighbors(child), 0))
+      else:
+        discard stack.popLast()
+        if len(stack) != 0:
+          yield (stack.peekLast().parent, parent, "reverse")
+    yield (start, start, "reverse")
+iterator dfsLabeledEdges*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): tuple[u, v: Node, direction: string] =
+  var nodes: seq[Node]
+  if source == None:
+    nodes = DG.nodes()
+  else:
+    nodes = @[source]
+  var visited = initHashSet[Node]()
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  for start in nodes:
+    if start in visited:
+      continue
+    yield (start, start, "forward")
+    visited.incl(start)
+    var stack = initDeque[tuple[parent: Node, depthNow: int, children: seq[Node], idx: int]]()
+    stack.addFirst((start, depthLimitUsing, DG.successors(start), 0))
+    while len(stack) != 0:
+      var (parent, depthNow, children, idx) = stack.peekLast()
+      if idx < len(children):
+        discard stack.popLast()
+        stack.addLast((parent, depthNow, children, idx+1))
+        var child = children[idx]
+        if child in visited:
+          yield (parent, child, "nontree")
+        else:
+          yield (parent, child, "forward")
+          visited.incl(child)
+          if 1 < depthNow:
+            stack.addLast((child, depthNow - 1, DG.successors(child), 0))
+      else:
+        discard stack.popLast()
+        if len(stack) != 0:
+          yield (stack.peekLast().parent, parent, "reverse")
+    yield (start, start, "reverse")
+
+proc dfsPostOrderNodes*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
+    if d == "reverse":
+      ret.add(v)
+  return ret
+proc dfsPostOrderNodes*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
+    if d == "reverse":
+      ret.add(v)
+  return ret
+
+proc dfsPreOrderNodes*(
+  G: Graph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(G, source=source, depthLimit=depthLimit):
+    if d == "forward":
+      ret.add(v)
+  return ret
+proc dfsPreOrderNodes*(
+  DG: DiGraph,
+  source: Node = None,
+  depthLimit: int = -1
+): seq[Node] =
+  var ret: seq[Node] = @[]
+  for (u, v, d) in dfsLabeledEdges(DG, source=source, depthLimit=depthLimit):
+    if d == "forward":
+      ret.add(v)
+  return ret
+
+iterator genericBfsEdges(
+  G: Graph,
+  source: Node,
+  neighbors: proc(node: Node): iterator: Node = nil,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var neighborsUsing: proc(node: Node): iterator: Node = neighbors
+
+  if neighbors == nil:
+    neighborsUsing = proc(node: Node): iterator: Node =
+      return G.neighborsIterator(node)
+
+  if sortNeighbors != nil:
+    neighborsUsing =
+      proc(node: Node): iterator: Node =
+        return iterator: Node =
+          for neighbor in sortNeighbors(neighbors(node).toSeq()):
+            yield neighbor
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(G)
+
+  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
+  queue.addLast(
+    (source, depthLimitUsing, neighborsUsing(source))
+  )
+
+  while len(queue) != 0:
+    let (parent, depthNow, children) = queue.popFirst()
+    for child in children:
+      if child notin visited:
+        yield (parent, child)
+        visited.incl(child)
+        if 1 < depthNow:
+          queue.addLast((child, depthNow - 1, neighborsUsing(child)))
+iterator genericBfsEdges(
+  DG: DiGraph,
+  source: Node,
+  successors: proc(node: Node): iterator: Node = nil,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successorsUsing: proc(node: Node): iterator: Node = successors
+
+  if successors == nil:
+    successorsUsing = proc(node: Node): iterator: Node =
+      return DG.successorsIterator(node)
+
+  if sortSuccessors != nil:
+    successorsUsing =
+      proc(node: Node): iterator: Node =
+        return iterator: Node =
+          for neighbor in sortSuccessors(successors(node).toSeq()):
+            yield neighbor
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  var depthLimitUsing = depthLimit
+  if depthLimit == -1:
+    depthLimitUsing = len(DG)
+
+  var queue = initDeque[tuple[node: Node, depthLimit: int, neighborIterator: iterator: Node]]()
+  queue.addLast(
+    (source, depthLimitUsing, successorsUsing(source))
+  )
+
+  while len(queue) != 0:
+    let (parent, depthNow, children) = queue.popFirst()
+    for child in children:
+      if child notin visited:
+        yield (parent, child)
+        visited.incl(child)
+        if 1 < depthNow:
+          queue.addLast((child, depthNow - 1, successorsUsing(child)))
+
+iterator bfsEdges*(
+  G: Graph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successors = proc(node: Node): iterator: Node =
+    return G.neighborsIterator(node)
+  for edge in genericBfsEdges(G, source, successors, depthLimit, sortNeighbors):
+    yield edge
+iterator bfsEdges*(
+  DG: DiGraph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): Edge =
+  var successors: proc(node: Node): iterator: Node
+  if reverse:
+    successors = proc(node: Node): iterator: Node =
+      return DG.predecessorsIterator(node)
+  else:
+    successors = proc(node: Node): iterator: Node =
+      return DG.successorsIterator(node)
+  for edge in genericBfsEdges(DG, source, successors, depthLimit, sortSuccessors):
+    yield edge
+
+proc bfsTree*(
+  G: Graph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): DiGraph =
+  let T = newDiGraph()
+  T.addNode(source)
+  T.addEdgesFrom(
+    bfsEdges(G, source, reverse=reverse, depthLimit=depthLimit, sortNeighbors=sortNeighbors).toSeq()
+  )
+  return T
+proc bfsTree*(
+  DG: DiGraph,
+  source: Node,
+  reverse: bool = false,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): DiGraph =
+  let T = newDiGraph()
+  T.addNode(source)
+  T.addEdgesFrom(
+    bfsEdges(DG, source, reverse=reverse, depthLimit=depthLimit, sortSuccessors=sortSuccessors).toSeq()
+  )
+  return T
+
+iterator bfsPredecessors*(
+  G: Graph,
+  source: Node,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, predecessor: Node] =
+  for (s, t) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
+    yield (t, s)
+iterator bfsPredecessors*(
+  DG: DiGraph,
+  source: Node,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, predecessor: Node] =
+  for (s, t) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
+    yield (t, s)
+
+iterator bfsSuccessors*(
+  G: Graph,
+  source: Node,
+  depthLimit: int = -1,
+  sortNeighbors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, successors: seq[Node]] =
+  var parent = source
+  var children: seq[Node] = @[]
+  for (p, c) in bfsEdges(G, source, depthLimit=depthLimit, sortNeighbors=sortNeighbors):
+    if p == parent:
+      children.add(c)
+      continue
+    yield (parent, children)
+    children = @[c]
+    parent = p
+  yield (parent, children)
+iterator bfsSuccessors*(
+  DG: DiGraph,
+  source: Node,
+  depthLimit: int = -1,
+  sortSuccessors: proc(nodes: seq[Node]): iterator: Node = nil
+): tuple[node: Node, successors: seq[Node]] =
+  var parent = source
+  var children: seq[Node] = @[]
+  for (p, c) in bfsEdges(DG, source, depthLimit=depthLimit, sortSuccessors=sortSuccessors):
+    if p == parent:
+      children.add(c)
+      continue
+    yield (parent, children)
+    children = @[c]
+    parent = p
+  yield (parent, children)
+
+proc descendantsAtDistance*(
+  G: Graph,
+  source: Node,
+  distance: int
+): HashSet[Node] =
+  if not G.hasNode(source):
+    raise newNNError(fmt"node {source} not in graph")
+
+  var currentDistance = 0
+
+  var currentLayer = initHashSet[Node]()
+  currentLayer.incl(source)
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  while currentDistance < distance:
+    var nextLayer = initHashSet[Node]()
+    for node in currentLayer:
+      for child in G.neighbors(node):
+        if child notin visited:
+          visited.incl(child)
+          nextLayer.incl(child)
+    currentLayer = nextLayer
+    currentDistance += 1
+
+  return currentLayer
+
+proc descendantsAtDistance*(
+  DG: DiGraph,
+  source: Node,
+  distance: int
+): HashSet[Node] =
+  if not DG.hasNode(source):
+    raise newNNError(fmt"node {source} not in graph")
+
+  var currentDistance = 0
+
+  var currentLayer = initHashSet[Node]()
+  currentLayer.incl(source)
+
+  var visited = initHashSet[Node]()
+  visited.incl(source)
+
+  while currentDistance < distance:
+    var nextLayer = initHashSet[Node]()
+    for node in currentLayer:
+      for child in DG.successors(node):
+        if child notin visited:
+          visited.incl(child)
+          nextLayer.incl(child)
+    currentLayer = nextLayer
+    currentDistance += 1
+
+  return currentLayer
+
+iterator bfsBeamEdges*(
+  G: Graph,
+  source: Node,
+  value: proc(node: Node): float,
+  width: int = -1
+): Edge =
+  var widthUsing = width
+  if width == -1:
+    widthUsing = len(G)
+
+  let successors = proc(v: Node): iterator: Node =
+    var nodes = G.neighbors(v)
+    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
+    for node in nodes:
+      nodeWithValue.add((-value(node), node))
+    nodeWithValue.sort()
+    for i in 0..<len(nodeWithValue):
+      nodes[i] = nodeWithValue[i].node
+    var sortedClippedNodes: seq[Node] = @[]
+    for i in 0..<min(width, len(nodes)):
+      sortedClippedNodes.add(nodes[i])
+    return iterator: Node =
+      for node in sortedClippedNodes:
+        yield node
+
+  for edge in genericBfsEdges(G, source, neighbors=successors):
+    yield edge
+iterator bfsBeamEdges*(
+  DG: DiGraph,
+  source: Node,
+  value: proc(node: Node): float,
+  width: int = -1
+): Edge =
+  var widthUsing = width
+  if width == -1:
+    widthUsing = len(DG)
+
+  let successors = proc(v: Node): iterator: Node =
+    var nodes = DG.successors(v)
+    var nodeWithValue: seq[tuple[value: float, node: Node]] = @[]
+    for node in nodes:
+      nodeWithValue.add((-value(node), node))
+    nodeWithValue.sort()
+    for i in 0..<len(nodeWithValue):
+      nodes[i] = nodeWithValue[i].node
+    var sortedClippedNodes: seq[Node] = @[]
+    for i in 0..<min(width, len(nodes)):
+      sortedClippedNodes.add(nodes[i])
+    return iterator: Node =
+      for node in sortedClippedNodes:
+        yield node
+
+  for edge in genericBfsEdges(DG, source, successors=successors):
+    yield edge
 
 # -------------------------------------------------------------------
 # TODO:
