@@ -4156,67 +4156,6 @@ proc dfsPreOrderNodes*(
       ret.add(v)
   return ret
 
-# iterator edgeDfs*(G: Graph, source: Node = None, orientation: string = ""): tuple[edge: Edge, orientation: string] =
-#   var nodes: seq[Node] = @[]
-#   if source == None:
-#     nodes = G.nodes()
-#   else:
-#     if source in G.nodesSet():
-#       nodes = @[source]
-
-#   let edgesFrom: proc(node: Node): tuple[edges: seq[tuple[edge: Edge, orientation: string]], idx: int] =
-#     proc(node: Node): tuple[edges: seq[tuple[edge: Edge, orientation: string]], idx: int] =
-#       if orientation == "":
-#         var edges: seq[tuple[edge: Edge, orientation: string]] = @[]
-#         for edge in G.edges(node):
-#           edges.add((edge, ""))
-#         return (edges, 0)
-#       elif orientation == "original":
-#         var edges: seq[tuple[edge: Edge, orientation: string]] = @[]
-#         for edge in G.edges(node):
-#           edges.add((edge, "forward"))
-#         return (edges, 0)
-#       else:
-#         raise newNNError(fmt"invalid orientation argument ('original' | 'reverse' | 'ignore'| ''): {orientation}")
-
-#   var visitedEdges = initHashSet[tuple[e: HashSet[Node], o: string]]()
-#   var visitedNodes = initHashSet[Node]()
-#   var edges = initTable[Node, tuple[edges: seq[tuple[edge: Edge, orientation: string]], idx: int]]()
-
-#   let edgeId: proc(edge: tuple[edge: Edge, orientation: string]): tuple[e: HashSet[Node], o: string] =
-#     proc(edge: tuple[edge: Edge, orientation: string]): tuple[e: HashSet[Node], o: string] =
-#       var e = @[edge.edge.u, edge.edge.v].toHashSet()
-#       return (e, edge.orientation)
-
-#   for startNode in nodes:
-#     var stack = @[startNode].toDeque()
-#     var edge: tuple[edge: Edge, orientation: string]
-#     while len(stack) != 0:
-#       var currentNode = stack.peekLast()
-
-#       echo stack
-#       echo currentNode
-#       echo visitedNodes
-#       echo visitedEdges
-
-#       if currentNode notin visitedNodes:
-#         edges[currentNode] = edgesFrom(currentNode)
-#         visitedNodes.incl(currentNode)
-
-#         if edges[currentNode].idx < len(edges[currentNode].edges):
-#           edge = edges[currentNode].edges[edges[currentNode].idx]
-#           edges[currentNode].idx += 1
-
-#         else:
-#           discard stack.popLast()
-#       else:
-#         let edgeid = edgeId(edge)
-#         if edgeid notin visitedEdges:
-#           visitedEdges.incl(edgeid)
-#           stack.addLast(edge.edge.v)
-#           yield edge
-# iterator edgeDfs*(DG: DiGraph, source: Node = None, orientation: string = ""): Edge =
-
 iterator genericBfsEdges(
   G: Graph,
   source: Node,
