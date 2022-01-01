@@ -171,10 +171,6 @@ test "onion layers of graph":
 # -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
-# Distance Measures
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Distance-Regular Graphs
 # -------------------------------------------------------------------
 
@@ -5662,3 +5658,22 @@ test "closeness vitality on directed graph":
   for (k, v) in got.pairs():
     check v.classify == fcNaN
     check expected[k].classify == fcNaN
+
+
+# -------------------------------------------------------------------
+# Distance Measures
+# -------------------------------------------------------------------
+
+test "eccentricity on graph":
+  let karate = karateClubGraph()
+  check karate.eccentricity() == {0: 3.0, 1: 3.0, 2: 3.0, 3: 3.0, 4: 4.0, 5: 4.0, 6: 4.0, 7: 4.0, 8: 3.0, 9: 4.0, 10: 4.0, 11: 4.0, 12: 4.0, 13: 3.0, 14: 5.0, 15: 5.0, 16: 5.0, 17: 4.0, 18: 5.0, 19: 3.0, 20: 5.0, 21: 4.0, 22: 5.0, 23: 5.0, 24: 4.0, 25: 4.0, 26: 5.0, 27: 4.0, 28: 4.0, 29: 5.0, 30: 4.0, 31: 3.0, 32: 4.0, 33: 4.0}.toTable()
+
+test "eccentricity on directed graph":
+  let dkarate = newDiGraph(karateClubGraph().edges())
+  try:
+    discard dkarate.eccentricity()
+  except NNError as e:
+    check e.msg == "found infinite path length because directed graph is not strongly connected"
+
+  let DG = completeDiGraph(4)
+  check DG.eccentricity() == {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0}.toTable()

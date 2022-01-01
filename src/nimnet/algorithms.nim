@@ -496,11 +496,6 @@ proc onionLayers*(g: Graph): Table[Node, int] =
 
 # -------------------------------------------------------------------
 # TODO:
-# Distance Measures
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Distance-Regular Graphs
 # -------------------------------------------------------------------
 
@@ -5712,3 +5707,39 @@ proc closenessVitality*(
     let aft = wienerIndex(DG.subgraph(DG.nodesSet() - @[v].toHashSet()), weight=newW)
     ret[v] = w - aft
   return ret
+
+# -------------------------------------------------------------------
+# TODO:
+# Distance Measures
+# -------------------------------------------------------------------
+
+proc eccentricity*(G: Graph, v: Node = None): Table[Node, float] =
+  let order = G.order()
+  var e = initTable[Node, float]()
+  var nodes: seq[Node]
+  if v in G.nodesSet():
+    nodes = @[v]
+  else:
+    nodes = G.nodes()
+  for n in nodes:
+    let length = singleSourceShortestPathLength(G, n)
+    let L = len(length)
+    if L != order:
+      raise newNNError("found infinite path length because graph is not connected")
+    e[n] = max(length.values().toSeq()).float
+  return e
+proc eccentricity*(DG: DiGraph, v: Node = None): Table[Node, float] =
+  let order = DG.order()
+  var e = initTable[Node, float]()
+  var nodes: seq[Node]
+  if v in DG.nodesSet():
+    nodes = @[v]
+  else:
+    nodes = DG.nodes()
+  for n in nodes:
+    let length = singleSourceShortestPathLength(DG, n)
+    let L = len(length)
+    if L != order:
+      raise newNNError("found infinite path length because directed graph is not strongly connected")
+    e[n] = max(length.values().toSeq()).float
+  return e

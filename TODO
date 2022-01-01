@@ -392,7 +392,7 @@ Distance Measures
 - networkx.algorithms.distance_measures.barycenter
 - networkx.algorithms.distance_measures.center
 - networkx.algorithms.distance_measures.diameter
-- networkx.algorithms.distance_measures.eccentricity
+- [x] networkx.algorithms.distance_measures.eccentricity
 - networkx.algorithms.distance_measures.extrema_bounding
 - networkx.algorithms.distance_measures.periphery
 - networkx.algorithms.distance_measures.radius
