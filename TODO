@@ -389,13 +389,13 @@ Directed Acyclic Graphs
 - networkx.algorithms.dag.dag_to_branching
 
 Distance Measures
-- networkx.algorithms.distance_measures.barycenter
-- networkx.algorithms.distance_measures.center
-- networkx.algorithms.distance_measures.diameter
+- [x]networkx.algorithms.distance_measures.barycenter
+- [x] networkx.algorithms.distance_measures.center
+- [x] networkx.algorithms.distance_measures.diameter
 - [x] networkx.algorithms.distance_measures.eccentricity
-- networkx.algorithms.distance_measures.extrema_bounding
-- networkx.algorithms.distance_measures.periphery
-- networkx.algorithms.distance_measures.radius
+- [x] networkx.algorithms.distance_measures.extrema_bounding
+- [x] networkx.algorithms.distance_measures.periphery
+- [x] networkx.algorithms.distance_measures.radius
 - networkx.algorithms.distance_measures.resistance_distance
 
 Distance-Regular Graphs

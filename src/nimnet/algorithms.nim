@@ -5713,9 +5713,329 @@ proc closenessVitality*(
 # Distance Measures
 # -------------------------------------------------------------------
 
-proc eccentricity*(G: Graph, v: Node = None): Table[Node, float] =
+proc extremaBoundingDiameterRadius*(G: Graph, compute: string = "diameter"): int =
+  let degrees = G.degree()
+  var tmp: seq[tuple[k: int, v: Node]] = @[]
+  for (v, k) in degrees.pairs():
+    tmp.add((k, v))
+  tmp.sort()
+  var minLowerNode = tmp[^1].v
+  var maxUpperNode = None
+  let N = len(degrees)
+  var highFlag = false
+  var eccLower = initTable[Node, int]()
+  for n in G.nodes():
+    eccLower[n] = 0
+  var eccUpper = initTable[Node, int]()
+  for n in G.nodes():
+    eccUpper[n] = N
+  var candidates = G.nodesSet()
+
+  var minLower = N
+  var maxLower = 0
+  var minUpper = N
+  var maxUpper = 0
+
+  while len(candidates) != 0:
+    var current: Node
+    var currentEcc: int
+    if highFlag:
+      current = maxUpperNode
+    else:
+      current = minLowerNode
+    highFlag = not highFlag
+    var dist = singleSourceShortestPathLength(G, current)
+    if len(dist) != N:
+      raise newNNError("cannot compute metric because graph is not connected")
+    currentEcc = max(dist.values().toSeq())
+
+    maxUpperNode = None
+    minLowerNode = None
+
+    for i in candidates:
+      var d = dist[i]
+      eccLower[i] = max(eccLower[i], max(d, currentEcc - d))
+      eccUpper[i] = min(eccUpper[i], currentEcc + d)
+      minLower = min(eccLower[i], minLower)
+      maxLower = max(eccLower[i], maxLower)
+      minUpper = min(eccUpper[i], minUpper)
+      maxUpper = max(eccUpper[i], maxUpper)
+
+    var roledOut = initHashSet[Node]()
+    if compute == "diameter":
+      for i in candidates:
+        if eccUpper[i] <= maxLower and 2 * eccLower[i] >= maxUpper:
+          roledOut.incl(i)
+    elif compute == "radius":
+      for i in candidates:
+        if eccLower[i] >= minUpper and eccUpper[i] + 1 <= 2 * minLower:
+          roledOut.incl(i)
+
+    for i in candidates:
+      if eccLower[i] == eccUpper[i]:
+        roledOut.incl(i)
+
+    candidates = candidates - roledOut
+
+    for i in candidates:
+      if minLowerNode == None or (eccLower[i] == eccLower[minLowerNode] and degrees[i] > degrees[minLowerNode]) or eccLower[i] < eccLower[minLowerNode]:
+        minLowerNode = i
+      if maxUpperNode == None or (eccUpper[i] == eccUpper[maxUpperNode] and degrees[i] > degrees[maxUpperNode]) or eccUpper[i] > eccUpper[maxUpperNode]:
+        maxUpperNode = i
+
+  if compute == "diameter":
+    return maxLower
+  elif compute == "radius":
+    return minUpper
+  else:
+    raise newNNError(fmt"not supported metric: {compute}, (supporting diameter, radius)")
+proc extremaBoundingDiameterRadius*(DG: DiGraph, compute: string = "diameter"): int =
+  let degrees = DG.degree()
+  var tmp: seq[tuple[k: int, v: Node]] = @[]
+  for (v, k) in degrees.pairs():
+    tmp.add((k, v))
+  tmp.sort()
+  var minLowerNode = tmp[^1].v
+  var maxUpperNode = None
+  let N = len(degrees)
+  var highFlag = false
+  var eccLower = initTable[Node, int]()
+  for n in DG.nodes():
+    eccLower[n] = 0
+  var eccUpper = initTable[Node, int]()
+  for n in DG.nodes():
+    eccUpper[n] = N
+  var candidates = DG.nodesSet()
+
+  var minLower = N
+  var maxLower = 0
+  var minUpper = N
+  var maxUpper = 0
+
+  while len(candidates) != 0:
+    var current: Node
+    var currentEcc: int
+    if highFlag:
+      current = maxUpperNode
+    else:
+      current = minLowerNode
+    highFlag = not highFlag
+    var dist = singleSourceShortestPathLength(DG, current)
+    if len(dist) != N:
+      raise newNNError("cannot compute metric because graph is not connected")
+    currentEcc = max(dist.values().toSeq())
+
+    maxUpperNode = None
+    minLowerNode = None
+
+    for i in candidates:
+      var d = dist[i]
+      eccLower[i] = max(eccLower[i], max(d, currentEcc - d))
+      eccUpper[i] = min(eccUpper[i], currentEcc + d)
+      minLower = min(eccLower[i], minLower)
+      maxLower = max(eccLower[i], maxLower)
+      minUpper = min(eccUpper[i], minUpper)
+      maxUpper = max(eccUpper[i], maxUpper)
+
+    var roledOut = initHashSet[Node]()
+    if compute == "diameter":
+      for i in candidates:
+        if eccUpper[i] <= maxLower and 2 * eccLower[i] >= maxUpper:
+          roledOut.incl(i)
+    elif compute == "radius":
+      for i in candidates:
+        if eccLower[i] >= minUpper and eccUpper[i] + 1 <= 2 * minLower:
+          roledOut.incl(i)
+
+    for i in candidates:
+      if eccLower[i] == eccUpper[i]:
+        roledOut.incl(i)
+
+    candidates = candidates - roledOut
+
+    for i in candidates:
+      if minLowerNode == None or (eccLower[i] == eccLower[minLowerNode] and degrees[i] > degrees[minLowerNode]) or eccLower[i] < eccLower[minLowerNode]:
+        minLowerNode = i
+      if maxUpperNode == None or (eccUpper[i] == eccUpper[maxUpperNode] and degrees[i] > degrees[maxUpperNode]) or eccUpper[i] > eccUpper[maxUpperNode]:
+        maxUpperNode = i
+
+  if compute == "diameter":
+    return maxLower
+  elif compute == "radius":
+    return minUpper
+  else:
+    raise newNNError(fmt"not supported metric: {compute}, (supporting diameter, radius)")
+
+proc extremaBoundingCenterPeriphery*(G: Graph, compute: string = "center"): seq[Node] =
+  let degrees = G.degree()
+  var tmp: seq[tuple[k: int, v: Node]] = @[]
+  for (v, k) in degrees.pairs():
+    tmp.add((k, v))
+  tmp.sort()
+  var minLowerNode = tmp[^1].v
+  var maxUpperNode = None
+  let N = len(degrees)
+  var highFlag = false
+  var eccLower = initTable[Node, int]()
+  for n in G.nodes():
+    eccLower[n] = 0
+  var eccUpper = initTable[Node, int]()
+  for n in G.nodes():
+    eccUpper[n] = N
+  var candidates = G.nodesSet()
+
+  var minLower = N
+  var maxLower = 0
+  var minUpper = N
+  var maxUpper = 0
+
+  while len(candidates) != 0:
+    var current: Node
+    var currentEcc: int
+    if highFlag:
+      current = maxUpperNode
+    else:
+      current = minLowerNode
+    highFlag = not highFlag
+    var dist = singleSourceShortestPathLength(G, current)
+    if len(dist) != N:
+      raise newNNError("cannot compute metric because graph is not connected")
+    currentEcc = max(dist.values().toSeq())
+
+    maxUpperNode = None
+    minLowerNode = None
+
+    for i in candidates:
+      var d = dist[i]
+      eccLower[i] = max(eccLower[i], max(d, currentEcc - d))
+      eccUpper[i] = min(eccUpper[i], currentEcc + d)
+      minLower = min(eccLower[i], minLower)
+      maxLower = max(eccLower[i], maxLower)
+      minUpper = min(eccUpper[i], minUpper)
+      maxUpper = max(eccUpper[i], maxUpper)
+
+    var roledOut = initHashSet[Node]()
+    if compute == "periphery":
+      for i in candidates:
+        if eccUpper[i] < maxLower and (maxLower == maxUpper or eccLower[i] > maxUpper):
+          roledOut.incl(i)
+    elif compute == "center":
+      for i in candidates:
+        if eccLower[i] > minUpper and (minLower == minUpper or eccUpper[i] + 1 < 2 * minLower):
+          roledOut.incl(i)
+
+    for i in candidates:
+      if eccLower[i] == eccUpper[i]:
+        roledOut.incl(i)
+
+    candidates = candidates - roledOut
+
+    for i in candidates:
+      if minLowerNode == None or (eccLower[i] == eccLower[minLowerNode] and degrees[i] > degrees[minLowerNode]) or eccLower[i] < eccLower[minLowerNode]:
+        minLowerNode = i
+      if maxUpperNode == None or (eccUpper[i] == eccUpper[maxUpperNode] and degrees[i] > degrees[maxUpperNode]) or eccUpper[i] > eccUpper[maxUpperNode]:
+        maxUpperNode = i
+
+  var p: seq[Node] = @[]
+  if compute == "periphery":
+    for v in G.nodes():
+      if eccLower[v] == maxLower:
+        p.add(v)
+    return p
+  elif compute == "center":
+    for v in G.nodes():
+      if eccUpper[v] == minUpper:
+        p.add(v)
+    return p
+  else:
+    raise newNNError(fmt"not supported metric: {compute}, (supporting periphery, center)")
+proc extremaBoundingCenterPeriphery*(DG: DiGraph, compute: string = "center"): seq[Node] =
+  let degrees = DG.degree()
+  var tmp: seq[tuple[k: int, v: Node]] = @[]
+  for (v, k) in degrees.pairs():
+    tmp.add((k, v))
+  tmp.sort()
+  var minLowerNode = tmp[^1].v
+  var maxUpperNode = None
+  let N = len(degrees)
+  var highFlag = false
+  var eccLower = initTable[Node, int]()
+  for n in DG.nodes():
+    eccLower[n] = 0
+  var eccUpper = initTable[Node, int]()
+  for n in DG.nodes():
+    eccUpper[n] = N
+  var candidates = DG.nodesSet()
+
+  var minLower = N
+  var maxLower = 0
+  var minUpper = N
+  var maxUpper = 0
+
+  while len(candidates) != 0:
+    var current: Node
+    var currentEcc: int
+    if highFlag:
+      current = maxUpperNode
+    else:
+      current = minLowerNode
+    highFlag = not highFlag
+    var dist = singleSourceShortestPathLength(DG, current)
+    if len(dist) != N:
+      raise newNNError("cannot compute metric because graph is not connected")
+    currentEcc = max(dist.values().toSeq())
+
+    maxUpperNode = None
+    minLowerNode = None
+
+    for i in candidates:
+      var d = dist[i]
+      eccLower[i] = max(eccLower[i], max(d, currentEcc - d))
+      eccUpper[i] = min(eccUpper[i], currentEcc + d)
+      minLower = min(eccLower[i], minLower)
+      maxLower = max(eccLower[i], maxLower)
+      minUpper = min(eccUpper[i], minUpper)
+      maxUpper = max(eccUpper[i], maxUpper)
+
+    var roledOut = initHashSet[Node]()
+    if compute == "periphery":
+      for i in candidates:
+        if eccUpper[i] < maxLower and (maxLower == maxUpper or eccLower[i] > maxUpper):
+          roledOut.incl(i)
+    elif compute == "center":
+      for i in candidates:
+        if eccLower[i] > minUpper and (minLower == minUpper or eccUpper[i] + 1 < 2 * minLower):
+          roledOut.incl(i)
+
+    for i in candidates:
+      if eccLower[i] == eccUpper[i]:
+        roledOut.incl(i)
+
+    candidates = candidates - roledOut
+
+    for i in candidates:
+      if minLowerNode == None or (eccLower[i] == eccLower[minLowerNode] and degrees[i] > degrees[minLowerNode]) or eccLower[i] < eccLower[minLowerNode]:
+        minLowerNode = i
+      if maxUpperNode == None or (eccUpper[i] == eccUpper[maxUpperNode] and degrees[i] > degrees[maxUpperNode]) or eccUpper[i] > eccUpper[maxUpperNode]:
+        maxUpperNode = i
+
+  var p: seq[Node] = @[]
+  if compute == "periphery":
+    for v in DG.nodes():
+      if eccLower[v] == maxLower:
+        p.add(v)
+    return p
+  elif compute == "center":
+    for v in DG.nodes():
+      if eccUpper[v] == minUpper:
+        p.add(v)
+    return p
+  else:
+    raise newNNError(fmt"not supported metric: {compute}, (supporting periphery, center)")
+
+proc eccentricity*(G: Graph, v: Node = None): Table[Node, int] =
   let order = G.order()
-  var e = initTable[Node, float]()
+  var e = initTable[Node, int]()
   var nodes: seq[Node]
   if v in G.nodesSet():
     nodes = @[v]
@@ -5726,11 +6046,11 @@ proc eccentricity*(G: Graph, v: Node = None): Table[Node, float] =
     let L = len(length)
     if L != order:
       raise newNNError("found infinite path length because graph is not connected")
-    e[n] = max(length.values().toSeq()).float
+    e[n] = max(length.values().toSeq()).int
   return e
-proc eccentricity*(DG: DiGraph, v: Node = None): Table[Node, float] =
+proc eccentricity*(DG: DiGraph, v: Node = None): Table[Node, int] =
   let order = DG.order()
-  var e = initTable[Node, float]()
+  var e = initTable[Node, int]()
   var nodes: seq[Node]
   if v in DG.nodesSet():
     nodes = @[v]
@@ -5741,5 +6061,110 @@ proc eccentricity*(DG: DiGraph, v: Node = None): Table[Node, float] =
     let L = len(length)
     if L != order:
       raise newNNError("found infinite path length because directed graph is not strongly connected")
-    e[n] = max(length.values().toSeq()).float
+    e[n] = max(length.values().toSeq()).int
   return e
+
+proc diameter*(G: Graph, useBounds: bool = false): int =
+  if useBounds:
+    return extremaBoundingDiameterRadius(G, compute="diameter")
+  return max(eccentricity(G).values().toSeq())
+proc diameter*(DG: DiGraph, useBounds: bool = false): int =
+  if useBounds:
+    return extremaBoundingDiameterRadius(DG, compute="diameter")
+  return max(eccentricity(DG).values().toSeq())
+
+proc radius*(G: Graph, useBounds: bool = false): int =
+  if useBounds:
+    return extremaBoundingDiameterRadius(G, compute="radius")
+  return min(eccentricity(G).values().toSeq())
+proc radius*(DG: DiGraph, useBounds: bool = false): int =
+  if useBounds:
+    return extremaBoundingDiameterRadius(DG, compute="radius")
+  return min(eccentricity(DG).values().toSeq())
+
+proc periphery*(G: Graph, useBounds: bool = false): seq[Node] =
+  if useBounds:
+    return extremaBoundingCenterPeriphery(G, compute="periphery")
+  let e = eccentricity(G)
+  let diameter = max(e.values().toSeq())
+  var p: seq[Node] = @[]
+  for v in e.keys():
+    if e[v] == diameter:
+      p.add(v)
+  p.sort()
+  return p
+proc periphery*(DG: DiGraph, useBounds: bool = false): seq[Node] =
+  if useBounds:
+    return extremaBoundingCenterPeriphery(DG, compute="periphery")
+  let e = eccentricity(DG)
+  let diameter = max(e.values().toSeq())
+  var p: seq[Node] = @[]
+  for v in e.keys():
+    if e[v] == diameter:
+      p.add(v)
+  p.sort()
+  return p
+
+proc center*(G: Graph, useBounds: bool = false): seq[Node] =
+  if useBounds:
+    return extremaBoundingCenterPeriphery(G, compute="center")
+  let e = eccentricity(G)
+  let radius = min(e.values().toSeq())
+  var p: seq[Node] = @[]
+  for v in e.keys():
+    if e[v] == radius:
+      p.add(v)
+  p.sort()
+  return p
+proc center*(DG: DiGraph, useBounds: bool = false): seq[Node] =
+  if useBounds:
+    return extremaBoundingCenterPeriphery(DG, compute="center")
+  let e = eccentricity(DG)
+  let radius = min(e.values().toSeq())
+  var p: seq[Node] = @[]
+  for v in e.keys():
+    if e[v] == radius:
+      p.add(v)
+  p.sort()
+  return p
+
+proc barycenter*(
+  G: Graph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[barycenter: seq[Node], barycentricity: Table[Node, float]] =
+  let sp = shortestPathLength(G, weight=weight)
+  var smallest = Inf
+  var barycenterVertices: seq[Node] = @[]
+  let n = len(G)
+  var barycentricity = initTable[Node, float]()
+  for (v, dists) in sp.pairs():
+    if len(dists) < n:
+      raise newNNNoPath("input graph is disconnected, so every induced subgraph has infinite barycentricity")
+    barycentricity[v] = sum(dists.values().toSeq())
+    if barycentricity[v] < smallest:
+      smallest = barycentricity[v]
+      barycenterVertices = @[v]
+    elif barycentricity[v] == smallest:
+      barycenterVertices.add(v)
+  barycenterVertices.sort()
+  return (barycenterVertices, barycentricity)
+proc barycenter*(
+  DG: DiGraph,
+  weight: TableRef[Edge, float] = nil,
+): tuple[barycenter: seq[Node], barycentricity: Table[Node, float]] =
+  let sp = shortestPathLength(DG, weight=weight)
+  var smallest = Inf
+  var barycenterVertices: seq[Node] = @[]
+  let n = len(DG)
+  var barycentricity = initTable[Node, float]()
+  for (v, dists) in sp.pairs():
+    if len(dists) < n:
+      raise newNNNoPath("input graph is disconnected, so every induced subgraph has infinite barycentricity")
+    barycentricity[v] = sum(dists.values().toSeq())
+    if barycentricity[v] < smallest:
+      smallest = barycentricity[v]
+      barycenterVertices = @[v]
+    elif barycentricity[v] == smallest:
+      barycenterVertices.add(v)
+  barycenterVertices.sort()
+  return (barycenterVertices, barycentricity)

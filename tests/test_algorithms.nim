@@ -5664,9 +5664,19 @@ test "closeness vitality on directed graph":
 # Distance Measures
 # -------------------------------------------------------------------
 
+test "extremaBoundingDiameterRadius for graph":
+  let karate = karateClubGraph()
+  check karate.extremaBoundingDiameterRadius(compute="diameter") == 5
+  check karate.extremaBoundingDiameterRadius(compute="radius") == 3
+
+test "extremaBoundingCenterPeriphery for graph":
+  let karate = karateClubGraph()
+  check karate.extremaBoundingCenterPeriphery(compute="center") == @[0, 1, 2, 3, 8, 13, 19, 31]
+  check karate.extremaBoundingCenterPeriphery(compute="periphery") == @[14, 15, 16, 18, 20, 22, 23, 26, 29]
+
 test "eccentricity on graph":
   let karate = karateClubGraph()
-  check karate.eccentricity() == {0: 3.0, 1: 3.0, 2: 3.0, 3: 3.0, 4: 4.0, 5: 4.0, 6: 4.0, 7: 4.0, 8: 3.0, 9: 4.0, 10: 4.0, 11: 4.0, 12: 4.0, 13: 3.0, 14: 5.0, 15: 5.0, 16: 5.0, 17: 4.0, 18: 5.0, 19: 3.0, 20: 5.0, 21: 4.0, 22: 5.0, 23: 5.0, 24: 4.0, 25: 4.0, 26: 5.0, 27: 4.0, 28: 4.0, 29: 5.0, 30: 4.0, 31: 3.0, 32: 4.0, 33: 4.0}.toTable()
+  check karate.eccentricity() == {0: 3, 1: 3, 2: 3, 3: 3, 4: 4, 5: 4, 6: 4, 7: 4, 8: 3, 9: 4, 10: 4, 11: 4, 12: 4, 13: 3, 14: 5, 15: 5, 16: 5, 17: 4, 18: 5, 19: 3, 20: 5, 21: 4, 22: 5, 23: 5, 24: 4, 25: 4, 26: 5, 27: 4, 28: 4, 29: 5, 30: 4, 31: 3, 32: 4, 33: 4}.toTable()
 
 test "eccentricity on directed graph":
   let dkarate = newDiGraph(karateClubGraph().edges())
@@ -5676,4 +5686,59 @@ test "eccentricity on directed graph":
     check e.msg == "found infinite path length because directed graph is not strongly connected"
 
   let DG = completeDiGraph(4)
-  check DG.eccentricity() == {0: 1.0, 1: 1.0, 2: 1.0, 3: 1.0}.toTable()
+  check DG.eccentricity() == {0: 1, 1: 1, 2: 1, 3: 1}.toTable()
+
+test "diameter on graph":
+  let karate = karateClubGraph()
+  check karate.diameter() == 5
+  check karate.diameter(useBounds=true) == 5
+
+test "diameter on directed graph":
+  let DG = completeDiGraph(4)
+  check DG.diameter() == 1
+  check DG.diameter(useBounds=true) == 1
+
+test "radius on graph":
+  let karate = karateClubGraph()
+  check karate.radius() == 3
+  check karate.radius(useBounds=true) == 3
+
+test "radius on directed graph":
+  let DG = completeDiGraph(4)
+  check DG.radius() == 1
+  check DG.radius(useBounds=true) == 1
+
+test "periphery on graph":
+  let karate = karateClubGraph()
+  check karate.periphery() == @[14, 15, 16, 18, 20, 22, 23, 26, 29]
+
+test "periphery on directed graph":
+  let DG = completeDiGraph(4)
+  check DG.periphery() == @[0, 1, 2, 3]
+
+test "center on graph":
+  let karate = karateClubGraph()
+  check karate.center() == @[0, 1, 2, 3, 8, 13, 19, 31]
+
+test "center on directed graph":
+  let DG = completeDiGraph(4)
+  check DG.center() == @[0, 1, 2, 3]
+
+test "barycenter on graph":
+  let karate = karateClubGraph()
+  let (barycenter, barycentricity) = karate.barycenter()
+  check barycenter == @[0]
+  check barycentricity == {0: 58.0, 1: 68.0, 2: 59.0, 3: 71.0, 4: 87.0, 5: 86.0, 6: 86.0, 7: 75.0, 8: 64.0, 9: 76.0, 10: 87.0, 11: 90.0, 12: 89.0, 13: 64.0, 14: 89.0, 15: 89.0, 16: 116.0, 17: 88.0, 18: 89.0, 19: 66.0, 20: 89.0, 21: 88.0, 22: 89.0, 23: 84.0, 24: 88.0, 25: 88.0, 26: 91.0, 27: 72.0, 28: 73.0, 29: 86.0, 30: 72.0, 31: 61.0, 32: 64.0, 33: 60.0}.toTable()
+
+  let wkarate = newGraph()
+  wkarate.addEdgesFrom(@[(0, 1), (0, 2), (0, 3), (0, 4), (0, 5), (0, 6), (0, 7), (0, 8), (0, 10), (0, 11), (0, 12), (0, 13), (0, 17), (0, 19), (0, 21), (0, 31), (1, 2), (1, 3), (1, 7), (1, 13), (1, 17), (1, 19), (1, 21), (1, 30), (2, 3), (2, 7), (2, 8), (2, 9), (2, 13), (2, 27), (2, 28), (2, 32), (3, 7), (3, 12), (3, 13), (4, 6), (4, 10), (5, 6), (5, 10), (5, 16), (6, 16), (8, 30), (8, 32), (8, 33), (9, 33), (13, 33), (19, 33), (23, 25), (23, 29), (25, 24), (27, 23), (27, 24), (27, 33), (28, 33), (29, 26), (30, 32), (30, 33), (31, 24), (31, 25), (31, 28), (31, 32), (31, 33), (32, 14), (32, 15), (32, 18), (32, 20), (32, 22), (32, 23), (32, 29), (32, 33), (33, 14), (33, 15), (33, 18), (33, 20), (33, 22), (33, 23), (33, 26), (33, 29)])
+  let weight: TableRef[Edge, float] = {(0, 1): 10.0, (0, 2): 23.0, (0, 3): 77.0, (0, 4): 40.0, (0, 5): 13.0, (0, 6): 44.0, (0, 7): 97.0, (0, 8): 25.0, (0, 10): 20.0, (0, 11): 21.0, (0, 12): 77.0, (0, 13): 23.0, (0, 17): 57.0, (0, 19): 74.0, (0, 21): 46.0, (0, 31): 2.0, (1, 2): 31.0, (1, 3): 84.0, (1, 7): 9.0, (1, 13): 53.0, (1, 17): 41.0, (1, 19): 24.0, (1, 21): 48.0, (1, 30): 10.0, (2, 3): 54.0, (2, 7): 10.0, (2, 8): 82.0, (2, 9): 64.0, (2, 13): 30.0, (2, 27): 91.0, (2, 28): 71.0, (2, 32): 2.0, (3, 7): 42.0, (3, 12): 98.0, (3, 13): 31.0, (4, 6): 44.0, (4, 10): 91.0, (5, 6): 11.0, (5, 10): 14.0, (5, 16): 51.0, (6, 16): 100.0, (8, 30): 49.0, (8, 32): 29.0, (8, 33): 44.0, (13, 33): 6.0, (19, 33): 93.0, (31, 24): 78.0, (31, 25): 87.0, (31, 28): 52.0, (31, 32): 65.0, (31, 33): 10.0, (30, 32): 25.0, (30, 33): 56.0, (9, 33): 97.0, (27, 23): 43.0, (27, 24): 30.0, (27, 33): 8.0, (28, 33): 87.0, (32, 14): 66.0, (32, 15): 6.0, (32, 18): 47.0, (32, 20): 12.0, (32, 22): 6.0, (32, 23): 46.0, (32, 29): 100.0, (32, 33): 31.0, (33, 14): 54.0, (33, 15): 47.0, (33, 18): 50.0, (33, 20): 66.0, (33, 22): 69.0, (33, 23): 15.0, (33, 26): 37.0, (33, 29): 55.0, (23, 25): 75.0, (23, 29): 59.0, (25, 24): 40.0, (29, 26): 46.0}.newTable()
+  let (wbarycenter, wbarycentricity) = karate.barycenter(weight=weight)
+  check wbarycenter == @[0]
+  check wbarycentricity == {0: 1263.0, 1: 1399.0, 2: 1553.0, 3: 2366.0, 4: 2523.0, 5: 1608.0, 6: 1940.0, 7: 1533.0, 8: 1931.0, 10: 1846.0, 11: 1935.0, 12: 3699.0, 13: 1514.0, 17: 2711.0, 19: 2167.0, 21: 2683.0, 31: 1279.0, 30: 1685.0, 9: 3601.0, 27: 1596.0, 28: 2907.0, 32: 1561.0, 16: 3240.0, 33: 1372.0, 14: 2979.0, 15: 1753.0, 18: 2713.0, 20: 1945.0, 22: 1753.0, 23: 1823.0, 25: 3741.0, 29: 3075.0, 24: 2496.0, 26: 2510.0}.toTable()
+
+test "barycenter on directed graph":
+  let DG = completeDiGraph(4)
+  let (barycenter, barycentricity) = DG.barycenter()
+  check barycenter == @[0, 1, 2, 3]
+  check barycentricity == {0: 3.0, 1: 3.0, 2: 3.0, 3: 3.0}.toTable()
