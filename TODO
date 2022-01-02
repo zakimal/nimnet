@@ -366,10 +366,8 @@ Cuts
 - networkx.algorithms.cuts.normalized_cut_size
 - networkx.algorithms.cuts.volume
 
-D-Separation
-- Examples
-- References
-- networkx.algorithms.d_separation.d_separated
+[x] D-Separation
+- [x] networkx.algorithms.d_separation.d_separated
 
 Directed Acyclic Graphs
 - [x] networkx.algorithms.dag.ancestors
