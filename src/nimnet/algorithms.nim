@@ -484,6 +484,13 @@ proc onionLayers*(g: Graph): Table[Node, int] =
 # Covering
 # -------------------------------------------------------------------
 
+proc isEdgeCover*(G: Graph, cover: HashSet[Edge]): bool =
+  var ns = initHashSet[Node]()
+  for edge in cover:
+    ns.incl(edge.u)
+    ns.incl(edge.v)
+  return G.nodesSet() <= ns
+
 # -------------------------------------------------------------------
 # TODO:
 # Cycle

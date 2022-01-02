@@ -348,7 +348,7 @@ Connectivity
 
 Covering
 - networkx.algorithms.covering.min_edge_cover
-- networkx.algorithms.covering.is_edge_cover
+- [x] networkx.algorithms.covering.is_edge_cover
 
 Cycles
 - networkx.algorithms.cycles.cycle_basis
