@@ -378,9 +378,9 @@ Directed Acyclic Graphs
 - [x] networkx.algorithms.dag.lexicographical_topological_sort
 - [x] networkx.algorithms.dag.is_directed_acyclic_graph
 - [x] networkx.algorithms.dag.is_aperiodic
-- networkx.algorithms.dag.transitive_closure
-- networkx.algorithms.dag.transitive_closure_dag
-- networkx.algorithms.dag.transitive_reduction
+- [x] networkx.algorithms.dag.transitive_closure
+- [x] networkx.algorithms.dag.transitive_closure_dag
+- [x] networkx.algorithms.dag.transitive_reduction
 - networkx.algorithms.dag.antichains
 - networkx.algorithms.dag.dag_longest_path
 - networkx.algorithms.dag.dag_longest_path_length

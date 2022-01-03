@@ -5669,6 +5669,44 @@ proc transitiveClosureWithSelfloop*(DG: DiGraph, reflexive: bool = false): DiGra
       TC.addEdgesFrom(edges)
     return TC
 
+proc transitiveClosureDag*(DG: DiGraph, topoOrder: seq[Node] = @[]): DiGraph =
+  var topoOrderUsing = topoOrder
+  if len(topoOrder) == 0:
+    topoOrderUsing = topologicalSort(DG).toSeq()
+  let TC = DG.copyAsDiGraph()
+  for v in reversed(topoOrderUsing):
+    var edges: seq[Edge] = @[]
+    for u in TC.descendantsAtDistance(v, 2):
+      edges.add((v, u))
+    TC.addEdgesFrom(edges)
+  return TC
+
+proc transitiveReduction*(DG: DiGraph): DiGraph =
+  if not isDirectedAcyclicGraph(DG):
+    raise newNNError("given graph is not DAG")
+  let TR = newDiGraph()
+  TR.addNodesFrom(DG.nodes())
+  var descendants = initTable[Node, HashSet[Node]]()
+  var checkCount = DG.inDegree()
+  for u in DG.nodes():
+    var uNbrs = DG.successorsSet(u)
+    for v in DG.successors(u):
+      if v in uNbrs:
+        if v notin descendants:
+          var s = initHashSet[Node]()
+          for (_, y) in DG.dfsEdges(source=v):
+            s.incl(y)
+          descendants[v] = s
+        uNbrs = uNbrs - descendants[v]
+      checkCount[v] -= 1
+      if checkCount[v] == 0:
+        descendants.del(v)
+    var edges: seq[Edge] = @[]
+    for v in uNbrs:
+      edges.add((u, v))
+    TR.addEdgesFrom(edges)
+  return TR
+
 # -------------------------------------------------------------------
 # TODO:
 # Link Prediction
