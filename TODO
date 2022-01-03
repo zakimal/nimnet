@@ -410,10 +410,10 @@ Dominance
 - [x] networkx.algorithms.dominating.dominating_set
 - [x] networkx.algorithms.dominating.is_dominating_set
 
-Efficiency
-- networkx.algorithms.efficiency_measures.efficiency
-- networkx.algorithms.efficiency_measures.local_efficiency
-- networkx.algorithms.efficiency_measures.global_efficiency
+[x] Efficiency
+- [x] networkx.algorithms.efficiency_measures.efficiency
+- [x] networkx.algorithms.efficiency_measures.local_efficiency
+- [x] networkx.algorithms.efficiency_measures.global_efficiency
 
 Eulerian
 - [x] networkx.algorithms.euler.is_eulerian

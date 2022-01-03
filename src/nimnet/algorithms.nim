@@ -601,11 +601,6 @@ proc isDominatingSet*(DG: DiGraph, nbunch: HashSet[Node]): bool =
 
 # -------------------------------------------------------------------
 # TODO:
-# Efficiency
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Flows
 # -------------------------------------------------------------------
 
@@ -6522,3 +6517,34 @@ proc barycenter*(
       barycenterVertices.add(v)
   barycenterVertices.sort()
   return (barycenterVertices, barycentricity)
+
+# -------------------------------------------------------------------
+# TODO:
+# Efficiency
+# -------------------------------------------------------------------
+
+proc efficiency*(G: Graph, u, v: Node): float =
+  var eff: float
+  try:
+    eff = 1 / shortestPathLength(G, source=u, target=v)[u][v]
+  except NNNoPath:
+    eff = 0.0
+  return eff
+
+proc globalEfficiency*(G: Graph): float =
+  let n = len(G).float
+  let denom = n * (n - 1.0)
+  var gEff = 0.0
+  if denom != 0.0:
+    for (source, targets) in allPairsShortestPathLength(G):
+      for (target, distance) in targets.pairs():
+        if distance > 0:
+          gEff += 1.0 / distance.float
+    gEff = gEff / denom
+  return gEff
+
+proc localEfficiency*(G: Graph): float =
+  var effs: seq[float] = @[]
+  for v in G.nodes():
+    effs.add(globalEfficiency(G.subgraph(G.neighbors(v))))
+  return sum(effs) / len(G).float
