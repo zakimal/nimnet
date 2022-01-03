@@ -662,8 +662,8 @@ Traversal
 - [x] Depth First Search
 - [x] Breadth First Search
 - [x] Beam search
-- Depth First Search on Edges
-- Breadth First Search on Edges
+- [x] Depth First Search on Edges
+- [x] Breadth First Search on Edges
 
 Tree
 - [x] Recognition
