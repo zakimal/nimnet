@@ -5707,6 +5707,25 @@ proc transitiveReduction*(DG: DiGraph): DiGraph =
     TR.addEdgesFrom(edges)
   return TR
 
+iterator antichains*(DG: DiGraph, topoOrder: seq[Node] = @[]): seq[Node] =
+  var topoOrderUsing = topoOrder
+  if len(topoOrder) == 0:
+    topoOrderUsing = topologicalSort(DG).toSeq()
+  let TC = DG.transitiveClosureDag(topoOrderUsing)
+  var antichainsStacks = initDeque[tuple[s: seq[Node], topo: seq[Node]]]()
+  antichainsStacks.addLast((@[], reversed(topoOrderUsing)))
+  while len(antichainsStacks) != 0:
+    var (antichain, stack) = antichainsStacks.popLast()
+    yield antichain
+    while len(stack) != 0:
+      var x = stack.pop()
+      var newAntichain = antichain & @[x]
+      var newStack: seq[Node] = @[]
+      for t in stack:
+        if not ((t in TC.successorsSet(x)) or (x in TC.successorsSet(t))):
+          newStack.add(t)
+      antichainsStacks.addLast((newAntichain, newStack))
+
 # -------------------------------------------------------------------
 # TODO:
 # Link Prediction

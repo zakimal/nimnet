@@ -381,7 +381,7 @@ Directed Acyclic Graphs
 - [x] networkx.algorithms.dag.transitive_closure
 - [x] networkx.algorithms.dag.transitive_closure_dag
 - [x] networkx.algorithms.dag.transitive_reduction
-- networkx.algorithms.dag.antichains
+- [x] networkx.algorithms.dag.antichains
 - networkx.algorithms.dag.dag_longest_path
 - networkx.algorithms.dag.dag_longest_path_length
 - networkx.algorithms.dag.dag_to_branching
