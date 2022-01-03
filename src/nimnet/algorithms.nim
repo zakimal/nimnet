@@ -4158,6 +4158,140 @@ proc dfsPreOrderNodes*(
       ret.add(v)
   return ret
 
+iterator edgeDfs*(
+  G: Graph,
+  source: Node = None,
+  orientation: string = ""
+): tuple[u: Node, v: Node, ori: string] =
+  var nodes: seq[Node] = @[]
+  if G.hasNode(source):
+    nodes = @[source]
+  else:
+    nodes = G.nodes()
+
+  let directed = G.isDirected()
+
+  var edgesFrom: proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]
+  if orientation == "":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in G.edges(node):
+        s.add((edge, ""))
+      return (s, 0)
+  elif not directed or orientation == "original":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in G.edges(node):
+        s.add((edge, "forward"))
+      return (s, 0)
+  else:
+    raise newNNError("invalid orientation for graph")
+
+  let getEdgeId = proc(edgeOri: tuple[e: Edge, ori: string]): tuple[e: HashSet[Node], ori: string] =
+    return (@[edgeOri.e.u, edgeOri.e.v].toHashSet(), edgeOri.ori)
+
+  let checkReverse = directed and orientation in @["reverse", "ignore"].toHashSet()
+
+  var visitedEdges = initHashSet[tuple[e: HashSet[Node], ori: string]]()
+  var visitedNodes = initHashSet[Node]()
+  var edges = initTable[Node, tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]]()
+
+  for startNode in nodes:
+    var stack = @[startNode].toDeque()
+    while len(stack) != 0:
+      var currentNode = stack.peekLast()
+      if currentNode notin visitedNodes:
+        edges[currentNode] = edgesFrom(currentNode)
+        visitedNodes.incl(currentNode)
+      if edges[currentNode].idx < len(edges[currentNode].s):
+        var edge = edges[currentNode].s[edges[currentNode].idx]
+        edges[currentNode].idx += 1
+        var edgeid = getEdgeId(edge)
+        if edgeid notin visitedEdges:
+          visitedEdges.incl(edgeid)
+          if checkReverse and edge.ori == "reverse":
+            stack.addLast(edge.e.u)
+          else:
+            stack.addLast(edge.e.v)
+          yield (edge.e.u, edge.e.v, edge.ori)
+      else:
+        discard stack.popLast()
+iterator edgeDfs*(
+  DG: DiGraph,
+  source: Node = None,
+  orientation: string = ""
+): tuple[u: Node, v: Node, ori: string] =
+  var nodes: seq[Node] = @[]
+  if DG.hasNode(source):
+    nodes = @[source]
+  else:
+    nodes = DG.nodes()
+
+  let directed = DG.isDirected()
+
+  var edgesFrom: proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]
+  if orientation == "":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in DG.edges(node):
+        s.add((edge, ""))
+      return (s, 0)
+  elif not directed or orientation == "original":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in DG.edges(node):
+        s.add((edge, "forward"))
+      return (s, 0)
+  elif orientation == "reverse":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for pred in DG.predecessors(node):
+        s.add(((pred, node), "reverse"))
+      return (s, 0)
+  elif orientation == "ignore":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for succ in DG.successors(node):
+        s.add(((node, succ), "forward"))
+      for pred in DG.predecessors(node):
+        s.add(((pred, node), "reverse"))
+      return (s, 0)
+  else:
+    raise newNNError("invalid orientation for directed graph")
+
+  let getEdgeId = proc(edgeOri: tuple[e: Edge, ori: string]): tuple[e: Edge, ori: string] =
+    if orientation != "":
+      return (edgeOri.e, "")
+    else:
+      return edgeOri
+
+  let checkReverse = directed and orientation in @["reverse", "ignore"].toHashSet()
+
+  var visitedEdges = initHashSet[tuple[e: Edge, ori: string]]()
+  var visitedNodes = initHashSet[Node]()
+  var edges = initTable[Node, tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]]()
+
+  for startNode in nodes:
+    var stack = @[startNode].toDeque()
+    while len(stack) != 0:
+      var currentNode = stack.peekLast()
+      if currentNode notin visitedNodes:
+        edges[currentNode] = edgesFrom(currentNode)
+        visitedNodes.incl(currentNode)
+      if edges[currentNode].idx < len(edges[currentNode].s):
+        var edge = edges[currentNode].s[edges[currentNode].idx]
+        edges[currentNode].idx += 1
+        var edgeid = getEdgeId(edge)
+        if edgeid notin visitedEdges:
+          visitedEdges.incl(edgeid)
+          if checkReverse and edge.ori == "reverse":
+            stack.addLast(edge.e.u)
+          else:
+            stack.addLast(edge.e.v)
+          yield (edge.e.u, edge.e.v, edge.ori)
+      else:
+        discard stack.popLast()
+
 iterator genericBfsEdges(
   G: Graph,
   source: Node,
@@ -4454,6 +4588,135 @@ iterator bfsBeamEdges*(
 
   for edge in genericBfsEdges(DG, source, successors=successors):
     yield edge
+
+iterator edgeBfs*(
+  G: Graph,
+  source: Node = None,
+  orientation: string = ""
+): tuple[u: Node, v: Node, ori: string] =
+  var nodes: seq[Node] = @[]
+  if G.hasNode(source):
+    nodes = @[source]
+  else:
+    nodes = G.nodes()
+
+  let directed = G.isDirected()
+
+  var edgesFrom: proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]
+  if orientation == "":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in G.edges(node):
+        s.add((edge, ""))
+      return (s, 0)
+  elif not directed or orientation == "original":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in G.edges(node):
+        s.add((edge, "forward"))
+      return (s, 0)
+  else:
+    raise newNNError("invalid orientation for graph")
+
+  let getEdgeId = proc(edgeOri: tuple[e: Edge, ori: string]): tuple[e: HashSet[Node], ori: string] =
+    return (@[edgeOri.e.u, edgeOri.e.v].toHashSet(), edgeOri.ori)
+
+  let checkReverse = directed and orientation in @["reverse", "ignore"].toHashSet()
+
+  var visitedEdges = initHashSet[tuple[e: HashSet[Node], ori: string]]()
+  var visitedNodes = nodes.toHashSet()
+  var queue = initDeque[tuple[n: Node, itr: tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]]]()
+  for n in nodes:
+    queue.addLast((n, edgesFrom(n)))
+
+  while len(queue) != 0:
+    var (_, childrenEdges) = queue.popFirst()
+    for edge in childrenEdges.s:
+      var child: Node
+      if checkReverse and edge.ori == "reverse":
+        child = edge.e.u
+      else:
+        child = edge.e.v
+      if child notin visitedNodes:
+        visitedNodes.incl(child)
+        queue.addLast((child, edgesFrom(child)))
+      var edgeid = getEdgeId(edge)
+      if edgeid notin visitedEdges:
+        visitedEdges.incl(edgeid)
+        yield (edge.e.u, edge.e.v, edge.ori)
+iterator edgeBfs*(
+  DG: DiGraph,
+  source: Node = None,
+  orientation: string = ""
+): tuple[u: Node, v: Node, ori: string] =
+  var nodes: seq[Node] = @[]
+  if DG.hasNode(source):
+    nodes = @[source]
+  else:
+    nodes = DG.nodes()
+
+  let directed = DG.isDirected()
+
+  var edgesFrom: proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]
+  if orientation == "":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in DG.edges(node):
+        s.add((edge, ""))
+      return (s, 0)
+  elif not directed or orientation == "original":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for edge in DG.edges(node):
+        s.add((edge, "forward"))
+      return (s, 0)
+  elif orientation == "reverse":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for pred in DG.predecessors(node):
+        s.add(((pred, node), "reverse"))
+      return (s, 0)
+  elif orientation == "ignore":
+    edgesFrom = proc(node: Node): tuple[s: seq[tuple[e: Edge, ori: string]], idx: int] =
+      var s: seq[tuple[e: Edge, ori: string]] = @[]
+      for succ in DG.successors(node):
+        s.add(((node, succ), "forward"))
+      for pred in DG.predecessors(node):
+        s.add(((pred, node), "reverse"))
+      return (s, 0)
+  else:
+    raise newNNError("invalid orientation for directed graph")
+
+  let getEdgeId = proc(edgeOri: tuple[e: Edge, ori: string]): tuple[e: Edge, ori: string] =
+    if orientation != "":
+      return (edgeOri.e, "")
+    else:
+      return edgeOri
+
+  let checkReverse = directed and orientation in @["reverse", "ignore"].toHashSet()
+
+  var visitedEdges = initHashSet[tuple[e: Edge, ori: string]]()
+  var visitedNodes = nodes.toHashSet()
+  var queue = initDeque[tuple[n: Node, itr: tuple[s: seq[tuple[e: Edge, ori: string]], idx: int]]]()
+  for n in nodes:
+    queue.addLast((n, edgesFrom(n)))
+
+  while len(queue) != 0:
+    var (_, childrenEdges) = queue.popFirst()
+    for edge in childrenEdges.s:
+      var child: Node
+      if checkReverse and edge.ori == "reverse":
+        child = edge.e.u
+      else:
+        child = edge.e.v
+      if child notin visitedNodes:
+        visitedNodes.incl(child)
+        queue.addLast((child, edgesFrom(child)))
+      var edgeid = getEdgeId(edge)
+      if edgeid notin visitedEdges:
+        visitedEdges.incl(edgeid)
+        yield (edge.e.u, edge.e.v, edge.ori)
+
 
 # -------------------------------------------------------------------
 # TODO:
