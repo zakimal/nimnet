@@ -658,7 +658,7 @@ Tournament
 - networkx.algorithms.tournament.random_tournament
 - networkx.algorithms.tournament.score_sequence
 
-Traversal
+[x] Traversal
 - [x] Depth First Search
 - [x] Breadth First Search
 - [x] Beam search

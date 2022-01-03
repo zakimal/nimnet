@@ -5642,6 +5642,33 @@ iterator allTopologicalSorts*(DG: DiGraph): seq[Node] =
     if len(bases) == 0:
       break
 
+proc transitiveClosure*(DG: DiGraph): DiGraph =
+  let TC = DG.copyAsDiGraph()
+  for v in DG.nodes():
+    var edges: seq[Edge] = @[]
+    for u in DG.dfsPreOrderNodes(v):
+      if v != u:
+        edges.add((v, u))
+    TC.addEdgesFrom(edges)
+  return TC
+proc transitiveClosureWithSelfloop*(DG: DiGraph, reflexive: bool = false): DiGraph =
+  if reflexive:
+    let TC = DG.copyAsDiGraph()
+    for v in DG.nodes():
+      var edges: seq[Edge] = @[]
+      for u in DG.dfsPreOrderNodes(v):
+        edges.add((v, u))
+      TC.addEdgesFrom(edges)
+    return TC
+  else:
+    let TC = DG.copyAsDiGraph()
+    for v in DG.nodes():
+      var edges: seq[Edge] = @[]
+      for (u, w, _) in DG.edgeDfs(v):
+        edges.add((v, w))
+      TC.addEdgesFrom(edges)
+    return TC
+
 # -------------------------------------------------------------------
 # TODO:
 # Link Prediction
