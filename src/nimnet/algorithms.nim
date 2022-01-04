@@ -799,11 +799,6 @@ proc isGraphical*(sequence: seq[int], methodName: string = "eg"): bool =
   raise newNNException("method must be 'eg' or 'hh'")
 
 # -------------------------------------------------------------------
-# TODO:
-# Hybrid
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Isolates
 # -------------------------------------------------------------------
 
@@ -6564,3 +6559,182 @@ proc flowHierachy*(DG: DiGraph, weight: TableRef[Edge, float] = nil): float =
     else:
       t += 1.0
   return 1.0 - s / t
+
+# -------------------------------------------------------------------
+# TODO:
+# Hybrid
+# -------------------------------------------------------------------
+
+proc klConnectedSubgraph*(
+  G: Graph,
+  k: int,
+  l: int,
+  lowMemory: bool = false,
+): tuple[subG: Graph, sameAsGraph: bool] =
+  let H = G.copyAsGraph()
+  var graphOK = true
+  var deletedSome = true
+  while deletedSome:
+    deletedSome = false
+    for edge in H.edges():
+      var (u, v) = edge
+      var G2: Graph
+      if lowMemory:
+        var verts = @[u, v].toHashSet()
+        var vertsCopy = verts
+        for i in 0..<k:
+          for w in vertsCopy:
+            verts = verts + G.neighborsSet(w)
+        G2 = G.subgraph(verts)
+      else:
+        G2 = G.copyAsGraph()
+      var path = @[u, v]
+      var cnt = 0
+      var accept = 0
+      while len(path) != 0:
+        cnt += 1
+        if cnt >= l:
+          accept = 1
+          break
+        var prev = u
+        for w in path:
+          if prev != w:
+            G2.removeEdge(prev, w)
+            prev = w
+        try:
+          path = shortestPath(G2, source=u, target=v)[u][v]
+        except NNNoPath:
+          path = @[]
+      if accept == 0:
+        H.removeEdge(u, v)
+        deletedSome = true
+        if graphOK:
+           graphOK = false
+  return (H, graphOK)
+proc klConnectedSubgraph*(
+  DG: DiGraph,
+  k: int,
+  l: int,
+  lowMemory: bool = false,
+): tuple[subDG: DiGraph, sameAsGraph: bool] =
+  let DH = DG.copyAsDiGraph()
+  var graphOK = true
+  var deletedSome = true
+  while deletedSome:
+    deletedSome = false
+    for edge in DH.edges():
+      var (u, v) = edge
+      var DG2: DiGraph
+      if lowMemory:
+        var verts = @[u, v].toHashSet()
+        var vertsCopy = verts
+        for i in 0..<k:
+          for w in vertsCopy:
+            verts = verts + DG.successorsSet(w)
+        DG2 = DG.subgraph(verts)
+      else:
+        DG2 = DG.copyAsDiGraph()
+      var path = @[u, v]
+      var cnt = 0
+      var accept = 0
+      while len(path) != 0:
+        cnt += 1
+        if cnt >= l:
+          accept = 1
+          break
+        var prev = u
+        for w in path:
+          if prev != w:
+            DG2.removeEdge(prev, w)
+            prev = w
+        try:
+          path = shortestPath(DG2, source=u, target=v)[u][v]
+        except NNNoPath:
+          path = @[]
+      if accept == 0:
+        DH.removeEdge(u, v)
+        deletedSome = true
+        if graphOK:
+           graphOK = false
+  return (DH, graphOK)
+
+proc isKlConnectedSubgraph*(
+  G: Graph,
+  k: int,
+  l: int,
+  lowMemory: bool = false,
+): bool =
+  var graphOK = true
+  for edge in G.edges():
+    var (u, v) = edge
+    var G2: Graph
+    if lowMemory:
+      var verts = @[u, v].toHashSet()
+      var vertsCopy = verts
+      for i in 0..<k:
+        for w in vertsCopy:
+          verts = verts + G.neighborsSet(w)
+      G2 = G.subgraph(verts)
+    else:
+      G2 = G.copyAsGraph()
+    var path = @[u, v]
+    var cnt = 0
+    var accept = 0
+    while len(path) != 0:
+      cnt += 1
+      if cnt >= l:
+        accept = 1
+        break
+      var prev = u
+      for w in path:
+        if prev != w:
+          G2.removeEdge(prev, w)
+          prev = w
+      try:
+        path = shortestPath(G2, source=u, target=v)[u][v]
+      except NNNoPath:
+        path = @[]
+    if accept == 0:
+      if graphOK:
+         graphOK = false
+  return graphOK
+proc isKlConnectedSubgraph*(
+  DG: DiGraph,
+  k: int,
+  l: int,
+  lowMemory: bool = false,
+): bool =
+  var graphOK = true
+  for edge in DG.edges():
+    var (u, v) = edge
+    var DG2: DiGraph
+    if lowMemory:
+      var verts = @[u, v].toHashSet()
+      var vertsCopy = verts
+      for i in 0..<k:
+        for w in vertsCopy:
+          verts = verts + DG.successorsSet(w)
+      DG2 = DG.subgraph(verts)
+    else:
+      DG2 = DG.copyAsDiGraph()
+    var path = @[u, v]
+    var cnt = 0
+    var accept = 0
+    while len(path) != 0:
+      cnt += 1
+      if cnt >= l:
+        accept = 1
+        break
+      var prev = u
+      for w in path:
+        if prev != w:
+          DG2.removeEdge(prev, w)
+          prev = w
+      try:
+        path = shortestPath(DG2, source=u, target=v)[u][v]
+      except NNNoPath:
+        path = @[]
+    if accept == 0:
+      if graphOK:
+         graphOK = false
+  return graphOK
