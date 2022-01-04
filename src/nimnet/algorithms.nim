@@ -800,11 +800,6 @@ proc isGraphical*(sequence: seq[int], methodName: string = "eg"): bool =
 
 # -------------------------------------------------------------------
 # TODO:
-# Hierarchy
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
-# TODO:
 # Hybrid
 # -------------------------------------------------------------------
 
@@ -6548,3 +6543,24 @@ proc localEfficiency*(G: Graph): float =
   for v in G.nodes():
     effs.add(globalEfficiency(G.subgraph(G.neighbors(v))))
   return sum(effs) / len(G).float
+
+# -------------------------------------------------------------------
+# Hierarchy
+# -------------------------------------------------------------------
+
+proc flowHierachy*(DG: DiGraph, weight: TableRef[Edge, float] = nil): float =
+  var s = 0.0
+  for c in stronglyConnectedComponents(DG):
+    let subDG = DG.subgraph(c)
+    for edge in subDG.edges():
+      if weight != nil:
+        s += weight.getOrDefault(edge, 1.0)
+      else:
+        s += 1.0
+  var t = 0.0
+  for edge in DG.edges():
+    if weight != nil:
+      t += weight.getOrDefault(edge, 1.0)
+    else:
+      t += 1.0
+  return 1.0 - s / t

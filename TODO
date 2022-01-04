@@ -446,8 +446,8 @@ Graph Hashing
 - [x] networkx.algorithms.graphical.is_valid_degree_sequence_havel_hakimi
 - [x] networkx.algorithms.graphical.is_valid_degree_sequence_erdos_gallai
 
-Hierarchy
-- networkx.algorithms.hierarchy.flow_hierarchy
+[x] Hierarchy
+- [x] networkx.algorithms.hierarchy.flow_hierarchy
 
 Hybrid
 - networkx.algorithms.hybrid.kl_connected_subgraph
