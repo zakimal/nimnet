@@ -1144,6 +1144,18 @@ proc matchingTableToSet(matching: Table[Node, Node]): HashSet[tuple[u: Node, v: 
 # Moral
 # -------------------------------------------------------------------
 
+proc moralGraph*(DG: DiGraph): Graph =
+  let H = DG.copyAsGraph()
+  for preds in DG.pred.values():
+    let N = len(preds)
+    let predSeq = sorted(preds.toSeq())
+    var predecessorsCombination: seq[Edge] = @[]
+    for i in 0..<N:
+      for j in (i+1)..<N:
+        predecessorsCombination.add((predSeq[i], predSeq[j]))
+    H.addEdgesFrom(predecessorsCombination)
+  return H
+
 # -------------------------------------------------------------------
 # TODO:
 # Node Classification
@@ -6561,7 +6573,6 @@ proc flowHierachy*(DG: DiGraph, weight: TableRef[Edge, float] = nil): float =
   return 1.0 - s / t
 
 # -------------------------------------------------------------------
-# TODO:
 # Hybrid
 # -------------------------------------------------------------------
 
