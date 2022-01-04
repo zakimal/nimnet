@@ -449,9 +449,9 @@ Graph Hashing
 [x] Hierarchy
 - [x] networkx.algorithms.hierarchy.flow_hierarchy
 
-Hybrid
-- networkx.algorithms.hybrid.kl_connected_subgraph
-- networkx.algorithms.hybrid.is_kl_connected
+[x] Hybrid
+- [x] networkx.algorithms.hybrid.kl_connected_subgraph
+- [x] networkx.algorithms.hybrid.is_kl_connected
 
 [x] Isolates
 - [x] etworkx.algorithms.isolate.is_isolate
