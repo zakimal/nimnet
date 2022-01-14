@@ -253,7 +253,7 @@ Centrality
 - Group Centrality
 - Load
 - Subgraph
-- Harmonic Centrality
+- [x] Harmonic Centrality
 - Dispersion
 - Reaching
 - Percolation

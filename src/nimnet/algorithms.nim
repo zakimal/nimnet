@@ -5486,6 +5486,91 @@ proc incrementalClosenessCentrality*(
     G.addEdge(u, v)
   return cc
 
+proc harmonicCentrality*(
+  G: Graph,
+  nbunch: seq[Node] = @[],
+  sources: seq[Node] = @[],
+  distance: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  var nbunchUsing: HashSet[Node]
+  if len(nbunch) == 0:
+    nbunchUsing = G.nodesSet()
+  else:
+    for n in nbunch:
+      if n in G.nodesSet():
+        nbunchUsing.incl(n)
+
+  var sourcesUsing: HashSet[Node]
+  if len(nbunch) == 0:
+    sourcesUsing = G.nodesSet()
+  else:
+    for n in sources:
+      if n in G.nodesSet():
+        sourcesUsing.incl(n)
+
+  var distanceUsing = newTable[Edge, float]()
+  if distance == nil:
+    for edge in G.edges():
+      distanceUsing[edge] = 1.0
+  else:
+    for edge in distance.keys():
+      distanceUsing[edge] = distance[edge]
+
+  var centrality = initTable[Node, float]()
+  for n in nbunchUsing:
+    centrality[n] = 0.0
+
+  for v in sourcesUsing:
+    var dist = shortestPathLength(G, source=v, weight=distanceUsing)
+    for u in nbunchUsing.intersection(dist[v].keys().toSeq().toHashSet()):
+      var d = dist[v][u]
+      if d == 0.0:
+        continue
+      centrality[u] += 1.0 / d
+  return centrality
+proc harmonicCentrality*(
+  DG: DiGraph,
+  nbunch: seq[Node] = @[],
+  sources: seq[Node] = @[],
+  distance: TableRef[Edge, float] = nil,
+): Table[Node, float] =
+  var nbunchUsing: HashSet[Node]
+  if len(nbunch) == 0:
+    nbunchUsing = DG.nodesSet()
+  else:
+    for n in nbunch:
+      if n in DG.nodesSet():
+        nbunchUsing.incl(n)
+
+  var sourcesUsing: HashSet[Node]
+  if len(nbunch) == 0:
+    sourcesUsing = DG.nodesSet()
+  else:
+    for n in sources:
+      if n in DG.nodesSet():
+        sourcesUsing.incl(n)
+
+  var distanceUsing = newTable[Edge, float]()
+  if distance == nil:
+    for edge in DG.edges():
+      distanceUsing[edge] = 1.0
+  else:
+    for edge in DG.edges():
+      distanceUsing[edge] = distance[edge]
+
+  var centrality = initTable[Node, float]()
+  for n in nbunchUsing:
+    centrality[n] = 0.0
+
+  for v in sourcesUsing:
+    var dist = shortestPathLength(DG, source=v, weight=distanceUsing)
+    for u in nbunchUsing.intersection(dist[v].keys().toSeq().toHashSet()):
+      var d = dist[v][u]
+      if d == 0.0:
+        continue
+      centrality[u] += 1.0 / d
+  return centrality
+
 # -------------------------------------------------------------------
 # TODO:
 # DAG
