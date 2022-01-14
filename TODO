@@ -238,8 +238,8 @@ Boundary
 - networkx.algorithms.boundary.node_boundary
 
 Bridges
-- networkx.algorithms.bridges.bridges
-- networkx.algorithms.bridges.has_bridges
+- [x] networkx.algorithms.bridges.bridges
+- [x] networkx.algorithms.bridges.has_bridges
 - networkx.algorithms.bridges.local_bridges
 
 Centrality

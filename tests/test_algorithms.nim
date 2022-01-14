@@ -314,10 +314,6 @@ test "hits on directed graph":
     check equal(val, expectedAuthorities[node]) == true
 
 # -------------------------------------------------------------------
-# Lowest Common Ancestor
-# -------------------------------------------------------------------
-
-# -------------------------------------------------------------------
 # Matching
 # -------------------------------------------------------------------
 
@@ -5908,3 +5904,21 @@ test "check whether directed graph is kl connected":
   check dkarate.isKlConnectedSubgraph(0, 0) == true
   check dkarate.isKlConnectedSubgraph(3, 3) == false
   check dkarate.isKlConnectedSubgraph(10, 10) == false
+
+# -------------------------------------------------------------------
+# Lowest Common Ancestor
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# Bridges
+# -------------------------------------------------------------------
+
+test "check bridges in graph":
+  let G = barbellGraph(10, 0)
+  check G.bridges().toSeq() == @[(9, 10)]
+
+test "check wheter graph has bridges":
+  let barbell = barbellGraph(10, 0)
+  check barbell.hasBridges() == true
+  let cycle = cycleGraph(5)
+  check cycle.hasBridges() == false

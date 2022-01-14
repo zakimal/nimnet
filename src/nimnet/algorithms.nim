@@ -66,13 +66,13 @@ proc union(uf: UnionFind, nodes: HashSet[Node]) =
   rootsWithWeight = rootsWithWeight.toHashSet.toSeq()
   rootsWithWeight.sort()
 
-  var roots: seq[Node] = @[]
+  var roots: Deque[Node] = initDeque[Node]()
   for (_, root) in rootsWithWeight:
-    roots.add(root)
+    roots.addLast(root)
 
   if len(roots) == 0:
     return
-  var head = roots[0]
+  var head = roots.popFirst()
   for r in roots:
     uf.weights[head] += uf.weights[r]
     uf.parents[r] = head
@@ -1097,11 +1097,6 @@ proc hits*(
   normalized: bool = true
 ): tuple[hubs: Table[Node, float], authorities: Table[Node, float]] =
   return hitsNim(DG, maxIter, tol, nstart, weight, normalized)
-
-# -------------------------------------------------------------------
-# TODO:
-# Lowest Common Ancestor
-# -------------------------------------------------------------------
 
 # -------------------------------------------------------------------
 # TODO:
@@ -6749,3 +6744,26 @@ proc isKlConnectedSubgraph*(
       if graphOK:
          graphOK = false
   return graphOK
+
+# -------------------------------------------------------------------
+# TODO:
+# Lowest Common Ancestor
+# -------------------------------------------------------------------
+
+# -------------------------------------------------------------------
+# TODO:
+# Bridges
+# -------------------------------------------------------------------
+
+iterator bridges*(G: Graph, root: Node = None): tuple[u, v: Node] =
+  let chains = G.chainDecomposition(root=root).toSeq()
+  var chainEdges = initHashSet[tuple[u, v: Node]]()
+  for edges in chains:
+    for edge in edges:
+      chainEdges.incl((edge.u, edge.v))
+  for (u, v) in G.edges():
+    if (u, v) notin chainEdges and (v, u) notin chainEdges:
+      yield (u, v)
+
+proc hasBridges*(G: Graph, root: Node = None): bool =
+  return len(G.bridges(root=root).toSeq()) != 0
